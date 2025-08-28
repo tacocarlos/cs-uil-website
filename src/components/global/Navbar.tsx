@@ -70,16 +70,7 @@ export default function Navbar() {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link href="/" className="flex items-center">
-            {/* <div className="relative mr-3 h-10 w-10">
-              <Image
-                src="/logo.png"
-                alt="CS UIL Logo"
-                fill
-                className="object-contain"
-              />
-            </div> */}
             <span className="text-xl font-bold">CS UIL 2025-2026</span>
           </Link>
 

@@ -4,15 +4,6 @@ import Image from "next/image";
 const Hero = () => {
   return (
     <section className="bg-primary text-primary-foreground relative flex h-[45vh] items-center justify-center overflow-hidden">
-      {/* <div className="absolute inset-0 opacity-20">
-        <Image
-          src="/code-bg.jpg"
-          alt="Code Background"
-          fill
-          className="object-cover"
-          priority
-        />
-      </div> */}
       <div className="z-10 container mx-auto px-4 text-center">
         <h1 className="mb-4 text-4xl font-bold md:text-6xl">
           CS UIL 2025-2026

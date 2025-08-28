@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Input } from "../ui/input";
+
 export default function Footer() {
   return (
     <footer className="bg-secondary px-4 py-8 text-secondary-foreground">

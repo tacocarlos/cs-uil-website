@@ -10,7 +10,7 @@ export default function Timeline({ events, timelineTitle }: TimelineProps) {
   return (
     <section className="bg-secondary-50 px-4 py-16">
       <div className="container mx-auto">
-        <h2 className="mb-12 text-center text-3xl font-bold text-blue-900">
+        <h2 className="text-primary-foreground mb-12 text-center text-3xl font-bold">
           {timelineTitle}
         </h2>
         <Accordion type="single" collapsible className="mx-auto max-w-3xl">
@@ -35,16 +35,17 @@ export const DefaultTimelineData: TimelineProps["events"] = [
   {
     date: "November 14th",
     eventName: "CS UIL Virutal Challenge #2",
-    description: "The second CS UIL Virtual Challenge, held on November 14th during Friday practice."
+    description:
+      "The second CS UIL Virtual Challenge, held on November 14th during Friday practice.",
   },
   {
     date: "December",
     eventName: "Advent of Code",
-    description: "An advent calendar of programming problems."
+    description: "An advent calendar of programming problems.",
   },
   {
     date: "December 13th",
     eventName: "USA Computing Olympiad - First Contest",
-    description: "The first contest of USACO."
-  }
+    description: "The first contest of USACO.",
+  },
 ];
