@@ -77,7 +77,7 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden items-center space-x-8 md:flex">
             <Link
-              href="/events"
+              href="/timeline"
               className="transition-colors hover:text-yellow-400"
             >
               Events
@@ -109,14 +109,7 @@ export default function Navbar() {
           >
             <div className="flex flex-col space-y-3 px-4">
               <Link
-                href="/about"
-                className="py-2 transition-colors hover:text-yellow-400"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </Link>
-              <Link
-                href="/events"
+                href="/timeline"
                 className="py-2 transition-colors hover:text-yellow-400"
                 onClick={() => setIsMenuOpen(false)}
               >

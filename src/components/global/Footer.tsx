@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-secondary px-4 py-8 text-secondary-foreground">
+    <footer className="bg-secondary text-secondary-foreground px-4 py-8">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
@@ -12,11 +12,16 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-bold">Quick Links</h3>
             <ul className="space-y-2">
               <li>
+                <Link href="/timeline" className="hover:text-accent-foreground">
+                  Event Timeline
+                </Link>
+              </li>
+              <li>
                 <Link
-                  href="/competition-timeline"
+                  href="/website-source"
                   className="hover:text-accent-foreground"
                 >
-                  Competition Timeline
+                  Website Source Code
                 </Link>
               </li>
             </ul>
@@ -24,7 +29,15 @@ export default function Footer() {
           <div>
             <h3 className="mb-4 text-lg font-bold">Contact</h3>
             <ul className="space-y-2 text-gray-400">
-              <li className="text-secondary-foreground">Email: <a href="mailto:cluna@grovetonisd.net" className="hover:text-accent-foreground">cluna@grovetonisd.net</a></li>
+              <li className="text-secondary-foreground">
+                Email:{" "}
+                <a
+                  href="mailto:cluna@grovetonisd.net"
+                  className="hover:text-accent-foreground"
+                >
+                  cluna@grovetonisd.net
+                </a>
+              </li>
             </ul>
           </div>
         </div>
