@@ -2,15 +2,11 @@ import Link from "next/link";
 import { Input } from "../ui/input";
 export default function Footer() {
   return (
-    <footer className="bg-secondary px-4 py-8 text-white">
+    <footer className="bg-secondary px-4 py-8 text-secondary-foreground">
       <div className="container mx-auto">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
             <h3 className="mb-4 text-lg font-bold">CS UIL 2025-2026</h3>
-            <p className="text-gray-400">
-              Promoting computer science education and competition excellence in
-              high schools.
-            </p>
           </div>
           <div>
             <h3 className="mb-4 text-lg font-bold">Quick Links</h3>
@@ -18,7 +14,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/competition-timeline"
-                  className="text-gray-400 hover:text-white"
+                  className="hover:text-accent-foreground"
                 >
                   Competition Timeline
                 </Link>
@@ -28,7 +24,7 @@ export default function Footer() {
           <div>
             <h3 className="mb-4 text-lg font-bold">Contact</h3>
             <ul className="space-y-2 text-gray-400">
-              <li>Email: cluna@grovetonisd.net</li>
+              <li className="text-secondary-foreground">Email: <a href="mailto:cluna@grovetonisd.net" className="hover:text-accent-foreground">cluna@grovetonisd.net</a></li>
             </ul>
           </div>
         </div>

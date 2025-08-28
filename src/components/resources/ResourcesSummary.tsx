@@ -1,5 +1,11 @@
 import Link from "next/link";
 
+export type ResourceItemType = {
+  title: string,
+  description: string,
+  href: string
+}
+
 export default function ResourcesSummary() {
   return (
     <section className="px-4 py-16">
@@ -7,7 +13,7 @@ export default function ResourcesSummary() {
         <h2 className="mb-12 text-center text-3xl font-bold text-blue-900">
           Preparation Resources
         </h2>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             {
               title: "Practice Problems",
@@ -24,23 +30,18 @@ export default function ResourcesSummary() {
               description: "Step-by-step tutorials for common algorithms",
               link: "/resources/tutorials",
             },
-            {
-              title: "Mock Competitions",
-              description: "Simulate competition environments online",
-              link: "/resources/mock",
-            },
           ].map((resource, index) => (
-            <Link
-              href={resource.link}
+            <p
+              // href={resource.link}
               key={index}
-              className="rounded-lg border-l-4 border-blue-500 bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
+              className="text-gray-500 bg-gray-400  rounded-lg border-l-4 border-blue-500 p-6 shadow-md transition-shadow hover:shadow-lg"
             >
-              <h3 className="mb-2 text-lg font-bold text-blue-900">
+              <h3 className="mb-2 text-lg font-bold">
                 {resource.title}
               </h3>
               <p className="mb-3 text-gray-600">{resource.description}</p>
-              <span className="font-medium text-blue-600">Learn more →</span>
-            </Link>
+              <span className="font-medium ">Learn more →</span>
+            </p>
           ))}
         </div>
       </div>
