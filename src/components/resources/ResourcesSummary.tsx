@@ -18,7 +18,7 @@ export default function ResourcesSummary() {
             {
               title: "Practice Problems",
               description: "Access previous years' competition problems",
-              link: "/resources/practice",
+              link: "/resources/past-problem",
             },
             {
               title: "Study Guides",
@@ -31,15 +31,15 @@ export default function ResourcesSummary() {
               link: "/resources/tutorials",
             },
           ].map((resource, index) => (
-            <p
+            <div
               // href={resource.link}
               key={index}
-              className="rounded-lg border-l-4 border-blue-500 bg-gray-400 p-6 text-gray-500 shadow-md transition-shadow hover:shadow-lg"
+              className="hover:motion-text-loop-sidebar-border hover:motion-duration-2000 rounded-lg border-l-4 border-blue-500 bg-gray-400 p-6 text-gray-500 shadow-md transition-shadow hover:shadow-lg"
             >
-              <h3 className="mb-2 text-lg font-bold">{resource.title}</h3>
+              <p className="mb-2 text-lg font-bold">{resource.title}</p>
               <p className="mb-3 text-gray-600">{resource.description}</p>
               <span className="font-medium">Learn more →</span>
-            </p>
+            </div>
           ))}
         </div>
       </div>
