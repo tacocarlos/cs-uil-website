@@ -17,9 +17,11 @@ export const problems = createTable(
         id: d.serial(),
         problemName: d.text().notNull(),
         competitionYear: d.integer().notNull(),
-        competitionLevel: d.text({
-            enum: ["invA", "invB", "district", "region", "state", "custom"],
-        }),
+        competitionLevel: d
+            .text({
+                enum: ["invA", "invB", "district", "region", "state", "custom"],
+            })
+            .notNull(),
         problemText: d.text().notNull(),
         programName: d.text().notNull(),
         inputFileName: d.text(),
