@@ -1,7 +1,14 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import {
+    pgTable,
+    text,
+    timestamp,
+    boolean,
+    integer,
+} from "drizzle-orm/pg-core";
+import { problems } from "./problem";
 
 export const user = pgTable("user", {
-    id: text("id").primaryKey(),
+    id: text("id").primaryKey().unique(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified")
@@ -14,7 +21,13 @@ export const user = pgTable("user", {
     updatedAt: timestamp("updated_at")
         .$defaultFn(() => /* @__PURE__ */ new Date())
         .notNull(),
+    showSubmissionScores: boolean().notNull().default(true),
+    mostRecentProblem: integer().references(() => problems.id),
+    role: text({ enum: ["student", "teacher", "site-admin"] }).default(
+        "student",
+    ),
 });
+export type User = typeof user.$inferSelect;
 
 export const session = pgTable("session", {
     id: text("id").primaryKey(),
@@ -46,6 +59,7 @@ export const account = pgTable("account", {
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
 });
+export type Account = typeof account.$inferSelect;
 
 export const verification = pgTable("verification", {
     id: text("id").primaryKey(),

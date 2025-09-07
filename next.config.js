@@ -5,6 +5,18 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+    images: {
+        remotePatterns: [
+            // allow google user profile images
+            {
+                protocol: "https",
+                hostname: "*.googleusercontent.com",
+                port: "",
+                pathname: "**",
+            },
+        ],
+    },
+};
 
 export default config;

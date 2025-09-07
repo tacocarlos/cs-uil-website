@@ -14,7 +14,7 @@ export const createTable = pgTableCreator((name) => `cs-uil-website_${name}`);
 export const problems = createTable(
     "problems",
     (d) => ({
-        id: d.serial(),
+        id: d.serial().primaryKey(),
         problemName: d.text().notNull(),
         competitionYear: d.integer().notNull(),
         competitionLevel: d
