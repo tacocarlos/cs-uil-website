@@ -102,12 +102,12 @@ function DesktopNavbar() {
                             <li>
                                 {role !== "student" ? (
                                     <>
-                                        <NavigationMenuLink>
+                                        <NavigationMenuLink asChild>
                                             <Link href="/dashboard/teacher">
                                                 Teacher Dashboard
                                             </Link>
                                         </NavigationMenuLink>
-                                        <NavigationMenuLink>
+                                        <NavigationMenuLink asChild>
                                             <Link href="/dashboard/student">
                                                 Student Dashboard
                                             </Link>
