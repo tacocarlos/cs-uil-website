@@ -55,6 +55,13 @@ public class Main {
         },
     });
 
+    const submitCodeMutator = api.execute.submitCode.useMutation({
+        onSuccess: async (data) => {
+            setOutput(data.executionResult.stdout ?? "");
+            toast("Submitted Code");
+        },
+    });
+
     async function runCode() {
         toast("Starting code execution...");
         if (!editorRef.current) {

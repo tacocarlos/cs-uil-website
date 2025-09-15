@@ -27,6 +27,8 @@ export const problems = createTable(
         inputFileName: d.text(),
         defaultInputFile: d.text(),
         enabled: d.boolean().default(false).notNull(),
+        testInput: d.text().notNull().default(""),
+        testOutput: d.text().notNull().default(""),
     }),
     (t) => [
         index("year_idx").on(t.competitionYear),

@@ -16,6 +16,8 @@ const data: Omit<Problem, "id">[] = [
         inputFileName: null,
         defaultInputFile: null,
         enabled: true,
+        testOutput: "",
+        testInput: "",
     },
     {
         problemName: "Luna",
@@ -32,6 +34,11 @@ const data: Omit<Problem, "id">[] = [
             { encoding: "utf-8" },
         ),
         enabled: true,
+        testOutput: "sans undertale",
+        testInput: readFileSync(
+            "dev-scripts/problems/uil/2025/custom/luna.dat",
+            { encoding: "utf-8" },
+        ),
     },
 ];
 
