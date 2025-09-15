@@ -71,7 +71,7 @@ export const executeRouter = createTRPCRouter({
             const submissionRequestBody = await submissionRequestResult.json();
             console.log("GOT TOKEN");
             console.dir(submissionRequestBody);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/dot-notation, @typescript-eslint/no-unsafe-member-access
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/dot-notation, @typescript-eslint/no-unsafe-member-access  @typescript-eslint/no-unnecessary-type-assertion
             const submissionToken = submissionRequestBody.token;
             console.log("GOT TOKEN [REAL]");
             const submissionResultRequest = await fetch(
