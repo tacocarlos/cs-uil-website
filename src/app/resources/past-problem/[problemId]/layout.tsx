@@ -20,7 +20,8 @@ export default async function Layout({
         redirect("/sign-in");
     }
 
-    const { problemId } = await params;
+    const problemId = (await params).problemId;
+    console.log(problemId);
     await db.update(user).set({
         mostRecentProblem: parseInt(problemId),
     });

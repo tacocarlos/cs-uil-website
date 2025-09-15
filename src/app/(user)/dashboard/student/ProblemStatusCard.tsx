@@ -32,7 +32,7 @@ export function ProblemStatusCard({
 }) {
     const hasSubmission = submission !== undefined;
     const isAccepted = hasSubmission && submission.accepted;
-    const maxPoints = 30; // Assuming max points is 100
+    const maxPoints = 30; // Assuming max points is 100 
     const formatLevel = (level: string) => {
         return level.charAt(0).toUpperCase() + level.slice(1);
     };
