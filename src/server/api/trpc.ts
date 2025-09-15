@@ -36,7 +36,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
  * errors on the backend.
  */
 const t = initTRPC.context<typeof createTRPCContext>().create({
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     transformer: superjson,
     errorFormatter({ shape, error }) {
         return {

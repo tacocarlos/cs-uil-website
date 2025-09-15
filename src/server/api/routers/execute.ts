@@ -6,7 +6,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 export const executeRouter = createTRPCRouter({
     getJavaRuntimes: publicProcedure.query(async () => {
         type ResponseData = [{ name: string; id: string }];
-        const url = new URL("/languages", env.JUDGE_URL as string);
+        const url = new URL("/languages", env.JUDGE_URL);
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
@@ -71,7 +71,7 @@ export const executeRouter = createTRPCRouter({
             const submissionRequestBody = await submissionRequestResult.json();
             console.log("GOT TOKEN");
             console.dir(submissionRequestBody);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/dot-notation, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-type-assertion
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
             const submissionToken = submissionRequestBody.token;
             console.log("GOT TOKEN [REAL]");
             const submissionResultRequest = await fetch(
