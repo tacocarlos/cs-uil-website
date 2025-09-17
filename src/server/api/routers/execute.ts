@@ -1,4 +1,3 @@
-import { env } from "~/env";
 import { z } from "zod";
 import { db } from "~/server/db";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -12,7 +11,7 @@ import { user as userTable } from "~/server/db/schema/auth";
 async function executeCode(
     code: string,
     language_id: string,
-    stdin: string = "",
+    stdin = "",
 ): Promise<{
     stdout: string | null;
     stderr: string | null;
@@ -49,11 +48,18 @@ async function executeCode(
             method: "GET",
         },
     );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return submissionResponse.json();
 }
 
 function diffStrings(a: string, b: string): string {
-    const changes = diffChars(a, b);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const changes: Array<{
+        added?: boolean;
+        removed?: boolean;
+        value: string;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    }> = diffChars(a, b);
 
     return changes
         .map((part) => {
@@ -67,8 +73,8 @@ function diffStrings(a: string, b: string): string {
 export const executeRouter = createTRPCRouter({
     getJavaRuntimes: publicProcedure.query(async () => {
         type ResponseData = [{ name: string; id: string }];
-        const url = new URL("/languages", env.JUDGE_URL);
-        const response = await fetch(url);
+        // const url = new URL("/languages", env.JUDGE_URL);
+        const response = await fetch("http://judge0.lunaghs.dev/languages");
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
@@ -151,7 +157,7 @@ export const executeRouter = createTRPCRouter({
                     .where(eq(userTable.id, userID))
                     .limit(1)
             )[0];
-            let problemQuery = await db
+            const problemQuery = await db
                 .select()
                 .from(problems)
                 .where(eq(problems.id, problemId))
@@ -173,34 +179,37 @@ export const executeRouter = createTRPCRouter({
             const numSubmissions = prevSubmissions.length + 1;
 
             const problem = problemQuery[0];
+            let testOutput = "";
+            if (problem === undefined) {
+                throw new Error("Failed to get problem");
+            } else {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                testOutput = problem.testOutput;
+            }
             const executionResult = await executeCode(
                 code,
                 languageId,
-                problem?.testInput ?? "",
+                testOutput,
             );
 
             const score = 60 - (numSubmissions - 1);
-            const diff = diffStrings(
-                executionResult.stdout ?? "",
-                problem?.testOutput ?? "",
-            );
-            const dist = distance(
-                executionResult.stdout ?? "",
-                problem?.testOutput ?? "",
-            );
+            const diff = diffStrings(executionResult.stdout ?? "", testOutput);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+            const dist = distance(executionResult.stdout ?? "", testOutput);
             const accepted = dist < 10;
 
             const alreadySucceeded =
                 prevSubmissions.find((ps) => ps.accepted) !== undefined;
 
             if (!alreadySucceeded) {
-                await db.update(submission).set({
+                await db.insert(submission).values({
                     problemId: problem?.id,
                     userId: userID,
                     maxPoints: 60,
                     points: score,
                     accepted: dist < 10,
-                    isStudentVisible: user?.showSubmissionScores,
+                    isStudentVisible: user?.showSubmissionScores ?? false,
+                    submittedCode: code,
                 });
             }
 
@@ -209,6 +218,7 @@ export const executeRouter = createTRPCRouter({
                 attemptNumber: numSubmissions,
                 score,
                 diff,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 distance: dist,
                 executionResult: executionResult,
             };
