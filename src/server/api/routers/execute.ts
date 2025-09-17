@@ -192,11 +192,11 @@ export const executeRouter = createTRPCRouter({
                 testOutput,
             );
 
-            const score = 60 - (numSubmissions - 1);
             const diff = diffStrings(executionResult.stdout ?? "", testOutput);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
             const dist = distance(executionResult.stdout ?? "", testOutput);
             const accepted = dist < 10;
+            const score = accepted ? 60 - (numSubmissions - 1) : 0;
 
             const alreadySucceeded =
                 prevSubmissions.find((ps) => ps.accepted) !== undefined;

@@ -138,9 +138,6 @@ function DesktopNavbar() {
                                         Account Setttings
                                     </Link>
                                 </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="/dashboard">Leaderboard</Link>
-                                </NavigationMenuLink>
                             </li>
                         </ul>
                     </NavigationMenuContent>
@@ -159,6 +156,14 @@ function DesktopNavbar() {
                         className={navigationMenuTriggerStyle()}
                     >
                         <Link href="/resources">Resources</Link>
+                    </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                    <NavigationMenuLink
+                        asChild
+                        className={navigationMenuTriggerStyle()}
+                    >
+                        <Link href="/leaderboard">Leaderboard</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
             </NavigationMenuList>
@@ -225,6 +230,11 @@ function SmallNavbar() {
                         className={navigationMenuTriggerStyle()}
                     >
                         <Link href="/resources">Resources</Link>
+                    </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                        <Link href="/leaderboard">Leaderboard</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
             </NavigationMenuList>

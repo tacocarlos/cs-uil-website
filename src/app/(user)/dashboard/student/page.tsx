@@ -11,6 +11,7 @@ import { submission as submissionTable } from "~/server/db/schema/submission";
 import type { Problem } from "~/server/db/schema/types";
 import { getUserRoles } from "~/lib/user/permission-utils";
 import { ro } from "date-fns/locale";
+import { api } from "~/trpc/server";
 
 async function RecentProblem({ user }: { user: User }) {
     if (user.mostRecentProblem === null) {
@@ -42,7 +43,6 @@ async function RecentProblem({ user }: { user: User }) {
 
 export default async function DashboardPage() {
     const session = await auth.api.getSession({ headers: await headers() });
-
     const isAuthenticated = session !== null;
     const user = session?.user as User;
     if (!isAuthenticated) {
@@ -51,7 +51,6 @@ export default async function DashboardPage() {
 
     const roles = await getUserRoles(user.id);
 
-    
     return (
         <div className="bg-primary container min-h-screen py-8">
             <h1 className="mb-4 text-2xl font-bold">Dashboard</h1>

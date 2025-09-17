@@ -12,16 +12,11 @@ import {
 } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Skeleton } from "~/components/ui/skeleton";
 import { Progress } from "~/components/ui/progress";
-import {
-    CheckCircle2,
-    XCircle,
-    AlertTriangle,
-    ExternalLink,
-} from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import type { Problem } from "~/server/db/schema/types";
 import type { Submission } from "~/server/db/schema/submission";
+import { useSession } from "auth-client";
 
 export function ProblemStatusCard({
     problem,
@@ -32,12 +27,13 @@ export function ProblemStatusCard({
 }) {
     const hasSubmission = submission !== undefined;
     const isAccepted = hasSubmission && submission.accepted;
-    const maxPoints = 30; // Assuming max points is 100 
     const formatLevel = (level: string) => {
         return level.charAt(0).toUpperCase() + level.slice(1);
     };
 
     const compLevel = formatLevel(problem.competitionLevel);
+    const { data: session } = useSession();
+    const maxPoints = 60;
 
     return (
         <Card className="flex flex-col justify-between">

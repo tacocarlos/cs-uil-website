@@ -18,8 +18,19 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
+import { useSession } from "auth-client";
+import { useRouter } from "next/navigation";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardHeader,
+} from "~/components/ui/card";
+import { formatDistanceToNow } from "date-fns";
 
 export default function PageCore({ problem }: { problem: Problem }) {
+    const { data: session } = useSession();
+    const router = useRouter();
     const starterCode = `import java.util.*;
 import java.io.*;
 
@@ -58,7 +69,10 @@ public class Main {
     const submitCodeMutator = api.execute.submitCode.useMutation({
         onSuccess: async (data) => {
             setOutput(data.executionResult.stdout ?? "");
-            toast("Submitted Code");
+            console.dir(data);
+            toast(
+                `Submitted Code - ${data.accepted ? "Solution Accepted" : "Solution Deined"}`,
+            );
         },
     });
 
@@ -78,9 +92,19 @@ public class Main {
         });
     }
 
+    const pastSubmissions = api.submission.getProblemSubmissions.useQuery({
+        problemId: problem.id,
+        userId: session?.user.id ?? "",
+    }).data;
+    const solved = pastSubmissions?.at(0)?.accepted ?? false;
+    console.dir(pastSubmissions);
+
+    if (session === null) {
+        return <></>;
+    }
     return (
-        <div className="bg-primary flex h-[80vh] flex-col self-center pt-[10vh]">
-            <div className="w-full p-3">
+        <div className="bg-primary flex h-[100vh] flex-col self-center pt-[10vh]">
+            <div className="w-full space-x-5 p-3">
                 <Button
                     variant="outline"
                     onClick={() => {
@@ -88,6 +112,26 @@ public class Main {
                     }}
                 >
                     Run Code
+                </Button>
+                <Button
+                    disabled={solved}
+                    onClick={async () => {
+                        toast("Starting code execution...");
+                        if (!editorRef.current) {
+                            toast("Editor is not initialized.");
+                            return;
+                        }
+
+                        const code = editorRef.current.getValue();
+                        submitCodeMutator.mutate({
+                            problemId: problem.id,
+                            userID: session!.user.id,
+                            code: code,
+                            languageId: javaRT.id.toString(),
+                        });
+                    }}
+                >
+                    Submit Code
                 </Button>
             </div>
             <ResizablePanelGroup
@@ -113,7 +157,53 @@ public class Main {
                                     {problem.problemText}
                                 </Markdown>
                             </TabsContent>
-                            <TabsContent value="past-submissions"></TabsContent>
+                            <TabsContent value="past-submissions">
+                                <ul className="h-96 overflow-scroll">
+                                    {pastSubmissions !== undefined ? (
+                                        pastSubmissions.map((submission) => {
+                                            return (
+                                                <Card key={submission.id}>
+                                                    <CardHeader>
+                                                        Submitted{" "}
+                                                        {formatDistanceToNow(
+                                                            submission.timeSubmitted,
+                                                            { addSuffix: true },
+                                                        )}
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        Submitted Code -{" "}
+                                                        {submission.accepted
+                                                            ? `Accepted - ${submission.points}/${submission.maxPoints}`
+                                                            : "Not Accepted"}
+                                                    </CardContent>
+                                                    <CardAction>
+                                                        <Button
+                                                            className="ml-5"
+                                                            onClick={() => {
+                                                                if (
+                                                                    !editorRef.current
+                                                                ) {
+                                                                    toast(
+                                                                        "Editor is not initialized.",
+                                                                    );
+                                                                    return;
+                                                                }
+                                                                editorRef.current.setValue(
+                                                                    submission.submittedCode,
+                                                                );
+                                                            }}
+                                                        >
+                                                            Copy Code To Editor
+                                                        </Button>
+                                                    </CardAction>
+                                                </Card>
+                                            );
+                                        })
+                                    ) : (
+                                        <p>No Past Submissions.</p>
+                                    )}
+                                </ul>
+                            </TabsContent>
                         </Tabs>
                     </div>
                 </ResizablePanel>
