@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/table";
 
 type LeaderboardEntry = {
+    id: string;
     name: string;
     score: number;
 };
@@ -61,7 +62,7 @@ export default function Leaderboard({
                         </TableRow>
                     ) : (
                         filteredAndSortedData.map((entry, index) => (
-                            <TableRow key={entry.name}>
+                            <TableRow key={entry.id}>
                                 <TableCell className="font-medium">
                                     {index + 1}
                                 </TableCell>

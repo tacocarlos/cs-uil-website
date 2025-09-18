@@ -10,7 +10,8 @@ import { eq } from "drizzle-orm";
 import { submission as submissionTable } from "~/server/db/schema/submission";
 import type { Problem } from "~/server/db/schema/types";
 import { getUserRoles } from "~/lib/user/permission-utils";
-import { ro } from "date-fns/locale";
+import { Switch } from "~/components/ui/switch";
+import SettingsSection from "./settings";
 import { api } from "~/trpc/server";
 
 async function RecentProblem({ user }: { user: User }) {
@@ -44,18 +45,27 @@ async function RecentProblem({ user }: { user: User }) {
 export default async function DashboardPage() {
     const session = await auth.api.getSession({ headers: await headers() });
     const isAuthenticated = session !== null;
-    const user = session?.user as User;
     if (!isAuthenticated) {
+        redirect("/sign-in");
+    }
+
+    const user = await api.user.getUser({ userId: session!.user.id });
+    if (user === undefined) {
         redirect("/sign-in");
     }
 
     const roles = await getUserRoles(user.id);
 
+    if (session?.user === undefined || session?.user === null) {
+        return null;
+    }
+
+    console.dir(session);
+
     return (
-        <div className="bg-primary container min-h-screen py-8">
-            <h1 className="mb-4 text-2xl font-bold">Dashboard</h1>
+        <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
             {user && (
-                <div className="rounded-lg bg-white p-6 shadow-md">
+                <div className="w-screen rounded-lg bg-white p-6 shadow-md">
                     <div className="mb-6 flex items-center gap-4">
                         {user.image && (
                             <Image
@@ -84,6 +94,15 @@ export default async function DashboardPage() {
                         </p>
                     </div>
                     <RecentProblem user={user} />
+                    <section>
+                        <h2 className="mt-6 mb-4 text-lg font-semibold">
+                            Settings
+                        </h2>
+                        <SettingsSection
+                            userId={user.id}
+                            leaderboardVisibility={user.showScoresInLeaderboard}
+                        />
+                    </section>
                 </div>
             )}
         </div>

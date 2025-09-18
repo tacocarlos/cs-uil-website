@@ -34,6 +34,11 @@ export const auth = betterAuth({
                 required: true,
                 defaultValue: "student",
             },
+            showScoresInLeaderboard: {
+                type: "boolean",
+                required: true,
+                defaultValue: true,
+            },
         },
     },
 });

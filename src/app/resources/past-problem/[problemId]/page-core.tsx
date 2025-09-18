@@ -114,7 +114,7 @@ public class Main {
                     Run Code
                 </Button>
                 <Button
-                    disabled={solved}
+                    disabled={solved || submitCodeMutator.isPending}
                     onClick={async () => {
                         toast("Starting code execution...");
                         if (!editorRef.current) {

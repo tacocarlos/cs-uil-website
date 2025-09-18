@@ -26,6 +26,7 @@ export const user = pgTable("user", {
     role: text({ enum: ["student", "teacher", "site-admin"] }).default(
         "student",
     ),
+    showScoresInLeaderboard: boolean().notNull().default(true),
 });
 export type User = typeof user.$inferSelect;
 

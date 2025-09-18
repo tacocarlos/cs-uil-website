@@ -21,7 +21,7 @@ export const submission = createTable(
         maxPoints: d.integer().notNull().default(60),
         accepted: d.boolean().default(false),
         submittedCode: d.text().notNull(),
-        isStudentVisible: d.boolean().notNull(),
+        isStudentVisible: d.boolean().notNull().default(true),
     }),
     (t) => [
         index("problem_idx").on(t.problemId),
