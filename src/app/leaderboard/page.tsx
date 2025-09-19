@@ -15,6 +15,7 @@ export default async function LeaderboardPage() {
                 eq(submission.accepted, true),
             ),
         );
+
     const scores = new Map<string, { name: string; score: number }>();
     users.forEach((score) => {
         const currUserScore = scores.get(score.user.id)?.score ?? 0;
@@ -23,7 +24,9 @@ export default async function LeaderboardPage() {
             score: currUserScore + score.submission.points,
         });
     });
+
     console.dir(scores);
+
     return (
         <main className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
             <Leaderboard

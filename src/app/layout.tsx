@@ -18,7 +18,7 @@ export default function RootLayout({
             <body>
                 <TRPCReactProvider>
                     <Navbar />
-                    {children}
+                    <main className="bg-primary min-h-screen">{children}</main>
                 </TRPCReactProvider>
                 <Toaster />
             </body>
