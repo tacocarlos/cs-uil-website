@@ -209,15 +209,16 @@ export const executeRouter = createTRPCRouter({
                     userId: userID,
                     maxPoints: 60,
                     points: score,
-                    accepted: dist < 10,
+                    accepted: accepted,
                     isStudentVisible: user?.showSubmissionScores ?? false,
                     submittedCode: code,
                 });
             }
 
             console.dir({
-                diff,
+                accepted,
                 distance: dist,
+                diff,
                 output: executionResult.stdout,
                 expected: testOutput,
             });
