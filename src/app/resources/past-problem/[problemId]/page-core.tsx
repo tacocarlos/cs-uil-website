@@ -168,51 +168,6 @@ public class Main {
                                 <PastSubmissions
                                     submissions={pastSubmissions ?? []}
                                 />
-                                {/* <ul className="h-96 overflow-scroll">
-                                    {pastSubmissions !== undefined ? (
-                                        pastSubmissions.map((submission) => {
-                                            return (
-                                                <Card key={submission.id}>
-                                                    <CardHeader>
-                                                        Submitted{" "}
-                                                        {formatDistanceToNow(
-                                                            submission.timeSubmitted,
-                                                            { addSuffix: true },
-                                                        )}
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        Submitted Code -{" "}
-                                                        {submission.accepted
-                                                            ? `Accepted - ${submission.points}/${submission.maxPoints}`
-                                                            : "Not Accepted"}
-                                                    </CardContent>
-                                                    <CardAction>
-                                                        <Button
-                                                            className="ml-5"
-                                                            onClick={() => {
-                                                                if (
-                                                                    !editorRef.current
-                                                                ) {
-                                                                    toast(
-                                                                        "Editor is not initialized.",
-                                                                    );
-                                                                    return;
-                                                                }
-                                                                editorRef.current.setValue(
-                                                                    submission.submittedCode,
-                                                                );
-                                                            }}
-                                                        >
-                                                            Copy Code To Editor
-                                                        </Button>
-                                                    </CardAction>
-                                                </Card>
-                                            );
-                                        })
-                                    ) : (
-                                        <p>No Past Submissions.</p>
-                                    )}
-                                </ul> */}
                             </TabsContent>
                         </Tabs>
                     </div>
@@ -235,7 +190,7 @@ public class Main {
                             />
                         </ResizablePanel>
                         <ResizableHandle className="h-4 bg-gray-300" />
-                        <ResizablePanel defaultSize={30}>
+                        <ResizablePanel defaultSize={30} className="p-2 pb-8">
                             <Tabs defaultValue={ioTab} value={ioTab}>
                                 <TabsList>
                                     <TabsTrigger
