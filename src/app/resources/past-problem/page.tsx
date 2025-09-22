@@ -4,9 +4,10 @@ import { db } from "~/server/db";
 import { problems } from "~/server/db/schema/problem";
 import { type Problem } from "~/server/db/schema/types";
 import ProblemFAQ from "./[problemId]/problem-notes";
+import { api } from "~/trpc/server";
 
 export default async function Page() {
-    const pastProblems = await db.select().from(problems);
+    const pastProblems = await api.problem.getProblems();
     // .where(eq(problems.enabled, true));
     console.dir("got data");
     console.dir(pastProblems);
