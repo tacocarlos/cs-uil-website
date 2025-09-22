@@ -93,7 +93,7 @@ function DesktopNavbar() {
     const role = user?.role ?? "student";
 
     return (
-        <NavigationMenu className="text-foreground space-x-3" viewport={false}>
+        <NavigationMenu className="text-foreground space-x-3">
             <NavigationMenuList>
                 <NavigationMenuItem>
                     <NavigationMenuTrigger>Account</NavigationMenuTrigger>
