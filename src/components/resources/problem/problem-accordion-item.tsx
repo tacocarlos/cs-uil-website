@@ -13,13 +13,20 @@ import {
 } from "~/components/ui/accordion";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Download, Code, FileText } from "lucide-react";
+import { Download, Code, FileText, Check, X } from "lucide-react";
 import { type Problem } from "~/server/db/schema/types";
 import Link from "next/link";
+import type { Submission } from "~/server/db/schema/submission";
 
-export function ProblemAccordionItem({ problem }: { problem: Problem }) {
+export function ProblemAccordionItem({
+    problem,
+    mostRecentSubmission,
+}: {
+    problem: Problem;
+    mostRecentSubmission?: Submission;
+}) {
     const [activeTab, setActiveTab] = useState("description");
 
     // Format competition level with proper capitalization
@@ -41,6 +48,28 @@ export function ProblemAccordionItem({ problem }: { problem: Problem }) {
         }
     };
 
+    function RecentSubmissionStatus() {
+        if (mostRecentSubmission === undefined) return null;
+        if (mostRecentSubmission.accepted) {
+            return (
+                <span className="flex items-center text-green-600">
+                    <Check size={20} />
+                    <p>
+                        Solution Accepted - {mostRecentSubmission.points}/
+                        {mostRecentSubmission.maxPoints}
+                    </p>
+                </span>
+            );
+        } else {
+            return (
+                <span className="flex items-center text-red-600">
+                    <X size={20} />
+                    <p>Solution Denied</p>
+                </span>
+            );
+        }
+    }
+
     return (
         <AccordionItem
             value={`problem-${problem.id}`}
@@ -48,9 +77,10 @@ export function ProblemAccordionItem({ problem }: { problem: Problem }) {
         >
             <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex w-full flex-col items-start justify-between text-left sm:flex-row sm:items-center">
-                    <div className="text-lg font-medium">
+                    <span className="flex items-center space-x-3 text-lg font-medium">
                         {problem.problemName}
-                    </div>
+                        <RecentSubmissionStatus />
+                    </span>
                     <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
                         <Badge variant="outline" className="font-normal">
                             {problem.competitionYear}
@@ -87,15 +117,13 @@ export function ProblemAccordionItem({ problem }: { problem: Problem }) {
                             <FileText className="h-4 w-4" />
                             Description
                         </TabsTrigger>
-                        {problem.defaultInputFile && (
-                            <TabsTrigger
-                                value="input"
-                                className="flex items-center gap-1"
-                            >
-                                <Code className="h-4 w-4" />
-                                Sample Input
-                            </TabsTrigger>
-                        )}
+                        <TabsTrigger
+                            value="input"
+                            className="flex items-center gap-1"
+                        >
+                            <Code className="h-4 w-4" />
+                            Problem Input/Output
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="description" className="mt-0">
@@ -185,15 +213,33 @@ export function ProblemAccordionItem({ problem }: { problem: Problem }) {
                         </Card>
                     </TabsContent>
 
-                    {problem.defaultInputFile && (
-                        <TabsContent value="input" className="mt-0">
-                            <Card className="p-4">
-                                <pre className="overflow-x-auto rounded-md bg-gray-50 p-4 text-sm">
-                                    {problem.defaultInputFile}
+                    <TabsContent value="input" className="mt-0">
+                        <Card>
+                            <CardHeader className="text-xl font-semibold">
+                                Sample Input
+                            </CardHeader>
+                            <CardContent>
+                                <pre className="rounded-xl bg-gray-100 p-3 text-sm">
+                                    {problem.defaultInputFile != "" &&
+                                    problem.defaultInputFile != null
+                                        ? problem.defaultInputFile
+                                        : "No Input Given."}
                                 </pre>
-                            </Card>
-                        </TabsContent>
-                    )}
+                            </CardContent>
+                        </Card>
+                        <Card className="text-xl">
+                            <CardHeader className="text-xl font-semibold">
+                                Sample Output
+                            </CardHeader>
+                            <CardContent>
+                                <pre className="rounded-xl bg-gray-100 p-3 text-sm">
+                                    {problem.sampleOutput != ""
+                                        ? problem.sampleOutput
+                                        : "No Output Given."}
+                                </pre>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 </Tabs>
             </AccordionContent>
         </AccordionItem>

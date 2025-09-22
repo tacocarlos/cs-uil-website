@@ -22,7 +22,9 @@ export const user = pgTable("user", {
         .$defaultFn(() => /* @__PURE__ */ new Date())
         .notNull(),
     showSubmissionScores: boolean().notNull().default(true),
-    mostRecentProblem: integer().references(() => problems.id),
+    mostRecentProblem: integer().references(() => problems.id, {
+        onDelete: "set null",
+    }),
     role: text({ enum: ["student", "teacher", "site-admin"] }).default(
         "student",
     ),

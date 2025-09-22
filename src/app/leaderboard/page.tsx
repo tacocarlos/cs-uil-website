@@ -11,7 +11,7 @@ export default async function LeaderboardPage() {
         .innerJoin(submission, eq(user.id, submission.userId))
         .where(
             and(
-                eq(submission.isStudentVisible, true),
+                eq(user.showScoresInLeaderboard, true),
                 eq(submission.accepted, true),
             ),
         );

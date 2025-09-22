@@ -1,0 +1,1 @@
+ALTER TABLE "cs-uil-website_problems" ADD COLUMN "sampleOutput" text DEFAULT '' NOT NULL;

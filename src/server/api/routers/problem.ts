@@ -21,9 +21,12 @@ export const problemRouter = createTRPCRouter({
                 problemText: z.string(),
                 programName: z.string(),
                 inputFileName: z.string().optional(),
+                sampleOutput: z.string().default(""),
                 defaultInputFile: z.string().optional(),
                 testInput: z.string().default(""),
                 testOutput: z.string().default(""),
+                enabled: z.boolean().default(false),
+                code: z.string(),
             }),
         )
         .mutation(async (opts) => {
@@ -40,4 +43,8 @@ export const problemRouter = createTRPCRouter({
                 .set({ enabled })
                 .where(eq(problems.id, id));
         }),
+
+    getProblems: publicProcedure.query(async () => {
+        return db.select().from(problems);
+    }),
 });

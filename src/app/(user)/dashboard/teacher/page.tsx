@@ -9,13 +9,18 @@ export default function TeacherDashboard() {
     return (
         <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
             <div className="bg-secondary w-fit rounded p-5">
-                <div>
+                <span className="space-x-5">
                     <Button asChild>
-                        <Link href="/dashboard/teacher/new/problem">
+                        <Link href="/dashboard/teacher/problem/new">
                             Add New Problem
                         </Link>
                     </Button>
-                </div>
+                    <Button asChild>
+                        <Link href="/dashboard/teacher/problem/edit">
+                            Edit Problem
+                        </Link>
+                    </Button>
+                </span>
             </div>
         </div>
     );

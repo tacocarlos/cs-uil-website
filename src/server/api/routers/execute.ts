@@ -8,6 +8,8 @@ import { diffChars } from "diff";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 
+const LEVENSHTEIN_DISTANCE_THRESHOLD = 5;
+
 async function executeCode(
     code: string,
     language_id: string,
@@ -184,18 +186,18 @@ export const executeRouter = createTRPCRouter({
                 throw new Error("Failed to get problem");
             } else {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                testOutput = problem.testOutput;
+                testOutput = problem.testOutput.replaceAll("\r", "");
             }
             const executionResult = await executeCode(
                 code,
                 languageId,
-                testOutput,
+                problem.testInput,
             );
 
             const diff = diffStrings(executionResult.stdout ?? "", testOutput);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
             const dist = distance(executionResult.stdout ?? "", testOutput);
-            const accepted = dist < 10;
+            const accepted = dist < LEVENSHTEIN_DISTANCE_THRESHOLD;
             const score = accepted ? 60 - (numSubmissions - 1) : 0;
 
             const alreadySucceeded =
@@ -212,6 +214,13 @@ export const executeRouter = createTRPCRouter({
                     submittedCode: code,
                 });
             }
+
+            console.dir({
+                diff,
+                distance: dist,
+                output: executionResult.stdout,
+                expected: testOutput,
+            });
 
             return {
                 accepted,

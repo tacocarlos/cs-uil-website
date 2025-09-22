@@ -7,9 +7,6 @@ import {
     ResizablePanelGroup,
 } from "~/components/ui/resizable";
 import type { Problem } from "~/server/db/schema/types";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeMathjax from "rehype-mathjax";
 import { Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -27,6 +24,8 @@ import {
     CardHeader,
 } from "~/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
+import ProblemStatement from "./components/problem-statement";
+import PastSubmissions from "./components/past-submissions";
 
 export default function PageCore({ problem }: { problem: Problem }) {
     const { data: session } = useSession();
@@ -44,31 +43,48 @@ public class Main {
     }
 }`;
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
     function handleEditorDidMount(
         editor: editor.IStandaloneCodeEditor,
         monaco: Monaco,
     ) {
         editorRef.current = editor;
     }
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    const [stdOut, setStdOut] = useState("");
+    const [stdErr, setStdErr] = useState("");
+
+    const [ioTab, setIOTab] = useState<"input" | "stderr" | "stdout">("input");
+
+    const utils = api.useUtils();
 
     const runtimes = api.execute.getJavaRuntimes.useQuery().data;
     const javaRT = runtimes?.at(0) ?? { id: 62, name: "Java" };
-    const [output, setOutput] = useState("");
+
+    const pastSubmissions = api.submission.getProblemSubmissions.useQuery({
+        problemId: problem.id,
+        userId: session?.user.id ?? "",
+    }).data;
+    const solved = pastSubmissions?.at(0)?.accepted ?? false;
+
     const runCodeMutator = api.execute.runCode.useMutation({
         onSuccess: async (data) => {
-            setOutput(data.stderr ?? data.stdout ?? "");
+            setStdOut(data.stdout ?? "");
+            setStdErr(data.stderr ?? "");
+            if (data.stdout) setIOTab("stdout");
+            else if (data.stderr) setIOTab("stderr");
             toast("Program Has Finished Running");
         },
         onError: async (data) => {
-            setOutput(JSON.stringify(data, null, 2));
+            setStdOut("Problem Has Failed To Run");
+            setStdErr("Problem Has Failed To Run");
             toast("Program Has Failed To Run");
         },
     });
 
     const submitCodeMutator = api.execute.submitCode.useMutation({
         onSuccess: async (data) => {
-            setOutput(data.executionResult.stdout ?? "");
+            utils.submission.invalidate();
             console.dir(data);
             toast(
                 `Submitted Code - ${data.accepted ? "Solution Accepted" : "Solution Deined"}`,
@@ -91,13 +107,6 @@ public class Main {
             languageId: javaRT.id.toString(),
         });
     }
-
-    const pastSubmissions = api.submission.getProblemSubmissions.useQuery({
-        problemId: problem.id,
-        userId: session?.user.id ?? "",
-    }).data;
-    const solved = pastSubmissions?.at(0)?.accepted ?? false;
-    console.dir(pastSubmissions);
 
     if (session === null) {
         return <></>;
@@ -136,7 +145,7 @@ public class Main {
             </div>
             <ResizablePanelGroup
                 direction="horizontal"
-                className="w-[80vw] rounded-lg border bg-white md:min-w-[450px]"
+                className="w-[80vw] rounded-lg border bg-white p-1 md:min-w-[450px]"
             >
                 <ResizablePanel defaultSize={40}>
                     <div className="m-5">
@@ -149,16 +158,17 @@ public class Main {
                                     Past Submissions
                                 </TabsTrigger>
                             </TabsList>
-                            <TabsContent value="problem-statement">
-                                <Markdown
-                                    remarkPlugins={[remarkGfm, remarkMath]}
-                                    rehypePlugins={[rehypeMathjax]}
-                                >
-                                    {problem.problemText}
-                                </Markdown>
+                            <TabsContent
+                                value="problem-statement"
+                                className="prose max-h-[300px] w-full grow basis-3xl flex-col"
+                            >
+                                <ProblemStatement problem={problem} />
                             </TabsContent>
                             <TabsContent value="past-submissions">
-                                <ul className="h-96 overflow-scroll">
+                                <PastSubmissions
+                                    submissions={pastSubmissions ?? []}
+                                />
+                                {/* <ul className="h-96 overflow-scroll">
                                     {pastSubmissions !== undefined ? (
                                         pastSubmissions.map((submission) => {
                                             return (
@@ -202,7 +212,7 @@ public class Main {
                                     ) : (
                                         <p>No Past Submissions.</p>
                                     )}
-                                </ul>
+                                </ul> */}
                             </TabsContent>
                         </Tabs>
                     </div>
@@ -212,7 +222,7 @@ public class Main {
                     <ResizablePanelGroup direction="vertical">
                         <ResizablePanel defaultSize={70}>
                             <Editor
-                                className=""
+                                className="rounded-md bg-stone-800 p-2"
                                 theme="vs-dark"
                                 defaultLanguage="java"
                                 height="100%"
@@ -226,25 +236,49 @@ public class Main {
                         </ResizablePanel>
                         <ResizableHandle className="h-4 bg-gray-300" />
                         <ResizablePanel defaultSize={30}>
-                            <Tabs defaultValue="input">
+                            <Tabs defaultValue={ioTab} value={ioTab}>
                                 <TabsList>
-                                    <TabsTrigger value="input">
+                                    <TabsTrigger
+                                        value="input"
+                                        onClick={() => setIOTab("input")}
+                                    >
                                         Input
                                     </TabsTrigger>
-                                    <TabsTrigger value="output">
-                                        Output
+                                    <TabsTrigger
+                                        value="stdout"
+                                        onClick={() => setIOTab("stdout")}
+                                    >
+                                        stdout
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="stderr"
+                                        onClick={() => setIOTab("stderr")}
+                                    >
+                                        stderr
                                     </TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="input">
                                     <Textarea
+                                        className="h-[200px] max-h-[250px]"
                                         ref={inputRef}
                                         defaultValue={
                                             problem.defaultInputFile ?? ""
                                         }
-                                    ></Textarea>
+                                    />
                                 </TabsContent>
-                                <TabsContent value="output">
-                                    <pre>{output}</pre>
+                                <TabsContent value="stdout">
+                                    <Textarea
+                                        className="h-[200px] max-h-[250px] overflow-auto"
+                                        value={stdOut}
+                                        readOnly
+                                    />
+                                </TabsContent>
+                                <TabsContent value="stderr">
+                                    <Textarea
+                                        className="h-[200px] max-h-[250px] overflow-auto"
+                                        value={stdErr}
+                                        readOnly
+                                    />
                                 </TabsContent>
                             </Tabs>
                         </ResizablePanel>

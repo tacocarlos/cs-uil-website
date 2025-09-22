@@ -6,15 +6,24 @@ import type { User } from "~/server/db/schema/auth";
 import { ProblemStatusCard } from "./ProblemStatusCard";
 import { db } from "~/server/db";
 import { problems } from "~/server/db/schema/problem";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { submission as submissionTable } from "~/server/db/schema/submission";
 import type { Problem } from "~/server/db/schema/types";
 import { getUserRoles } from "~/lib/user/permission-utils";
 import { Switch } from "~/components/ui/switch";
 import SettingsSection from "./settings";
 import { api } from "~/trpc/server";
+import { Skeleton } from "~/components/ui/skeleton";
+import InProgressProblems from "./in-progress";
+import SubmittedProblems from "./submitted-problems";
 
-async function RecentProblem({ user }: { user: User }) {
+async function RecentProblem({ userId }: { userId: string }) {
+    const user = await api.user.getUser({ userId });
+
+    if (user === undefined) {
+        return <Skeleton />;
+    }
+
     if (user.mostRecentProblem === null) {
         return null;
     }
@@ -25,15 +34,13 @@ async function RecentProblem({ user }: { user: User }) {
         .where(eq(problems.id, user.mostRecentProblem))
         .limit(1);
 
-    let [submission] = await db
-        .select()
-        .from(submissionTable)
-        .where(eq(submissionTable.userId, user.id))
-        .limit(1)
-        .orderBy(submissionTable.timeSubmitted);
-
+    const submission = await api.submission.getMostRecentSubmission({
+        userId,
+        problemId: problem!.id,
+    });
     return (
         <div>
+            <p>Points: </p>
             <ProblemStatusCard
                 problem={problem as Problem}
                 submission={submission}
@@ -44,23 +51,21 @@ async function RecentProblem({ user }: { user: User }) {
 
 export default async function DashboardPage() {
     const session = await auth.api.getSession({ headers: await headers() });
+    const user = session?.user;
     const isAuthenticated = session !== null;
     if (!isAuthenticated) {
         redirect("/sign-in");
     }
 
-    const user = await api.user.getUser({ userId: session!.user.id });
     if (user === undefined) {
         redirect("/sign-in");
     }
-
-    const roles = await getUserRoles(user.id);
 
     if (session?.user === undefined || session?.user === null) {
         return null;
     }
 
-    console.dir(session);
+    api.user.getUser.prefetch({ userId: session!.user.id });
 
     return (
         <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -83,26 +88,15 @@ export default async function DashboardPage() {
                             <p className="text-gray-600">{user.email}</p>
                         </div>
                     </div>
-
-                    <div className="mt-4">
-                        <h3 className="mb-2 font-medium">
-                            Your CS UIL Progress
-                        </h3>
-                        <p className="text-gray-700">
-                            Welcome to your dashboard! Here you can track your
-                            progress and access competition resources.
-                        </p>
-                    </div>
-                    <RecentProblem user={user} />
+                    <RecentProblem userId={user.id} />
                     <section>
                         <h2 className="mt-6 mb-4 text-lg font-semibold">
                             Settings
                         </h2>
-                        <SettingsSection
-                            userId={user.id}
-                            leaderboardVisibility={user.showScoresInLeaderboard}
-                        />
+                        <SettingsSection userId={user.id} />
                     </section>
+                    <InProgressProblems userId={user.id} />
+                    <SubmittedProblems userId={user.id} />
                 </div>
             )}
         </div>
