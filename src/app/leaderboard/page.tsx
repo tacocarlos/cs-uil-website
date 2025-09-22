@@ -4,6 +4,8 @@ import { submission } from "~/server/db/schema/submission";
 import { and, eq } from "drizzle-orm";
 import Leaderboard from "./leaderboard";
 
+export const dynamic = "force-dynamic";
+
 export default async function LeaderboardPage() {
     const users = await db
         .select()
