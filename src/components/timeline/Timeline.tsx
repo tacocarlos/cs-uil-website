@@ -41,6 +41,18 @@ export const DefaultTimelineData: TimelineProps["events"] = [
     },
     {
         date: "November 14th",
+        eventName: "Berbas Computing Challenge",
+        description: `The Berbas Computing Challenge is an online problem solving competition, aimed at algorithmic thinking, but _**does not require any coding.**_ From their website:
+
+_The Bebras challenge is designed to help students explorer their talents and passion for informatics and computational thinking with engaging challenges.
+Participating in the challenge is free and the tasks can all be completed without any preparation or studying.
+Students from 6 to 18 years old work through a set of tasks that focus on different topics and skills within informatics and computational thinking.
+They will have 45 minutes to complete as many tasks as they can, they are not expected to finish them all.
+The challenge has six different age categories with each their own set of tasks to keep things exciting and challenging for all students._
+`,
+    },
+    {
+        date: "November 14th",
         eventName: "CS UIL Virutal Challenge #2",
         description:
             "The second CS UIL Virtual Challenge, held on November 14th during Friday practice.",
