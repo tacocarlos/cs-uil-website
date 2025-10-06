@@ -163,6 +163,14 @@ function DesktopNavbar() {
                         asChild
                         className={navigationMenuTriggerStyle()}
                     >
+                        <Link href="/resources/skill-tree">Skill Tree</Link>
+                    </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                    <NavigationMenuLink
+                        asChild
+                        className={navigationMenuTriggerStyle()}
+                    >
                         <Link href="/leaderboard">Leaderboard</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
