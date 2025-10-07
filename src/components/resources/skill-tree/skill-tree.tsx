@@ -16,7 +16,6 @@ import {
     ReactFlow,
 } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
-import { PREREQS, TOPICS, type Topic } from "./dataset";
 import {
     Drawer,
     DrawerClose,
@@ -28,6 +27,8 @@ import {
 import { DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import type { Topic, Prereq } from "../../../app/resources/skill-tree/topic";
+import { Lock } from "lucide-react";
 
 const NODE_W = 240;
 const NODE_H = 84;
@@ -46,13 +47,47 @@ function colorForUnit(unit: number) {
         "#93c5fd", // 9
         "#86efac", // 10
     ];
-    return colors[(unit - 1) % colors.length]!;
+    return colors[unit % colors.length]!;
 }
 
-type TopicNode = Node<{ topic: Topic }, "topic">;
+type TopicNode = Node<{ topic: Topic; topicIndex: number }, "topic">;
+type TopicStatus = "unlocked" | "completed" | "locked";
+function determineStatus(topic: Topic): TopicStatus {
+    if (topic.completed === true) return "completed";
+    if (topic.unlocked === true) return "unlocked";
+
+    return "locked";
+}
 
 function TopicNode({ data }: NodeProps<TopicNode>) {
-    const { topic } = data;
+    const { topic, topicIndex } = data;
+    // lacking colors
+    const basicStyle = {
+        width: NODE_W,
+        height: NODE_H,
+        boxSizing: "content-box",
+        padding: 5,
+        borderRadius: 10,
+        border: "1px solid #d1d5db",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+        color: "#111827",
+    } as const;
+    function determineStyle() {
+        if (topic.completed === true) {
+            return { background: colorForUnit(topicIndex) };
+        } else if (topic.unlocked === true) {
+            return { background: "#ffffff", color: "#000000" };
+        }
+
+        return { background: "#000000", fontSize: 0, color: "#ffffff" };
+    }
+
+    const topicStatus = determineStatus(topic);
+
+    const { color, background } = determineStyle();
     return (
         <>
             <Handle
@@ -62,21 +97,15 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
             />
             <div
                 style={{
-                    width: NODE_W,
-                    height: NODE_H,
-                    boxSizing: "content-box",
-                    padding: 5,
-                    borderRadius: 10,
-                    border: "1px solid #d1d5db",
-                    background: colorForUnit(topic.unit),
-                    color: "#111827",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                    boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+                    ...basicStyle,
+                    color,
+                    background,
                 }}
                 title={topic.desc}
             >
+                {topicStatus === "locked" ? (
+                    <Lock className="absolute h-full w-full pb-4" />
+                ) : null}
                 <div
                     style={{
                         display: "flex",
@@ -96,23 +125,25 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
                     >
                         {topic.label}
                     </div>
-                    <span
-                        style={{
-                            fontSize: 12,
-                            background: "rgba(17,24,39,0.1)",
-                            color: "#111827",
-                            padding: "2px 8px",
-                            borderRadius: 999,
-                            lineHeight: 1.4,
-                        }}
-                    >
-                        U{topic.unit}
-                    </span>
+                    {topic.id.startsWith("u") ? (
+                        <span
+                            style={{
+                                fontSize: 12,
+                                background: "rgba(17,24,39,0.1)",
+                                color: "#111827",
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                lineHeight: 1.4,
+                            }}
+                        >
+                            {topic.id.toLocaleUpperCase()}
+                        </span>
+                    ) : null}
                 </div>
                 {topic.desc && (
                     <div
                         style={{
-                            fontSize: 12,
+                            fontSize: topicStatus !== "locked" ? 12 : 0,
                             color: "#374151",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -174,8 +205,12 @@ function layoutDagre(
 
 export default function StaticSkillTree({
     direction = "LR",
+    topicData,
+    preReqData,
 }: {
     direction?: "LR" | "TB";
+    topicData: Topic[];
+    preReqData: Prereq[];
 }) {
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -185,21 +220,21 @@ export default function StaticSkillTree({
         }
     }, []);
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [selectedTopic, setSelectedTopic] = useState(TOPICS.at(0)!);
+    const [selectedTopic, setSelectedTopic] = useState(topicData.at(0)!);
     const baseNodes: TopicNode[] = React.useMemo(
         () =>
-            TOPICS.map((t) => ({
+            topicData.map((t, idx) => ({
                 id: t.id,
                 type: "topic",
-                data: { topic: t },
+                data: { topic: t, topicIndex: idx },
                 position: { x: 0, y: 0 },
             })),
-        [],
+        [topicData],
     );
 
     const baseEdges: Edge[] = React.useMemo(
         () =>
-            PREREQS.map((e) => ({
+            preReqData.map((e) => ({
                 id: `e-${e.source}-${e.target}`,
                 source: e.source,
                 target: e.target,
@@ -213,7 +248,7 @@ export default function StaticSkillTree({
                     color: "#9ca3af",
                 },
             })),
-        [],
+        [preReqData],
     );
 
     const { nodes, edges } = React.useMemo(
@@ -245,17 +280,15 @@ export default function StaticSkillTree({
                 zoomOnScroll
                 zoomOnPinch
                 onNodeClick={(event: React.MouseEvent, node: TopicNode) => {
+                    if (determineStatus(node.data.topic) === "locked") {
+                        return;
+                    }
+
                     setSelectedTopic(node.data.topic);
                     setDrawerOpen(true);
                 }}
                 colorMode="dark"
             >
-                <MiniMap<TopicNode>
-                    nodeColor={(node: TopicNode) => {
-                        const topic = node.data.topic;
-                        return colorForUnit(topic.unit);
-                    }}
-                />
                 <Controls />
                 <Background gap={16} />
             </ReactFlow>
