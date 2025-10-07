@@ -107,23 +107,27 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
                     <Lock className="absolute h-full w-full pb-4" />
                 ) : null}
                 <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 8,
-                        alignItems: "center",
-                    }}
+                    className={
+                        topic.unlocked === true
+                            ? "animate-background bg-gradient-to-r from-green-300 via-blue-600 to-red-300 bg-[length:_400%_400%] p-1 ease-in-out [animation-duration:_4s]"
+                            : ""
+                    }
                 >
                     <div
-                        style={{
-                            fontWeight: 700,
-                            fontSize: 14,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                        }}
+                        className={`flex items-center justify-between gap-8`}
+                        style={{ background }}
                     >
-                        {topic.label}
+                        <div
+                            style={{
+                                fontWeight: 700,
+                                fontSize: 14,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                            }}
+                        >
+                            {topic.label}
+                        </div>
                     </div>
                     {topic.id.startsWith("u") ? (
                         <span
