@@ -1,22 +1,22 @@
-import { AccordionContent, AccordionItem } from "@radix-ui/react-accordion";
-import Link from "next/link";
 import Footer from "~/components/global/Footer";
 import Hero from "~/components/global/Hero";
 import ResourcesSummary from "~/components/resources/ResourcesSummary";
 import Timeline, { DefaultTimelineData } from "~/components/timeline/Timeline";
-import { Accordion, AccordionTrigger } from "~/components/ui/accordion";
 
 export default function Home() {
-  return (
-    <main className="from-primary to-secondary min-h-screen bg-gradient-to-b">
-      <Hero />
+    return (
+        <main className="from-primary to-secondary min-h-screen bg-gradient-to-b">
+            <Hero />
 
-      {/* Competition Timeline */}
-      <Timeline events={DefaultTimelineData} timelineTitle="GHS CS UIL Team Events"/>
+            {/* Competition Timeline */}
+            <Timeline
+                events={DefaultTimelineData}
+                timelineTitle="GHS CS UIL Team Events"
+            />
 
-      {/* Resources Preview */}
-      <ResourcesSummary />
-      <Footer />
-    </main>
-  );
+            {/* Resources Preview */}
+            <ResourcesSummary />
+            <Footer />
+        </main>
+    );
 }
