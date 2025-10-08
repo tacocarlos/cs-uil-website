@@ -308,6 +308,15 @@ export default function StaticSkillTree({
                         </CardHeader>
                         <CardContent>
                             <div>{selectedTopic.desc}</div>
+                            <ul>
+                                {selectedTopic.relevantLinks.map((rl, idx) => {
+                                    return (
+                                        <li key={idx}>
+                                            <a href={rl}>{rl}</a>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
                         </CardContent>
                     </Card>
                     <DrawerFooter>

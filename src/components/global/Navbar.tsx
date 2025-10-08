@@ -96,6 +96,14 @@ function DesktopNavbar() {
         <NavigationMenu className="text-foreground space-x-3">
             <NavigationMenuList>
                 <NavigationMenuItem>
+                    <NavigationMenuLink
+                        asChild
+                        className={navigationMenuTriggerStyle()}
+                    >
+                        <Link href="/calculator">TI 84 Plus CE Online</Link>
+                    </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
                     <NavigationMenuTrigger>Account</NavigationMenuTrigger>
                     <NavigationMenuContent>
                         <ul className="grid w-[200px] gap-4">
