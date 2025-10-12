@@ -216,13 +216,6 @@ export default function StaticSkillTree({
     topicData: Topic[];
     preReqData: Prereq[];
 }) {
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            alert(
-                "This page is currently a work in progress. Currently shows old AP CSA Topics, will update later to be CS UIL specific.",
-            );
-        }
-    }, []);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState(topicData.at(0)!);
     const baseNodes: TopicNode[] = React.useMemo(
