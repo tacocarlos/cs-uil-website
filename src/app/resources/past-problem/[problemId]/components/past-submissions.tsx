@@ -32,7 +32,7 @@ function SubmissionInformation({ submission }: { submission: Submission }) {
                     <p>Not Accepted</p>
                 </span>
             )}
-            <section className="prose h-80 w-full overflow-y-auto p-[10px]">
+            <section className="prose h-80 w-full max-w-none overflow-y-auto p-[10px]">
                 <header className="text-primary text-xl font-semibold">
                     Submitted Code
                 </header>

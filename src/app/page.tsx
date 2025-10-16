@@ -7,16 +7,18 @@ import Timeline, { DefaultTimelineData } from "~/components/timeline/Timeline";
 import { Accordion, AccordionTrigger } from "~/components/ui/accordion";
 
 export default function Home() {
-  return (
-    <main className="from-primary to-secondary min-h-screen bg-gradient-to-b">
-      <Hero />
+    return (
+        <main className="from-primary to-secondary min-h-screen bg-gradient-to-b">
+            <Hero />
 
-      {/* Competition Timeline */}
-      <Timeline events={DefaultTimelineData} timelineTitle="GHS CS UIL Team Events"/>
-
-      {/* Resources Preview */}
-      <ResourcesSummary />
-      <Footer />
-    </main>
-  );
+            {/* Competition Timeline */}
+            <Timeline
+                events={DefaultTimelineData}
+                timelineTitle="GHS CS UIL Team Events"
+            />
+            {/* Resources Preview */}
+            <ResourcesSummary />
+            <Footer />
+        </main>
+    );
 }

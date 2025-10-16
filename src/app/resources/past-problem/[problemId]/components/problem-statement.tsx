@@ -6,11 +6,12 @@ import rehypeMathjax from "rehype-mathjax";
 
 export default function ProblemStatement({ problem }: { problem: Problem }) {
     return (
-        <Markdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeMathjax]}
-        >
-            {`## ${problem.problemName}
+        <div className="">
+            <Markdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeMathjax]}
+            >
+                {`## ${problem.problemName}
 ${problem.problemText}
 
 ---
@@ -27,6 +28,7 @@ ${problem.defaultInputFile != "" && problem.defaultInputFile != null ? problem.d
 ${problem.sampleOutput}
 \`\`\`
 `}
-        </Markdown>
+            </Markdown>
+        </div>
     );
 }

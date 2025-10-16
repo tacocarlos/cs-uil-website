@@ -84,7 +84,7 @@ export const submissionRouter = createTRPCRouter({
         .query(async (opts) => {
             const { userId, problemId } = opts.input;
             if (userId === "") return undefined;
-            return (
+            const mostRecent = (
                 await db
                     .select()
                     .from(submission)
@@ -100,5 +100,11 @@ export const submissionRouter = createTRPCRouter({
                     )
                     .limit(1)
             ).at(0);
+
+            if (mostRecent) {
+                return { state: "success" as const, mostRecent };
+            } else {
+                return { state: "failed" as const };
+            }
         }),
 });

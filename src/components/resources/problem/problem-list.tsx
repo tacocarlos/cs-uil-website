@@ -16,19 +16,22 @@ export default function ProblemList({
 }) {
     const { data: session } = useSession();
     const user = session?.user;
-    const submissions = problems.map((p) =>
-        api.submission.getMostRecentSubmission.useQuery({
+    const submissions = problems.map((p) => {
+        const submission = api.submission.getMostRecentSubmission.useQuery({
             userId: user?.id ?? "",
             problemId: p.id,
-        }),
-    );
+        });
+
+        if (submission.data?.state === "success") {
+            return submission.data?.mostRecent;
+        }
+
+        return undefined;
+    });
 
     const pairs: [Problem, Submission | undefined][] = [];
     for (let i = 0; i < problems.length && i < submissions.length; i++) {
-        pairs.push([
-            problems[i]!,
-            submissions[i]?.data as Submission | undefined,
-        ]);
+        pairs.push([problems[i]!, submissions[i]]);
     }
 
     return (

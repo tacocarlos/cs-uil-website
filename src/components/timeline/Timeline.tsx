@@ -78,7 +78,7 @@ The challenge has six different age categories with each their own set of tasks 
         eventName: "UIL Invitational B",
         description: `Invitational B will be held at Livingston High School, approximately an hour away from GHS.
 
-**Schedule**  
+**Schedule**
   - Probably leave around 6:00 AM
       `,
     },

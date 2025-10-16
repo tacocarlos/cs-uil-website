@@ -34,10 +34,14 @@ async function RecentProblem({ userId }: { userId: string }) {
         .where(eq(problems.id, user.mostRecentProblem))
         .limit(1);
 
-    const submission = await api.submission.getMostRecentSubmission({
+    const mrsResult = await api.submission.getMostRecentSubmission({
         userId,
         problemId: problem!.id,
     });
+
+    const submission =
+        mrsResult?.state === "success" ? mrsResult.mostRecent : undefined;
+
     return (
         <div>
             <p>Points: </p>
