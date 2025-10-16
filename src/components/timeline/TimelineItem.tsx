@@ -16,8 +16,14 @@ export type TimelineItem = Readonly<{
     index?: number | string;
 }>;
 
-export default function TimelineEntry({ event }: { event: TimelineItem }) {
+export default function TimelineEntry({
+    timelineEvent,
+}: {
+    timelineEvent: TimelineItem;
+}) {
+    const event = timelineEvent;
     const idx = (event.index ?? event.eventName).toString();
+
     return (
         <AccordionItem
             value={idx}
