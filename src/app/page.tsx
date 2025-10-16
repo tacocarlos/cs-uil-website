@@ -1,10 +1,7 @@
-import { AccordionContent, AccordionItem } from "@radix-ui/react-accordion";
-import Link from "next/link";
 import Footer from "~/components/global/Footer";
 import Hero from "~/components/global/Hero";
 import ResourcesSummary from "~/components/resources/ResourcesSummary";
 import Timeline, { DefaultTimelineData } from "~/components/timeline/Timeline";
-import { Accordion, AccordionTrigger } from "~/components/ui/accordion";
 
 export default function Home() {
     return (
@@ -16,6 +13,7 @@ export default function Home() {
                 events={DefaultTimelineData}
                 timelineTitle="GHS CS UIL Team Events"
             />
+
             {/* Resources Preview */}
             <ResourcesSummary />
             <Footer />

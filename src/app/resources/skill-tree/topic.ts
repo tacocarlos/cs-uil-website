@@ -7,4 +7,4 @@ export type Topic = {
     unlocked?: boolean;
 };
 
-export type Prereq = { source: string; target: string };
+export type Prereq = { source: Topic["id"]; target: Topic["id"] };

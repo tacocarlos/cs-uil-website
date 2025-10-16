@@ -28,6 +28,13 @@ export const TOPICS: Topic[] = [
         label: "Fundamentals of Discrete Math",
         desc: "Sets (the mathematical one, not the ADT), Combinatorics, and the Pigeonhole Principle",
         relevantLinks: [],
+        completed: true,
+    },
+    {
+        id: "adt2",
+        label: "Abstract Data Types Part 2",
+        desc: "Binary Search Trees",
+        relevantLinks: [],
         unlocked: true,
     },
     {
@@ -35,7 +42,7 @@ export const TOPICS: Topic[] = [
         label: "Graph Basics",
         desc: "The basics of graphs: code representations and methods.",
         relevantLinks: [],
-        unlocked: false,
+        unlocked: true,
     },
 ];
 
@@ -43,5 +50,7 @@ export const PREREQS: Prereq[] = [
     { source: "pseudocode", target: "alg-analy" },
     { source: "alg-analy", target: "adt1" },
     { source: "adt1", target: "graphs-1" },
+    { source: "adt1", target: "adt2" },
+    { source: "adt2", target: "graphs-1" },
     { source: "discrete-1", target: "graphs-1" },
 ];

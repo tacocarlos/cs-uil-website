@@ -107,23 +107,27 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
                     <Lock className="absolute h-full w-full pb-4" />
                 ) : null}
                 <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 8,
-                        alignItems: "center",
-                    }}
+                    className={
+                        topic.unlocked === true
+                            ? "animate-background bg-gradient-to-r from-green-300 via-blue-600 to-red-300 bg-[length:_400%_400%] p-1 ease-in-out [animation-duration:_4s]"
+                            : ""
+                    }
                 >
                     <div
-                        style={{
-                            fontWeight: 700,
-                            fontSize: 14,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                        }}
+                        className={`flex items-center justify-between gap-8`}
+                        style={{ background }}
                     >
-                        {topic.label}
+                        <div
+                            style={{
+                                fontWeight: 700,
+                                fontSize: 14,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                            }}
+                        >
+                            {topic.label}
+                        </div>
                     </div>
                     {topic.id.startsWith("u") ? (
                         <span
@@ -212,13 +216,6 @@ export default function StaticSkillTree({
     topicData: Topic[];
     preReqData: Prereq[];
 }) {
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            alert(
-                "This page is currently a work in progress. Currently shows old AP CSA Topics, will update later to be CS UIL specific.",
-            );
-        }
-    }, []);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState(topicData.at(0)!);
     const baseNodes: TopicNode[] = React.useMemo(
@@ -304,6 +301,15 @@ export default function StaticSkillTree({
                         </CardHeader>
                         <CardContent>
                             <div>{selectedTopic.desc}</div>
+                            <ul>
+                                {selectedTopic.relevantLinks.map((rl, idx) => {
+                                    return (
+                                        <li key={idx}>
+                                            <a href={rl}>{rl}</a>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
                         </CardContent>
                     </Card>
                     <DrawerFooter>

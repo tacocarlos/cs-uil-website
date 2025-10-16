@@ -41,23 +41,25 @@ export const TOPICS: Topic[] = [
     {
         id: "u1.7",
         label: "API and Libraries",
-        unlocked: true,
+        completed: true,
         relevantLinks: [],
     },
     {
         id: "u1.8",
         label: "Documentation with Comments",
-        unlocked: true,
+        completed: true,
         relevantLinks: [],
     },
     {
         id: "u1.9",
         label: "Method Signatures",
+        unlocked: true,
         relevantLinks: [],
     },
     {
         id: "u1.10",
         label: "Calling Class Methods",
+        unlocked: true,
         relevantLinks: [],
     },
     {

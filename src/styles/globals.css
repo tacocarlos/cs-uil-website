@@ -10,6 +10,18 @@
         var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
         "Noto Color Emoji";
+    --animate-background: background-move ease infinite;
+
+    @keyframes background-move {
+        0%,
+        100% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+    }
 }
 :root {
     --background: oklch(1 0 0);
