@@ -101,7 +101,7 @@ export const submissionRouter = createTRPCRouter({
                     .limit(1)
             ).at(0);
 
-            if (mostRecent) {
+            if (mostRecent !== undefined) {
                 return { state: "success" as const, mostRecent };
             } else {
                 return { state: "failed" as const };

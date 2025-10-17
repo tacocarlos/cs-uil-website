@@ -1,19 +1,12 @@
-import { useRef } from "react";
 import { Accordion } from "../ui/accordion";
 import TimelineEntry, { type TimelineItem } from "./TimelineItem";
 
 export type TimelineProps = {
     events: Omit<TimelineItem, "index">[];
     timelineTitle: string;
-    scrollToNext: boolean;
 };
 
-export default function Timeline({
-    events,
-    timelineTitle,
-    scrollToNext = false,
-}: TimelineProps) {
-    const nextEventRef = useRef(null);
+export default function Timeline({ events, timelineTitle }: TimelineProps) {
     return (
         <section className="bg-secondary-50 px-4 py-16">
             <div className="container mx-auto">
