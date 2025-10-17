@@ -1,3 +1,4 @@
+"use client";
 import {
     AccordionItem,
     AccordionContent,
@@ -7,6 +8,7 @@ import rehypeMathJax from "rehype-mathjax";
 import remarkGfm from "remark-gfm";
 import Markdown from "react-markdown";
 import remarkMath from "remark-math";
+import { useRef, useEffect } from "react";
 
 export type TimelineItem = Readonly<{
     date: string;
@@ -14,6 +16,7 @@ export type TimelineItem = Readonly<{
     description: string;
     important?: boolean;
     index?: number | string;
+    scrollTo?: boolean;
 }>;
 
 export default function TimelineEntry({
@@ -23,12 +26,27 @@ export default function TimelineEntry({
 }) {
     const event = timelineEvent;
     const idx = (event.index ?? event.eventName).toString();
+    const scrollableRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (event.scrollTo && scrollableRef.current) {
+            const curr = scrollableRef?.current;
+            if (curr === null) {
+                alert("did not have ref");
+            }
+
+            curr.scrollIntoView({ behavior: "smooth" });
+            // curr.className += "motion-preset-shake motion-duration-500";
+            curr.className += "animate-shake animate-duration-500";
+        }
+    }, [event]);
 
     return (
         <AccordionItem
             value={idx}
             key={idx}
             className="bg-secondary mb-8 flex-col rounded-lg p-6 pb-2 shadow-md"
+            ref={scrollableRef}
         >
             <AccordionTrigger>
                 <div

@@ -6,6 +6,7 @@ export default function TimelinePage() {
             <Timeline
                 events={DefaultTimelineData}
                 timelineTitle="Computer Science UIL 2025-2026 Activities"
+                scrollToDesignated
             />
         </main>
     );

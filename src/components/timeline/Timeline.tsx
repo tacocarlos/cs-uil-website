@@ -4,9 +4,14 @@ import TimelineEntry, { type TimelineItem } from "./TimelineItem";
 export type TimelineProps = {
     events: Omit<TimelineItem, "index">[];
     timelineTitle: string;
+    scrollToDesignated?: boolean;
 };
 
-export default function Timeline({ events, timelineTitle }: TimelineProps) {
+export default function Timeline({
+    events,
+    timelineTitle,
+    scrollToDesignated,
+}: TimelineProps) {
     return (
         <section className="bg-secondary-50 px-4 py-16">
             <div className="container mx-auto">
@@ -40,6 +45,7 @@ export const DefaultTimelineData: TimelineProps["events"] = [
             "The CS UIL Virtual Challenge is an online UIL contest consisting of only the written test. In order to replicate the standard UIL environment, I will host the constest during Friday practice at 11:00AM on October 24th.",
     },
     {
+        scrollTo: true,
         date: "November 14th",
         eventName: "Berbas Computing Challenge",
         description: `The Berbas Computing Challenge is an online problem solving competition, aimed at algorithmic thinking, but _**does not require any coding.**_ From their website:
