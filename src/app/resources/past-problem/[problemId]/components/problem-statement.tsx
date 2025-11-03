@@ -1,8 +1,8 @@
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-import type { Problem } from "~/server/db/schema/types";
 import rehypeMathjax from "rehype-mathjax";
+import type { Problem } from "~/server/db/schema/types";
 
 export default function ProblemStatement({ problem }: { problem: Problem }) {
     return (

@@ -25,6 +25,10 @@ import { problems } from "~/server/db/schema/problem";
 import type { JSX, ReactNode } from "react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Switch } from "~/components/ui/switch";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeMathjax from "rehype-mathjax";
 
 type FormSchemaType = z.infer<typeof formSchema>;
 
@@ -116,6 +120,19 @@ function GenericTextField({
                     </FormControl>
                     <FormDescription>{fieldDescription}</FormDescription>
                     <FormMessage />
+                    {variant === "markdown" ? (
+                        <div className="prose prose-slate mt-0 max-w-none border-2 border-gray-600">
+                            <p className="bg-black text-white">
+                                Markdown Preview
+                            </p>
+                            <Markdown
+                                remarkPlugins={[remarkGfm, remarkMath]}
+                                rehypePlugins={[rehypeMathjax]}
+                            >
+                                {field.value}
+                            </Markdown>
+                        </div>
+                    ) : null}
                 </FormItem>
             )}
         />
