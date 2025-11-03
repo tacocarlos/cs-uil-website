@@ -1,7 +1,7 @@
 // apcsaGraph.ts
 import type { Topic, Prereq } from "../topic";
 
-export const TOPICS: Topic[] = [
+const UNIT_ONE_TOPICS: Topic[] = [
     {
         id: "u1.1",
         label: "Introduction to Algorithms, Programming, and Compilers",
@@ -53,43 +53,80 @@ export const TOPICS: Topic[] = [
     {
         id: "u1.9",
         label: "Method Signatures",
-        unlocked: true,
+        completed: true,
         relevantLinks: [],
     },
     {
         id: "u1.10",
         label: "Calling Class Methods",
-        unlocked: true,
+        completed: true,
         relevantLinks: [],
     },
     {
         id: "u1.11",
         label: "Using the Math Class",
         relevantLinks: [],
+        completed: true,
     },
     {
         id: "u1.12",
         label: "Objects: Instances of Classes",
+        completed: true,
         relevantLinks: [],
     },
     {
         id: "u1.13",
         label: "Object Creation and Storage (Instantiation)",
         relevantLinks: [],
+        completed: true,
     },
     {
         id: "u1.14",
         label: "Calling Instance Methods",
+        completed: true,
         relevantLinks: [],
     },
     {
         id: "u1.15",
         label: "String Manipulation",
+        completed: true,
         relevantLinks: [],
     },
 ];
 
-export const PREREQS: Prereq[] = [
+const UNIT_TWO_TOPICS: Topic[] = [
+    {
+        id: "u2.1",
+        label: "Algorithms with Selection and Repetition",
+        unlocked: true,
+        relevantLinks: [],
+    },
+    {
+        id: "u2.2",
+        label: "Boolean Expressions",
+        unlocked: true,
+        relevantLinks: [],
+    },
+    {
+        id: "u2.3",
+        label: "If Else Statements",
+        relevantLinks: [],
+    },
+    {
+        id: "u2.4",
+        label: "Nested If Statements",
+        relevantLinks: [],
+    },
+    {
+        id: "u2.5",
+        label: "Compound Boolean Expressions",
+        relevantLinks: [],
+    },
+];
+
+export const TOPICS: Topic[] = [...UNIT_ONE_TOPICS, ...UNIT_TWO_TOPICS];
+
+const UNIT_ONE: Prereq[] = [
     { source: "u1.1", target: "u1.2" },
     { source: "u1.2", target: "u1.3" },
     { source: "u1.3", target: "u1.4" },
@@ -104,4 +141,19 @@ export const PREREQS: Prereq[] = [
     { source: "u1.12", target: "u1.13" },
     { source: "u1.13", target: "u1.14" },
     { source: "u1.14", target: "u1.15" },
+];
+
+const UNIT_TWO_PREREQ: Prereq[] = [
+    { source: "u2.1", target: "u2.2" },
+    { source: "u2.2", target: "u2.3" },
+    { source: "u2.3", target: "u2.4" },
+    { source: "u2.4", target: "u2.5" },
+];
+
+const TRANSITION_PREREQ: Prereq[] = [{ source: "u1.15", target: "u2.1" }];
+
+export const PREREQS: Prereq[] = [
+    ...UNIT_ONE,
+    ...UNIT_TWO_PREREQ,
+    ...TRANSITION_PREREQ,
 ];

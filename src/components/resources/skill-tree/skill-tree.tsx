@@ -29,6 +29,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import type { Topic, Prereq } from "../../../app/resources/skill-tree/topic";
 import { Lock } from "lucide-react";
+import { format, formatDate, formatDistanceToNow } from "date-fns";
 
 const NODE_W = 240;
 const NODE_H = 84;
@@ -300,6 +301,15 @@ export default function StaticSkillTree({
                             <CardTitle>{selectedTopic.label}</CardTitle>
                         </CardHeader>
                         <CardContent>
+                            {selectedTopic.coveredOn !== undefined ? (
+                                <div className="italic">
+                                    Covered On:{" "}
+                                    {formatDate(
+                                        selectedTopic.coveredOn,
+                                        "PPPP",
+                                    )}
+                                </div>
+                            ) : null}
                             <div>{selectedTopic.desc}</div>
                             <ul>
                                 {selectedTopic.relevantLinks.map((rl, idx) => {
@@ -310,6 +320,7 @@ export default function StaticSkillTree({
                                     );
                                 })}
                             </ul>
+                            <div></div>
                         </CardContent>
                     </Card>
                     <DrawerFooter>

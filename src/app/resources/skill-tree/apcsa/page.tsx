@@ -4,7 +4,7 @@ export default function SkillTreePage() {
     return (
         <div className="grid h-screen place-items-center">
             <StaticSkillTree
-                direction="LR"
+                direction="TB"
                 topicData={TOPICS}
                 preReqData={PREREQS}
             />

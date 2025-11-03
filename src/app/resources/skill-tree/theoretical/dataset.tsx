@@ -33,9 +33,10 @@ export const TOPICS: Topic[] = [
     {
         id: "adt2",
         label: "Abstract Data Types Part 2",
-        desc: "Binary Search Trees",
-        relevantLinks: [],
-        unlocked: true,
+        desc: "ArrayList and LinkedLists, Trees, Binary Search Trees, Heaps",
+        relevantLinks: ["https://www.youtube.com/watch?v=B7hVxCmfPtM"],
+        completed: true,
+        coveredOn: new Date("Friday October 17, 2025"),
     },
     {
         id: "graphs-1",

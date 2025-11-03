@@ -5,6 +5,7 @@ export type Topic = {
     relevantLinks: string[];
     completed?: boolean;
     unlocked?: boolean;
+    coveredOn?: Date;
 };
 
 export type Prereq = { source: Topic["id"]; target: Topic["id"] };
