@@ -100,19 +100,22 @@ export default function PageCore({ problem }: { problem: Problem }) {
     const runCodeMutator = api.execute.runCode.useMutation({
         onSuccess: async (data) => {
             setStdOut(data.stdout ?? "");
-            setStdErr(data.stderr ?? "");
-            // Only switch tabs if we're currently on input tab
-            if (ioTab === "input") {
-                if (data.stdout) setIOTab("stdout");
-                else if (data.stderr) setIOTab("stderr");
+            setIOTab("stdout");
+            if (data.compile_output !== null) {
+                setStdErr(data.compile_output);
+                setIOTab("stderr");
+            } else {
+                setStdErr(data.stderr ?? "");
+                setIOTab("stderr");
             }
+
             toast("Program Has Finished Running");
         },
         onError: async (data) => {
             setStdOut("Problem Has Failed To Run");
             setStdErr("Problem Has Failed To Run");
             // Only switch to stderr if we're currently on input tab
-            if (ioTab === "input") {
+            if (ioTab === "input" || ioTab == "stdout") {
                 setIOTab("stderr");
             }
             toast("Program Has Failed To Run");

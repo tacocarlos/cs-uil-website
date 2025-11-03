@@ -105,8 +105,8 @@ export const executeRouter = createTRPCRouter({
             z.object({
                 stdout: z.string().nullable(),
                 stderr: z.string().nullable(),
-                time: z.string(),
-                memory: z.number(),
+                time: z.string().nullable(),
+                memory: z.number().nullable(),
                 token: z.string(),
                 compile_output: z.string().nullable(),
                 status: z.object({
@@ -221,6 +221,7 @@ export const executeRouter = createTRPCRouter({
                 diff,
                 output: executionResult.stdout,
                 expected: testOutput,
+                compileOutput: executionResult.compile_output,
             });
 
             return {
@@ -231,6 +232,7 @@ export const executeRouter = createTRPCRouter({
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 distance: dist,
                 executionResult: executionResult,
+                compileOutput: executionResult.compile_output,
             };
         }),
 });
