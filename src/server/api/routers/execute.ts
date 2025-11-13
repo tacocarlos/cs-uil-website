@@ -55,12 +55,10 @@ async function executeCode(
 }
 
 function diffStrings(a: string, b: string): string {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const changes: Array<{
         added?: boolean;
         removed?: boolean;
         value: string;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     }> = diffChars(a, b);
 
     return changes
@@ -185,7 +183,6 @@ export const executeRouter = createTRPCRouter({
             if (problem === undefined) {
                 throw new Error("Failed to get problem");
             } else {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 testOutput = problem.testOutput.replaceAll("\r", "");
             }
             const executionResult = await executeCode(
@@ -195,7 +192,6 @@ export const executeRouter = createTRPCRouter({
             );
 
             const diff = diffStrings(executionResult.stdout ?? "", testOutput);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
             const dist = distance(executionResult.stdout ?? "", testOutput);
             const accepted = dist < LEVENSHTEIN_DISTANCE_THRESHOLD;
             const score = accepted ? 60 - (numSubmissions - 1) : 0;
@@ -229,7 +225,6 @@ export const executeRouter = createTRPCRouter({
                 attemptNumber: numSubmissions,
                 score,
                 diff,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 distance: dist,
                 executionResult: executionResult,
                 compileOutput: executionResult.compile_output,

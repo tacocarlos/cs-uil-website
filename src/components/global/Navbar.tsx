@@ -175,12 +175,21 @@ function DesktopNavbar() {
                     </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
-                    >
-                        <Link href="/leaderboard">Leaderboard</Link>
-                    </NavigationMenuLink>
+                    <NavigationMenuTrigger>Leaderboard</NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                        <ul className="grid w-[200px] gap-4">
+                            <li>
+                                <NavigationMenuLink asChild>
+                                    <Link href="/leaderboard">Problems</Link>
+                                </NavigationMenuLink>
+                                <NavigationMenuLink asChild>
+                                    <Link href="/leaderboard/written">
+                                        Written
+                                    </Link>
+                                </NavigationMenuLink>
+                            </li>
+                        </ul>
+                    </NavigationMenuContent>
                 </NavigationMenuItem>
             </NavigationMenuList>
         </NavigationMenu>
@@ -225,9 +234,6 @@ function SmallNavbar() {
                                         Account Setttings
                                     </Link>
                                 </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="/dashboard">Leaderboard</Link>
-                                </NavigationMenuLink>
                             </li>
                         </ul>
                     </NavigationMenuContent>
@@ -249,9 +255,21 @@ function SmallNavbar() {
                     </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                        <Link href="/leaderboard">Leaderboard</Link>
-                    </NavigationMenuLink>
+                    <NavigationMenuTrigger>Leaderboard</NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                        <ul className="grid w-[200px] gap-4">
+                            <li>
+                                <NavigationMenuLink asChild>
+                                    <Link href="/leaderboard">Problems</Link>
+                                </NavigationMenuLink>
+                                <NavigationMenuLink asChild>
+                                    <Link href="/leaderboard/written">
+                                        Written
+                                    </Link>
+                                </NavigationMenuLink>
+                            </li>
+                        </ul>
+                    </NavigationMenuContent>
                 </NavigationMenuItem>
             </NavigationMenuList>
         </NavigationMenu>

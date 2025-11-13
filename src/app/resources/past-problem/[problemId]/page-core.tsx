@@ -8,6 +8,21 @@ import {
 import type { Problem } from "~/server/db/schema/types";
 import { Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
+import * as vscode from "vscode";
+// Import Monaco Language Client components
+import {
+    EditorApp,
+    type EditorAppConfig,
+} from "monaco-languageclient/editorApp";
+import { configureDefaultWorkerFactory } from "monaco-languageclient/workerFactory";
+import {
+    MonacoVscodeApiWrapper,
+    type MonacoVscodeApiConfig,
+} from "monaco-languageclient/vscodeApiWrapper";
+import {
+    LanguageClientWrapper,
+    type LanguageClientConfig,
+} from "monaco-languageclient/lcwrapper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useRef, useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
@@ -54,7 +69,8 @@ export default function PageCore({ problem }: { problem: Problem }) {
         editor: editor.IStandaloneCodeEditor,
         monaco: Monaco,
     ) {
-        editorRef.current = editor;
+        monaco.editor.setModelLanguage(editor.getModel()!, "java");
+        // monaco.editor.editorRef.current = editor;
 
         // Load saved code from localStorage
         const savedCode = window.localStorage.getItem(codeStorageKey);
