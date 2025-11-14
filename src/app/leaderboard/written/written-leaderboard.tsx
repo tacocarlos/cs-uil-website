@@ -24,12 +24,19 @@ export default function WrittenLeaderboard() {
     const [selectedCompetition, setSelectedCompetition] = useState<
         string | "all" | undefined
     >(undefined);
+    const [selectedYear, setSelectedYear] = useState<
+        number | "all" | undefined
+    >(undefined);
 
     // Fetch available competitions and most recent competition
     const { data: competitions } =
         api.written.getAvailableCompetitions.useQuery();
     const { data: mostRecentCompetition } =
         api.written.getMostRecentCompetition.useQuery();
+
+    // Fetch available years and most recent year
+    const { data: years } = api.written.getAvailableYears.useQuery();
+    const { data: mostRecentYear } = api.written.getMostRecentYear.useQuery();
 
     // Set default competition to most recent once loaded
     useEffect(() => {
@@ -38,17 +45,29 @@ export default function WrittenLeaderboard() {
         }
     }, [mostRecentCompetition, selectedCompetition]);
 
+    // Set default year to most recent once loaded
+    useEffect(() => {
+        if (mostRecentYear && selectedYear === undefined) {
+            setSelectedYear(mostRecentYear);
+        }
+    }, [mostRecentYear, selectedYear]);
+
     // Determine the competition parameter for the query
     const competitionParam =
         selectedCompetition === "all" ? undefined : selectedCompetition;
 
-    // Fetch leaderboard data based on selected competition
+    // Determine the year parameter for the query
+    const yearParam = selectedYear === "all" ? undefined : selectedYear;
+
+    // Fetch leaderboard data based on selected competition and year
     const { data: scores, isLoading } = api.written.getLeaderboard.useQuery(
         {
             competition: competitionParam as any,
+            year: yearParam,
         },
         {
-            enabled: selectedCompetition !== undefined,
+            enabled:
+                selectedCompetition !== undefined && selectedYear !== undefined,
         },
     );
 
@@ -67,6 +86,32 @@ export default function WrittenLeaderboard() {
             </h2>
 
             <div className="mb-4 space-y-4">
+                <div>
+                    <label className="mb-2 block text-sm font-medium">
+                        Year
+                    </label>
+                    <Select
+                        value={selectedYear?.toString()}
+                        onValueChange={(value) =>
+                            setSelectedYear(
+                                value === "all" ? "all" : parseInt(value),
+                            )
+                        }
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Years</SelectItem>
+                            {years?.map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                    {year}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <div>
                     <label className="mb-2 block text-sm font-medium">
                         Competition
@@ -112,7 +157,9 @@ export default function WrittenLeaderboard() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading || selectedCompetition === undefined ? (
+                    {isLoading ||
+                    selectedCompetition === undefined ||
+                    selectedYear === undefined ? (
                         <TableRow>
                             <TableCell colSpan={3} className="h-24 text-center">
                                 Loading...

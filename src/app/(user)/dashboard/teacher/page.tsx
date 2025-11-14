@@ -20,6 +20,11 @@ export default function TeacherDashboard() {
                             Edit Problem
                         </Link>
                     </Button>
+                    <Button asChild>
+                        <Link href="/dashboard/teacher/written">
+                            Add Written Test Score
+                        </Link>
+                    </Button>
                 </span>
             </div>
         </div>
