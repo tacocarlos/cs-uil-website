@@ -82,6 +82,9 @@ export default function PageCore({ problem }: { problem: Problem }) {
         editor.onDidChangeModelContent(() => {
             window.localStorage.setItem(codeStorageKey, editor.getValue());
         });
+
+        toast("Editor initialized.");
+        editorRef.current = editor;
     }
 
     const [stdOut, setStdOut] = useState("");
@@ -150,7 +153,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
 
     async function runCode() {
         toast("Starting code execution...");
-        if (!editorRef.current) {
+        if (editorRef.current === null) {
             toast("Editor is not initialized.");
             return;
         }
