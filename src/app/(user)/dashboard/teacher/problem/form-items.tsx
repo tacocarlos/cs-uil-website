@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
-import { problems } from "~/server/db/schema/problem";
+
 import type { JSX, ReactNode } from "react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Switch } from "~/components/ui/switch";

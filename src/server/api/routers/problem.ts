@@ -3,6 +3,7 @@ import { db } from "~/server/db";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { problems } from "~/server/db/schema/problem";
 import { eq } from "drizzle-orm";
+import { getAllAppProblems } from "~/lib/api/lunaghs";
 
 export const problemRouter = createTRPCRouter({
     addProblem: publicProcedure
@@ -45,6 +46,6 @@ export const problemRouter = createTRPCRouter({
         }),
 
     getProblems: publicProcedure.query(async () => {
-        return db.select().from(problems);
+        return getAllAppProblems();
     }),
 });

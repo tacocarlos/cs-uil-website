@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { db } from "~/server/db";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { problems } from "~/server/db/schema/problem";
 import { eq, and } from "drizzle-orm";
 import { distance } from "fastest-levenshtein";
 import { diffChars } from "diff";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
+import { getProblemById, fetchUrlContent } from "~/lib/api/lunaghs";
 
 const LEVENSHTEIN_DISTANCE_THRESHOLD = 5;
 
@@ -73,7 +73,6 @@ function diffStrings(a: string, b: string): string {
 export const executeRouter = createTRPCRouter({
     getJavaRuntimes: publicProcedure.query(async () => {
         type ResponseData = [{ name: string; id: string }];
-        // const url = new URL("/languages", env.JUDGE_URL);
         const response = await fetch("http://judge0.lunaghs.dev/languages");
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
@@ -150,21 +149,32 @@ export const executeRouter = createTRPCRouter({
         )
         .mutation(async (opts) => {
             const { userID, problemId, code, languageId } = opts.input;
-            const user = (
-                await db
+
+            // Fetch user and problem data in parallel – problem comes from the
+            // external API rather than the local database.
+            const [user, apiResult] = await Promise.all([
+                db
                     .select()
                     .from(userTable)
                     .where(eq(userTable.id, userID))
                     .limit(1)
-            )[0];
-            const problemQuery = await db
-                .select()
-                .from(problems)
-                .where(eq(problems.id, problemId))
-                .limit(1);
-            if (problemQuery.length === 0) {
-                throw Error("Failed to read problem");
+                    .then((rows) => rows[0]),
+                getProblemById(problemId),
+            ]);
+
+            if (!apiResult.success || !apiResult.problem) {
+                throw new Error("Failed to read problem");
             }
+
+            const apiProblem = apiResult.problem;
+
+            // Fetch test input and output from their respective URLs in parallel.
+            const [testInput, testOutput] = await Promise.all([
+                fetchUrlContent(apiProblem.test_data_url),
+                fetchUrlContent(apiProblem.test_output_url),
+            ]);
+
+            const normalizedTestOutput = testOutput.replaceAll("\r", "");
 
             const prevSubmissions = await db
                 .select()
@@ -178,21 +188,20 @@ export const executeRouter = createTRPCRouter({
 
             const numSubmissions = prevSubmissions.length + 1;
 
-            const problem = problemQuery[0];
-            let testOutput = "";
-            if (problem === undefined) {
-                throw new Error("Failed to get problem");
-            } else {
-                testOutput = problem.testOutput.replaceAll("\r", "");
-            }
             const executionResult = await executeCode(
                 code,
                 languageId,
-                problem.testInput,
+                testInput,
             );
 
-            const diff = diffStrings(executionResult.stdout ?? "", testOutput);
-            const dist = distance(executionResult.stdout ?? "", testOutput);
+            const diff = diffStrings(
+                executionResult.stdout ?? "",
+                normalizedTestOutput,
+            );
+            const dist = distance(
+                executionResult.stdout ?? "",
+                normalizedTestOutput,
+            );
             const accepted = dist < LEVENSHTEIN_DISTANCE_THRESHOLD;
             const score = accepted ? 60 - (numSubmissions - 1) : 0;
 
@@ -201,7 +210,7 @@ export const executeRouter = createTRPCRouter({
 
             if (!alreadySucceeded) {
                 await db.insert(submission).values({
-                    problemId: problem?.id,
+                    problemId: apiProblem.id,
                     userId: userID,
                     maxPoints: 60,
                     points: score,
@@ -216,7 +225,7 @@ export const executeRouter = createTRPCRouter({
                 distance: dist,
                 diff,
                 output: executionResult.stdout,
-                expected: testOutput,
+                expected: normalizedTestOutput,
                 compileOutput: executionResult.compile_output,
             });
 

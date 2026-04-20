@@ -4,18 +4,17 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import type { User } from "~/server/db/schema/auth";
 import { ProblemStatusCard } from "./ProblemStatusCard";
-import { db } from "~/server/db";
-import { problems } from "~/server/db/schema/problem";
-import { and, eq } from "drizzle-orm";
-import { submission as submissionTable } from "~/server/db/schema/submission";
 import type { Problem } from "~/server/db/schema/types";
-import { getUserRoles } from "~/lib/user/permission-utils";
-import { Switch } from "~/components/ui/switch";
 import SettingsSection from "./settings";
 import { api } from "~/trpc/server";
 import { Skeleton } from "~/components/ui/skeleton";
 import InProgressProblems from "./in-progress";
 import SubmittedProblems from "./submitted-problems";
+import {
+    getProblemById,
+    getAllCompetitions,
+    toAppProblem,
+} from "~/lib/api/lunaghs";
 
 async function RecentProblem({ userId }: { userId: string }) {
     const user = await api.user.getUser({ userId });
@@ -28,15 +27,29 @@ async function RecentProblem({ userId }: { userId: string }) {
         return null;
     }
 
-    const [problem] = await db
-        .select()
-        .from(problems)
-        .where(eq(problems.id, user.mostRecentProblem))
-        .limit(1);
+    const [apiResult, competitions] = await Promise.all([
+        getProblemById(user.mostRecentProblem),
+        getAllCompetitions(),
+    ]);
+
+    if (!apiResult.success || !apiResult.problem) {
+        return null;
+    }
+
+    const apiProblem = apiResult.problem;
+    const competition = competitions.find(
+        (c) => c.id === apiProblem.competition,
+    );
+
+    if (!competition) {
+        return null;
+    }
+
+    const problem = (await toAppProblem(apiProblem, competition)) as Problem;
 
     const mrsResult = await api.submission.getMostRecentSubmission({
         userId,
-        problemId: problem!.id,
+        problemId: problem.id,
     });
 
     const submission =
@@ -45,10 +58,7 @@ async function RecentProblem({ userId }: { userId: string }) {
     return (
         <div>
             <p>Points: </p>
-            <ProblemStatusCard
-                problem={problem as Problem}
-                submission={submission}
-            />
+            <ProblemStatusCard problem={problem} submission={submission} />
         </div>
     );
 }

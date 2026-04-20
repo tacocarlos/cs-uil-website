@@ -1,16 +1,11 @@
-import { eq } from "drizzle-orm";
 import ProblemList from "~/components/resources/problem/problem-list";
-import { db } from "~/server/db";
-import { problems } from "~/server/db/schema/problem";
 import { type Problem } from "~/server/db/schema/types";
 import ProblemFAQ from "./[problemId]/problem-notes";
-import { api } from "~/trpc/server";
+import { getAllAppProblems } from "~/lib/api/lunaghs";
 
 export default async function Page() {
-    const pastProblems = await api.problem.getProblems();
-    // .where(eq(problems.enabled, true));
-    console.dir("got data");
-    console.dir(pastProblems);
+    const pastProblems = await getAllAppProblems();
+
     return (
         <>
             <section className="bg-primary-50 px-4 py-16">
