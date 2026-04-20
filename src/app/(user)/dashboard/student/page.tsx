@@ -2,66 +2,10 @@ import { auth } from "auth";
 import { headers } from "next/headers";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import type { User } from "~/server/db/schema/auth";
-import { ProblemStatusCard } from "./ProblemStatusCard";
-import type { Problem } from "~/server/db/schema/types";
 import SettingsSection from "./settings";
 import { api } from "~/trpc/server";
-import { Skeleton } from "~/components/ui/skeleton";
 import InProgressProblems from "./in-progress";
 import SubmittedProblems from "./submitted-problems";
-import {
-    getProblemById,
-    getAllCompetitions,
-    toAppProblem,
-} from "~/lib/api/lunaghs";
-
-async function RecentProblem({ userId }: { userId: string }) {
-    const user = await api.user.getUser({ userId });
-
-    if (user === undefined) {
-        return <Skeleton />;
-    }
-
-    if (user.mostRecentProblem === null) {
-        return null;
-    }
-
-    const [apiResult, competitions] = await Promise.all([
-        getProblemById(user.mostRecentProblem),
-        getAllCompetitions(),
-    ]);
-
-    if (!apiResult.success || !apiResult.problem) {
-        return null;
-    }
-
-    const apiProblem = apiResult.problem;
-    const competition = competitions.find(
-        (c) => c.id === apiProblem.competition,
-    );
-
-    if (!competition) {
-        return null;
-    }
-
-    const problem = (await toAppProblem(apiProblem, competition)) as Problem;
-
-    const mrsResult = await api.submission.getMostRecentSubmission({
-        userId,
-        problemId: problem.id,
-    });
-
-    const submission =
-        mrsResult?.state === "success" ? mrsResult.mostRecent : undefined;
-
-    return (
-        <div>
-            <p>Points: </p>
-            <ProblemStatusCard problem={problem} submission={submission} />
-        </div>
-    );
-}
 
 export default async function DashboardPage() {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -102,7 +46,6 @@ export default async function DashboardPage() {
                             <p className="text-gray-600">{user.email}</p>
                         </div>
                     </div>
-                    <RecentProblem userId={user.id} />
                     <section>
                         <h2 className="mt-6 mb-4 text-lg font-semibold">
                             Settings

@@ -1,11 +1,4 @@
-import {
-    pgTable,
-    text,
-    timestamp,
-    boolean,
-    integer,
-} from "drizzle-orm/pg-core";
-import { problems } from "./problem";
+import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
     id: text("id").primaryKey().unique(),
@@ -22,9 +15,6 @@ export const user = pgTable("user", {
         .$defaultFn(() => /* @__PURE__ */ new Date())
         .notNull(),
     showSubmissionScores: boolean().notNull().default(true),
-    mostRecentProblem: integer().references(() => problems.id, {
-        onDelete: "set null",
-    }),
     role: text({ enum: ["student", "teacher", "site-admin"] }).default(
         "student",
     ),

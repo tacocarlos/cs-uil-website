@@ -58,9 +58,11 @@ export interface ApiCompetition {
 /**
  * Shared Next.js cache options – revalidate every hour so the site stays fresh
  * without hammering the API on every request.
+ *
+ * Next.js augments the global RequestInit with a `next` property, so this is
+ * well-typed when the project includes `/// <reference types="next" />`.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CACHE_OPTS: any = { next: { revalidate: 3600 } };
+const CACHE_OPTS: RequestInit = { next: { revalidate: 3600 } };
 
 /**
  * Safely fetch the text content at a URL.
@@ -187,7 +189,7 @@ export async function toAppProblem(
         id: apiProblem.id,
         problemName: apiProblem.name,
         competitionYear: competition.year,
-        competitionLevel: (competition.level ?? "custom") as CompetitionLevel,
+        competitionLevel: competition.level ?? "custom",
         problemText: markdown ?? "",
         programName: "",
         sampleOutput,
@@ -211,34 +213,25 @@ export async function getAllAppProblems() {
     const competitions = await getAllCompetitions();
     if (competitions.length === 0) return [];
 
-    const compMap = new Map(competitions.map((c) => [c.id, c]));
-
     // Fetch every competition's full problem list in parallel
     const nestedApiProblems = await Promise.all(
         competitions.map((c) => getCompetitionProblems(c.id)),
     );
 
-    // Flatten, preserving {apiProblem, competition} pairs
+    // Flatten to {apiProblem, competition} pairs
     const pairs = nestedApiProblems.flatMap((probs, idx) =>
         probs.map((p) => ({ apiProblem: p, comp: competitions[idx]! })),
     );
 
-    // Fetch all content in parallel
-    const appProblems = await Promise.all(
+    // Sort before converting: newest competition first, then by problem number
+    pairs.sort(
+        (a, b) =>
+            b.comp.year - a.comp.year ||
+            a.apiProblem.number - b.apiProblem.number,
+    );
+
+    // Fetch all content in parallel – Promise.all preserves order
+    return Promise.all(
         pairs.map(({ apiProblem, comp }) => toAppProblem(apiProblem, comp)),
     );
-
-    // Sort: newest competition first, then by problem number within competition
-    const withNumber = appProblems.map((p, i) => ({
-        ...p,
-        _number: pairs[i]!.apiProblem.number,
-    }));
-
-    withNumber.sort(
-        (a, b) =>
-            b.competitionYear - a.competitionYear ||
-            a._number - b._number,
-    );
-
-    return withNumber.map(({ _number: _, ...p }) => p);
 }

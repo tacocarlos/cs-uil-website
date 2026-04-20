@@ -8,21 +8,6 @@ import {
 import type { Problem } from "~/server/db/schema/types";
 import { Editor, type Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
-import * as vscode from "vscode";
-// Import Monaco Language Client components
-import {
-    EditorApp,
-    type EditorAppConfig,
-} from "monaco-languageclient/editorApp";
-import { configureDefaultWorkerFactory } from "monaco-languageclient/workerFactory";
-import {
-    MonacoVscodeApiWrapper,
-    type MonacoVscodeApiConfig,
-} from "monaco-languageclient/vscodeApiWrapper";
-import {
-    LanguageClientWrapper,
-    type LanguageClientConfig,
-} from "monaco-languageclient/lcwrapper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useRef, useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
@@ -38,77 +23,206 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "~/components/ui/select";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { useSession } from "auth-client";
 import ProblemStatement from "./components/problem-statement";
 import PastSubmissions from "./components/past-submissions";
 
-const starterCode = `import java.util.*;
+// ─────────────────────────────────────────────────────────────────────────────
+// Language definitions
+// ─────────────────────────────────────────────────────────────────────────────
+
+type LanguageConfig = {
+    /** Judge0 language ID */
+    id: string;
+    /** Display name shown in the selector */
+    name: string;
+    /** Monaco editor language identifier */
+    monacoLang: string;
+    /** Starter code that echoes stdin */
+    starterCode: string;
+};
+
+const LANGUAGES: LanguageConfig[] = [
+    {
+        id: "62",
+        name: "Java",
+        monacoLang: "java",
+        starterCode: `import java.util.*;
 import java.io.*;
 
 public class Main {
 public static void main(String[] args) throws IOException {
     Scanner sc = new Scanner(System.in);
-    while(sc.hasNextLine()) {
+    while (sc.hasNextLine()) {
         System.out.println(sc.nextLine());
     }
     sc.close();
 }
-}`;
+}`,
+    },
+    {
+        id: "50",
+        name: "C",
+        monacoLang: "c",
+        starterCode: `#include <stdio.h>
+
+int main() {
+    char line[1024];
+    while (fgets(line, sizeof(line), stdin)) {
+        printf("%s", line);
+    }
+    return 0;
+}`,
+    },
+    {
+        id: "54",
+        name: "C++",
+        monacoLang: "cpp",
+        starterCode: `#include <iostream>
+#include <string>
+
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        std::cout << line << "\\n";
+    }
+    return 0;
+}`,
+    },
+    {
+        id: "71",
+        name: "Python",
+        monacoLang: "python",
+        starterCode: `import sys
+
+for line in sys.stdin:
+    print(line, end="")`,
+    },
+];
+
+const DEFAULT_LANGUAGE_ID = "62";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function PageCore({ problem }: { problem: Problem }) {
     const { data: session } = useSession();
 
     // localStorage keys for this specific problem
-    const codeStorageKey = `problem-${problem.id}-code`;
     const inputStorageKey = `problem-${problem.id}-input`;
+    const langStorageKey = `problem-${problem.id}-language`;
 
-    const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
-    function handleEditorDidMount(
-        editor: editor.IStandaloneCodeEditor,
-        monaco: Monaco,
-    ) {
-        monaco.editor.setModelLanguage(editor.getModel()!, "java");
-        // monaco.editor.editorRef.current = editor;
+    // Per-language code key so each language's editor content is stored independently
+    const codeKeyForLang = (langId: string) =>
+        `problem-${problem.id}-code-${langId}`;
 
-        // Load saved code from localStorage
-        const savedCode = window.localStorage.getItem(codeStorageKey);
-        if (savedCode) {
-            editor.setValue(savedCode);
+    // ── Language selection ──────────────────────────────────────────────────
+
+    const [selectedLanguageId, setSelectedLanguageId] = useState<string>(() => {
+        if (typeof window !== "undefined") {
+            return (
+                window.localStorage.getItem(langStorageKey) ??
+                DEFAULT_LANGUAGE_ID
+            );
+        }
+        return DEFAULT_LANGUAGE_ID;
+    });
+
+    const selectedLanguage =
+        LANGUAGES.find((l) => l.id === selectedLanguageId) ?? LANGUAGES[0]!;
+
+    // Ref kept in sync with state so the onDidChangeModelContent listener (registered
+    // once on mount) always writes to the current language's key without going stale.
+    const selectedLanguageIdRef = useRef(selectedLanguageId);
+    useEffect(() => {
+        selectedLanguageIdRef.current = selectedLanguageId;
+    }, [selectedLanguageId]);
+
+    function handleLanguageChange(newLangId: string) {
+        const ed = editorRef.current;
+        if (ed) {
+            // Flush current code to the outgoing language's key.
+            window.localStorage.setItem(
+                codeKeyForLang(selectedLanguageId),
+                ed.getValue(),
+            );
+
+            // Advance the ref BEFORE calling setValue so that the synchronous
+            // onDidChangeModelContent callback saves to the correct (new) key.
+            selectedLanguageIdRef.current = newLangId;
+
+            // Restore saved code for the incoming language, or show its starter code.
+            const newLang =
+                LANGUAGES.find((l) => l.id === newLangId) ?? LANGUAGES[0]!;
+            const saved = window.localStorage.getItem(
+                codeKeyForLang(newLangId),
+            );
+            ed.setValue(saved ?? newLang.starterCode);
         }
 
-        // Save code to localStorage on change
-        editor.onDidChangeModelContent(() => {
-            window.localStorage.setItem(codeStorageKey, editor.getValue());
+        setSelectedLanguageId(newLangId);
+        window.localStorage.setItem(langStorageKey, newLangId);
+    }
+
+    // ── Editor ref & mount ──────────────────────────────────────────────────
+
+    const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
+
+    function handleEditorDidMount(
+        editorInstance: editor.IStandaloneCodeEditor,
+        _monaco: Monaco,
+    ) {
+        // Restore saved code for the initially selected language, falling back
+        // to that language's starter code on a first visit.
+        const savedCode = window.localStorage.getItem(
+            codeKeyForLang(selectedLanguageId),
+        );
+        editorInstance.setValue(savedCode ?? selectedLanguage.starterCode);
+
+        // Persist code on every change. Uses the ref so this single listener,
+        // registered once, always writes to whichever language is active.
+        editorInstance.onDidChangeModelContent(() => {
+            window.localStorage.setItem(
+                codeKeyForLang(selectedLanguageIdRef.current),
+                editorInstance.getValue(),
+            );
         });
 
         toast("Editor initialized.");
-        editorRef.current = editor;
+        editorRef.current = editorInstance;
     }
+
+    // ── I/O state ───────────────────────────────────────────────────────────
 
     const [stdOut, setStdOut] = useState("");
     const [stdErr, setStdErr] = useState("");
     const [testInput, setTestInput] = useState(() => {
-        // Load from localStorage on initial render
         if (typeof window !== "undefined") {
             const saved = window.localStorage.getItem(inputStorageKey);
             if (saved !== null) return saved;
         }
         return problem.defaultInputFile ?? "";
     });
-
     const [ioTab, setIOTab] = useState<"input" | "stderr" | "stdout">("input");
 
-    // Save testInput to localStorage whenever it changes
+    // Persist test input to localStorage whenever it changes
     useEffect(() => {
         window.localStorage.setItem(inputStorageKey, testInput);
     }, [testInput, inputStorageKey]);
 
-    const utils = api.useUtils();
+    // ── tRPC ────────────────────────────────────────────────────────────────
 
-    const runtimes = api.execute.getJavaRuntimes.useQuery().data;
-    const javaRT = runtimes?.at(0) ?? { id: 62, name: "Java" };
+    const utils = api.useUtils();
 
     const pastSubmissions = api.submission.getProblemSubmissions.useQuery({
         problemId: problem.id,
@@ -127,14 +241,12 @@ export default function PageCore({ problem }: { problem: Problem }) {
                 setStdErr(data.stderr ?? "");
                 setIOTab("stderr");
             }
-
             toast("Program Has Finished Running");
         },
-        onError: async (data) => {
+        onError: async () => {
             setStdOut("Problem Has Failed To Run");
             setStdErr("Problem Has Failed To Run");
-            // Only switch to stderr if we're currently on input tab
-            if (ioTab === "input" || ioTab == "stdout") {
+            if (ioTab === "input" || ioTab === "stdout") {
                 setIOTab("stderr");
             }
             toast("Program Has Failed To Run");
@@ -143,7 +255,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
 
     const submitCodeMutator = api.execute.submitCode.useMutation({
         onSuccess: async (data) => {
-            utils.submission.invalidate();
+            await utils.submission.invalidate();
             console.dir(data);
             toast(
                 `Submitted Code - ${data.accepted ? "Solution Accepted" : "Solution Denied"}`,
@@ -151,18 +263,19 @@ export default function PageCore({ problem }: { problem: Problem }) {
         },
     });
 
+    // ── Actions ─────────────────────────────────────────────────────────────
+
     async function runCode() {
         toast("Starting code execution...");
         if (editorRef.current === null) {
             toast("Editor is not initialized.");
             return;
         }
-
         const code = editorRef.current.getValue();
         await runCodeMutator.mutateAsync({
             code,
             input: testInput,
-            languageId: javaRT.id.toString(),
+            languageId: selectedLanguageId,
         });
     }
 
@@ -172,13 +285,12 @@ export default function PageCore({ problem }: { problem: Problem }) {
             toast("Editor is not initialized.");
             return;
         }
-
         const code = editorRef.current.getValue();
         submitCodeMutator.mutate({
             problemId: problem.id,
             userID: session!.user.id,
-            code: code,
-            languageId: javaRT.id.toString(),
+            code,
+            languageId: selectedLanguageId,
         });
     }
 
@@ -188,14 +300,16 @@ export default function PageCore({ problem }: { problem: Problem }) {
     }
 
     function resetCode() {
-        const editor = editorRef.current;
-        if (editor === null) return;
-        editor.setValue(starterCode);
+        const ed = editorRef.current;
+        if (ed === null) return;
+        ed.setValue(selectedLanguage.starterCode);
     }
 
     if (session === null) {
         return <></>;
     }
+
+    // ── Render ───────────────────────────────────────────────────────────────
 
     return (
         <div className="bg-primary flex h-screen w-full flex-col pt-[10vh]">
@@ -203,7 +317,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
                 direction="horizontal"
                 className="h-full w-full"
             >
-                {/* Left Panel - Problem Description */}
+                {/* ── Left Panel – Problem Description ── */}
                 <ResizablePanel defaultSize={40} minSize={30}>
                     <div className="flex h-full flex-col bg-white">
                         <Tabs
@@ -244,31 +358,44 @@ export default function PageCore({ problem }: { problem: Problem }) {
 
                 <ResizableHandle className="w-1 bg-slate-300 hover:bg-slate-400" />
 
-                {/* Right Panel - Code Editor */}
+                {/* ── Right Panel – Code Editor ── */}
                 <ResizablePanel defaultSize={60} minSize={40}>
                     <div className="flex h-full flex-col bg-slate-900">
                         {/* Editor Header */}
                         <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800 px-4 py-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-slate-300">
-                                    Java
-                                </span>
-                            </div>
-                            <div>
-                                <Button
-                                    className="text-sm font-medium text-slate-300"
-                                    onClick={() => {
-                                        const decision = confirm(
-                                            "This action will reset your code editor, and ALL PROGRESS WILL BE LOST. Are you sure?",
-                                        );
+                            {/* Language selector */}
+                            <Select
+                                value={selectedLanguageId}
+                                onValueChange={handleLanguageChange}
+                            >
+                                <SelectTrigger className="w-32 border-slate-600 bg-slate-700 text-sm text-slate-300 focus:ring-0 focus:ring-offset-0">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {LANGUAGES.map((lang) => (
+                                        <SelectItem
+                                            key={lang.id}
+                                            value={lang.id}
+                                        >
+                                            {lang.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                                        if (decision === false) return;
-                                        resetCode();
-                                    }}
-                                >
-                                    Reset To Default Code
-                                </Button>
-                            </div>
+                            {/* Reset button */}
+                            <Button
+                                className="text-sm font-medium text-slate-300"
+                                onClick={() => {
+                                    const decision = confirm(
+                                        "This action will reset your code editor, and ALL PROGRESS WILL BE LOST. Are you sure?",
+                                    );
+                                    if (decision === false) return;
+                                    resetCode();
+                                }}
+                            >
+                                Reset To Default Code
+                            </Button>
                         </div>
 
                         <ResizablePanelGroup direction="vertical">
@@ -276,9 +403,9 @@ export default function PageCore({ problem }: { problem: Problem }) {
                             <ResizablePanel defaultSize={70} minSize={30}>
                                 <Editor
                                     theme="vs-dark"
-                                    defaultLanguage="java"
                                     height="100%"
-                                    language="java"
+                                    language={selectedLanguage.monacoLang}
+                                    defaultValue={selectedLanguage.starterCode}
                                     options={{
                                         automaticLayout: true,
                                         fontSize: 14,
@@ -290,7 +417,6 @@ export default function PageCore({ problem }: { problem: Problem }) {
                                         lineHeight: 1.6,
                                     }}
                                     onMount={handleEditorDidMount}
-                                    defaultValue={starterCode}
                                 />
                             </ResizablePanel>
 
@@ -300,7 +426,6 @@ export default function PageCore({ problem }: { problem: Problem }) {
                             <ResizablePanel defaultSize={30} minSize={20}>
                                 <div className="flex h-full flex-col bg-slate-900">
                                     <Tabs
-                                        defaultValue={ioTab}
                                         value={ioTab}
                                         className="flex h-full flex-col overflow-y-auto"
                                     >
@@ -377,6 +502,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
                                                 </AlertDialog>
                                             )}
                                         </div>
+
                                         <TabsContent
                                             value="input"
                                             className="h-full flex-1 p-4"
