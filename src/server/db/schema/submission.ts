@@ -1,17 +1,14 @@
 import { index } from "drizzle-orm/pg-core";
 import createTable from "./createTable";
-import { problems } from "./problem";
+
 import { user } from "./auth";
 import { randomUUID } from "crypto";
 
 export const submission = createTable(
     "submission",
     (d) => ({
-        id: d.text().primaryKey().$defaultFn(randomUUID).unique(),
-        problemId: d
-            .integer()
-            .notNull()
-            .references(() => problems.id, { onDelete: "cascade" }),
+        id: d.text().primaryKey().$defaultFn(randomUUID),
+        problemId: d.integer().notNull(),
         userId: d
             .text()
             .notNull()
@@ -22,6 +19,7 @@ export const submission = createTable(
         accepted: d.boolean().default(false),
         submittedCode: d.text().notNull(),
         isStudentVisible: d.boolean().notNull().default(true),
+        attemptNumber: d.integer().notNull().default(1),
     }),
     (t) => [
         index("problem_idx").on(t.problemId),

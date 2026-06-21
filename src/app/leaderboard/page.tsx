@@ -2,43 +2,91 @@ import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { submission } from "~/server/db/schema/submission";
 import { and, eq } from "drizzle-orm";
-import Leaderboard from "./leaderboard";
+import { getAllCompetitions, getAllMinimalProblems } from "~/lib/api/lunaghs";
+import Leaderboard, { type CompetitionLeaderboardData } from "./leaderboard";
 
 export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
-    const users = await db
-        .select()
-        .from(user)
-        .innerJoin(submission, eq(user.id, submission.userId))
-        .where(
-            and(
-                eq(user.showScoresInLeaderboard, true),
-                eq(submission.accepted, true),
+    const [rows, apiProblems, apiCompetitions] = await Promise.all([
+        db
+            .select()
+            .from(user)
+            .innerJoin(submission, eq(user.id, submission.userId))
+            .where(
+                and(
+                    eq(user.showScoresInLeaderboard, true),
+                    eq(submission.accepted, true),
+                ),
             ),
-        );
+        getAllMinimalProblems(),
+        getAllCompetitions(),
+    ]);
 
-    const scores = new Map<string, { name: string; score: number }>();
-    users.forEach((score) => {
-        const currUserScore = scores.get(score.user.id)?.score ?? 0;
-        scores.set(score.user.id, {
-            name: score.user.name,
-            score: currUserScore + score.submission.points,
-        });
+    console.log("api problem (initial):");
+    console.dir(apiProblems);
+
+    // Aggregate score and distinct solved problem IDs per user
+    const userMap = new Map<
+        string,
+        { name: string; score: number; solvedIds: Set<number> }
+    >();
+
+    rows.forEach((row) => {
+        const entry = userMap.get(row.user.id);
+        if (
+            row.submission.accepted === false ||
+            row.submission.accepted === null
+        )
+            return;
+
+        console.log(
+            `Solved Problem:\n\t${JSON.stringify(row.submission, null, 4)}`,
+        );
+        if (entry) {
+            entry.score += row.submission.points;
+            entry.solvedIds.add(row.submission.problemId);
+            console.log(
+                `=================================\nUpdated Entry: \n\t${JSON.stringify(entry, null, 4)}\n${Array.from(entry.solvedIds)}\n=================================`,
+            );
+        } else {
+            userMap.set(row.user.id, {
+                name: row.user.name,
+                score: row.submission.points,
+                solvedIds: new Set([row.submission.problemId]),
+            });
+            const e = userMap.get(row.user.id)!;
+            // e.solvedIds.add(row.submission.problemId);
+            console.log(
+                `=================================\nCreated Entry: \n\t${JSON.stringify(e, null, 4)}\n[${Array.from(e.solvedIds).toString()}]\n=================================`,
+            );
+        }
     });
+
+    let scores = Array.from(userMap.entries()).map(([id, data]) => ({
+        id,
+        name: data.name,
+        score: data.score,
+        solvedProblemIds: Array.from(data.solvedIds),
+    }));
 
     console.dir(scores);
 
+    const problems = apiProblems.map((p) => ({
+        id: p.id,
+        name: p.name,
+        competition_id: p.competition_id,
+    }));
+    const competitions = new Map<number, CompetitionLeaderboardData>();
+    apiCompetitions.forEach((c) => competitions.set(c.id, c));
+    console.log("api problems: ");
+    console.dir(apiProblems);
     return (
         <main className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
             <Leaderboard
-                scores={Object.entries(Object.fromEntries(scores)).map(
-                    ([key, value]) => ({
-                        id: key,
-                        name: value.name,
-                        score: value.score as number,
-                    }),
-                )}
+                scores={scores}
+                problems={problems}
+                competitions={competitions}
             />
         </main>
     );

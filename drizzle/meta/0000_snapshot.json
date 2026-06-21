@@ -1,11 +1,11 @@
 {
-  "id": "0b154fe4-4641-4b7c-9e11-c2b0fc1564bf",
+  "id": "c2ab6fa5-a5cc-410d-9cb7-552b8234d528",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.account": {
-      "name": "account",
+    "public.cs-uil-website_account": {
+      "name": "cs-uil-website_account",
       "schema": "",
       "columns": {
         "id": {
@@ -89,10 +89,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "account_user_id_user_id_fk": {
-          "name": "account_user_id_user_id_fk",
-          "tableFrom": "account",
-          "tableTo": "user",
+        "cs-uil-website_account_user_id_cs-uil-website_user_id_fk": {
+          "name": "cs-uil-website_account_user_id_cs-uil-website_user_id_fk",
+          "tableFrom": "cs-uil-website_account",
+          "tableTo": "cs-uil-website_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -109,8 +109,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.session": {
-      "name": "session",
+    "public.cs-uil-website_session": {
+      "name": "cs-uil-website_session",
       "schema": "",
       "columns": {
         "id": {
@@ -164,10 +164,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "session_user_id_user_id_fk": {
-          "name": "session_user_id_user_id_fk",
-          "tableFrom": "session",
-          "tableTo": "user",
+        "cs-uil-website_session_user_id_cs-uil-website_user_id_fk": {
+          "name": "cs-uil-website_session_user_id_cs-uil-website_user_id_fk",
+          "tableFrom": "cs-uil-website_session",
+          "tableTo": "cs-uil-website_user",
           "columnsFrom": [
             "user_id"
           ],
@@ -180,8 +180,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "session_token_unique": {
-          "name": "session_token_unique",
+        "cs-uil-website_session_token_unique": {
+          "name": "cs-uil-website_session_token_unique",
           "nullsNotDistinct": false,
           "columns": [
             "token"
@@ -192,8 +192,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user": {
-      "name": "user",
+    "public.cs-uil-website_user": {
+      "name": "cs-uil-website_user",
       "schema": "",
       "columns": {
         "id": {
@@ -245,40 +245,34 @@
           "notNull": true,
           "default": true
         },
-        "mostRecentProblem": {
-          "name": "mostRecentProblem",
-          "type": "integer",
+        "role": {
+          "name": "role",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'student'"
+        },
+        "showScoresInLeaderboard": {
+          "name": "showScoresInLeaderboard",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "user_mostRecentProblem_cs-uil-website_problems_id_fk": {
-          "name": "user_mostRecentProblem_cs-uil-website_problems_id_fk",
-          "tableFrom": "user",
-          "tableTo": "cs-uil-website_problems",
-          "columnsFrom": [
-            "mostRecentProblem"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "user_id_unique": {
-          "name": "user_id_unique",
+        "cs-uil-website_user_id_unique": {
+          "name": "cs-uil-website_user_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "id"
           ]
         },
-        "user_email_unique": {
-          "name": "user_email_unique",
+        "cs-uil-website_user_email_unique": {
+          "name": "cs-uil-website_user_email_unique",
           "nullsNotDistinct": false,
           "columns": [
             "email"
@@ -289,8 +283,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.verification": {
-      "name": "verification",
+    "public.cs-uil-website_verification": {
+      "name": "cs-uil-website_verification",
       "schema": "",
       "columns": {
         "id": {
@@ -338,72 +332,42 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.cs-uil-website_problems": {
-      "name": "cs-uil-website_problems",
+    "public.cs-uil-website_forefeits": {
+      "name": "cs-uil-website_forefeits",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
-        "problemName": {
-          "name": "problemName",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "competitionYear": {
-          "name": "competitionYear",
+        "problemId": {
+          "name": "problemId",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "competitionLevel": {
-          "name": "competitionLevel",
+        "userId": {
+          "name": "userId",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "problemText": {
-          "name": "problemText",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "programName": {
-          "name": "programName",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "inputFileName": {
-          "name": "inputFileName",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "defaultInputFile": {
-          "name": "defaultInputFile",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "enabled": {
-          "name": "enabled",
-          "type": "boolean",
+        "forefeitedAt": {
+          "name": "forefeitedAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": "now()"
         }
       },
       "indexes": {
-        "year_idx": {
-          "name": "year_idx",
+        "u_idx": {
+          "name": "u_idx",
           "columns": [
             {
-              "expression": "competitionYear",
+              "expression": "userId",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -414,26 +378,11 @@
           "method": "btree",
           "with": {}
         },
-        "level_idx": {
-          "name": "level_idx",
+        "p_idx": {
+          "name": "p_idx",
           "columns": [
             {
-              "expression": "competitionLevel",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "problem_name_idx": {
-          "name": "problem_name_idx",
-          "columns": [
-            {
-              "expression": "problemName",
+              "expression": "problemId",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -445,7 +394,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "cs-uil-website_forefeits_userId_cs-uil-website_user_id_fk": {
+          "name": "cs-uil-website_forefeits_userId_cs-uil-website_user_id_fk",
+          "tableFrom": "cs-uil-website_forefeits",
+          "tableTo": "cs-uil-website_user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -614,10 +577,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "cs-uil-website_user_roles_userId_user_id_fk": {
-          "name": "cs-uil-website_user_roles_userId_user_id_fk",
+        "cs-uil-website_user_roles_userId_cs-uil-website_user_id_fk": {
+          "name": "cs-uil-website_user_roles_userId_cs-uil-website_user_id_fk",
           "tableFrom": "cs-uil-website_user_roles",
-          "tableTo": "user",
+          "tableTo": "cs-uil-website_user",
           "columnsFrom": [
             "userId"
           ],
@@ -715,7 +678,15 @@
           "name": "isStudentVisible",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": true
+        },
+        "attemptNumber": {
+          "name": "attemptNumber",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         }
       },
       "indexes": {
@@ -751,23 +722,10 @@
         }
       },
       "foreignKeys": {
-        "cs-uil-website_submission_problemId_cs-uil-website_problems_id_fk": {
-          "name": "cs-uil-website_submission_problemId_cs-uil-website_problems_id_fk",
+        "cs-uil-website_submission_userId_cs-uil-website_user_id_fk": {
+          "name": "cs-uil-website_submission_userId_cs-uil-website_user_id_fk",
           "tableFrom": "cs-uil-website_submission",
-          "tableTo": "cs-uil-website_problems",
-          "columnsFrom": [
-            "problemId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "cs-uil-website_submission_userId_user_id_fk": {
-          "name": "cs-uil-website_submission_userId_user_id_fk",
-          "tableFrom": "cs-uil-website_submission",
-          "tableTo": "user",
+          "tableTo": "cs-uil-website_user",
           "columnsFrom": [
             "userId"
           ],
@@ -779,15 +737,117 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "cs-uil-website_submission_id_unique": {
-          "name": "cs-uil-website_submission_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "id"
-          ]
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cs-uil-website_written_tests": {
+      "name": "cs-uil-website_written_tests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "adminShow": {
+          "name": "adminShow",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competition": {
+          "name": "competition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seasonYear": {
+          "name": "seasonYear",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2000
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "takenAt": {
+          "name": "takenAt",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "accuracy": {
+          "name": "accuracy",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
+      "indexes": {
+        "written_tests_user_idx": {
+          "name": "written_tests_user_idx",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "written_tests_competition_idx": {
+          "name": "written_tests_competition_idx",
+          "columns": [
+            {
+              "expression": "competition",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cs-uil-website_written_tests_userId_cs-uil-website_user_id_fk": {
+          "name": "cs-uil-website_written_tests_userId_cs-uil-website_user_id_fk",
+          "tableFrom": "cs-uil-website_written_tests",
+          "tableTo": "cs-uil-website_user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

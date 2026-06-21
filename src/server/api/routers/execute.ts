@@ -7,6 +7,7 @@ import { diffChars } from "diff";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 import { getProblemById, fetchUrlContent } from "~/lib/api/lunaghs";
+import CalculateScore from "~/lib/problems/judge/calculate-score";
 
 const LEVENSHTEIN_DISTANCE_THRESHOLD = 5;
 
@@ -169,6 +170,7 @@ export const executeRouter = createTRPCRouter({
             const apiProblem = apiResult.problem;
 
             // Fetch test input and output from their respective URLs in parallel.
+            console.log(apiProblem.test_output_url);
             const [testInput, testOutput] = await Promise.all([
                 fetchUrlContent(apiProblem.test_data_url),
                 fetchUrlContent(apiProblem.test_output_url),
@@ -203,8 +205,7 @@ export const executeRouter = createTRPCRouter({
                 normalizedTestOutput,
             );
             const accepted = dist < LEVENSHTEIN_DISTANCE_THRESHOLD;
-            const score = accepted ? 60 - (numSubmissions - 1) : 0;
-
+            const score = accepted ? CalculateScore(numSubmissions) : 0;
             const alreadySucceeded =
                 prevSubmissions.find((ps) => ps.accepted) !== undefined;
 
@@ -217,6 +218,7 @@ export const executeRouter = createTRPCRouter({
                     accepted: accepted,
                     isStudentVisible: user?.showSubmissionScores ?? false,
                     submittedCode: code,
+                    attemptNumber: numSubmissions,
                 });
             }
 

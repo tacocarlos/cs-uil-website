@@ -15,7 +15,7 @@ export default function Home() {
             />
 
             {/* Resources Preview */}
-            <ResourcesSummary />
+            {/*<ResourcesSummary />*/}
             <Footer />
         </main>
     );

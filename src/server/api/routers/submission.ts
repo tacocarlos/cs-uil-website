@@ -2,6 +2,7 @@ import z from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { submission } from "~/server/db/schema/submission";
+import { user as userTable } from "~/server/db/schema/auth";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 const userProblemObject = z.object({
@@ -106,5 +107,82 @@ export const submissionRouter = createTRPCRouter({
             } else {
                 return { state: "failed" as const };
             }
+        }),
+
+    getAllSubmissions: publicProcedure
+        .input(
+            z.object({
+                limit: z.number().int().min(1).max(100).default(50),
+                offset: z.number().int().min(0).default(0),
+            }),
+        )
+        .query(async (opts) => {
+            const { limit, offset } = opts.input;
+            return await db
+                .select({
+                    id: submission.id,
+                    problemId: submission.problemId,
+                    userId: submission.userId,
+                    timeSubmitted: submission.timeSubmitted,
+                    points: submission.points,
+                    maxPoints: submission.maxPoints,
+                    accepted: submission.accepted,
+                    isStudentVisible: submission.isStudentVisible,
+                    userName: userTable.name,
+                    userEmail: userTable.email,
+                    userImage: userTable.image,
+                })
+                .from(submission)
+                .leftJoin(userTable, eq(submission.userId, userTable.id))
+                .orderBy(desc(submission.timeSubmitted))
+                .limit(limit)
+                .offset(offset);
+        }),
+
+    getSubmissionById: publicProcedure
+        .input(z.object({ submissionId: z.string() }))
+        .query(async (opts) => {
+            const { submissionId } = opts.input;
+            const rows = await db
+                .select({
+                    id: submission.id,
+                    problemId: submission.problemId,
+                    userId: submission.userId,
+                    timeSubmitted: submission.timeSubmitted,
+                    points: submission.points,
+                    maxPoints: submission.maxPoints,
+                    accepted: submission.accepted,
+                    isStudentVisible: submission.isStudentVisible,
+                    submittedCode: submission.submittedCode,
+                    userName: userTable.name,
+                    userEmail: userTable.email,
+                    userImage: userTable.image,
+                })
+                .from(submission)
+                .leftJoin(userTable, eq(submission.userId, userTable.id))
+                .where(eq(submission.id, submissionId))
+                .limit(1);
+            return rows.at(0) ?? null;
+        }),
+
+    overrideSubmission: publicProcedure
+        .input(
+            z.object({
+                submissionId: z.string(),
+                accepted: z.boolean(),
+                points: z.number().int().min(0),
+            }),
+        )
+        .mutation(async (opts) => {
+            const { submissionId, accepted, points } = opts.input;
+            const rows = await db
+                .update(submission)
+                .set({ accepted, points })
+                .where(eq(submission.id, submissionId))
+                .returning();
+            if (rows.length === 0) {
+                throw new Error("Submission not found");
+            }
+            return rows[0]!;
         }),
 });

@@ -5,7 +5,7 @@ export default function TimelinePage() {
         <main className="bg-primary">
             <Timeline
                 events={DefaultTimelineData}
-                timelineTitle="Computer Science UIL 2025-2026 Activities"
+                timelineTitle="Computer Science UIL 2026-2027 Activities"
                 scrollToDesignated
             />
         </main>

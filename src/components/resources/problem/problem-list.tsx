@@ -1,11 +1,8 @@
 "use client";
 
-import { Accordion } from "~/components/ui/accordion";
-import { ProblemAccordionItem } from "./problem-accordion-item";
 import { type Problem } from "~/server/db/schema/types";
-import { api } from "~/trpc/react";
-import { useSession } from "auth-client";
-import { submission, type Submission } from "~/server/db/schema/submission";
+import type { Submission } from "~/server/db/schema/submission";
+import { ProblemCard } from "./problem-card";
 import { Input } from "~/components/ui/input";
 import {
     Select,
@@ -14,8 +11,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "~/components/ui/select";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "~/components/ui/pagination";
 
 export default function ProblemList({
     problems,
@@ -24,71 +30,74 @@ export default function ProblemList({
     problems: Problem[];
     className?: string;
 }) {
-    const { data: session } = useSession();
-    const user = session?.user;
+    const ITEMS_PER_PAGE = 9; // 3 rows × 3 columns
 
-    // Search and filter state
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedYear, setSelectedYear] = useState<string>("all");
     const [selectedLevel, setSelectedLevel] = useState<string>("all");
+    const [currentPage, setCurrentPage] = useState(1);
 
-    // Get unique years and levels for filter dropdowns
-    const years = useMemo(() => {
-        const uniqueYears = Array.from(
-            new Set(problems.map((p) => p.competitionYear)),
-        ).sort((a, b) => b - a);
-        return uniqueYears;
-    }, [problems]);
+    // Reset to page 1 whenever any filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, selectedYear, selectedLevel]);
 
-    const levels = [
-        "invA",
-        "invB",
-        "district",
-        "region",
-        "state",
-        "custom",
-    ] as const;
+    const years = useMemo(
+        () =>
+            Array.from(new Set(problems.map((p) => p.competitionYear))).sort(
+                (a, b) => b - a,
+            ),
+        [problems],
+    );
 
-    // Filter problems based on search and filters
-    const filteredProblems = useMemo(() => {
-        return problems.filter((problem) => {
-            // Search filter
-            const matchesSearch = problem.problemName
-                .toLowerCase()
-                .includes(searchQuery.toLowerCase());
+    const filteredProblems = useMemo(
+        () =>
+            problems.filter((p) => {
+                const matchesSearch = p.problemName
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase());
+                const matchesYear =
+                    selectedYear === "all" ||
+                    p.competitionYear.toString() === selectedYear;
+                const matchesLevel =
+                    selectedLevel === "all" ||
+                    p.competitionLevel === selectedLevel;
+                return matchesSearch && matchesYear && matchesLevel;
+            }),
+        [problems, searchQuery, selectedYear, selectedLevel],
+    );
 
-            // Year filter
-            const matchesYear =
-                selectedYear === "all" ||
-                problem.competitionYear.toString() === selectedYear;
+    // Submissions are not yet loaded from the API; placeholder for future use.
+    const pairs: [Problem, Submission | undefined][] = filteredProblems.map(
+        (p) => [p, undefined],
+    );
 
-            // Level filter
-            const matchesLevel =
-                selectedLevel === "all" ||
-                problem.competitionLevel === selectedLevel;
+    const totalPages = Math.max(1, Math.ceil(pairs.length / ITEMS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const pageStart = (safePage - 1) * ITEMS_PER_PAGE;
+    const visiblePairs = pairs.slice(pageStart, pageStart + ITEMS_PER_PAGE);
 
-            return matchesSearch && matchesYear && matchesLevel;
-        });
-    }, [problems, searchQuery, selectedYear, selectedLevel]);
+    /** Returns page numbers (or "ellipsis" sentinels) for the pagination bar. */
+    function getPageNumbers(
+        current: number,
+        total: number,
+    ): (number | "ellipsis")[] {
+        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
-    const submissions = filteredProblems.map((p) => {
-        return undefined;
-    });
-
-    const pairs: [Problem, Submission | undefined][] = [];
-    for (
-        let i = 0;
-        i < filteredProblems.length && i < submissions.length;
-        i++
-    ) {
-        pairs.push([filteredProblems[i]!, submissions[i]]);
+        const pages: (number | "ellipsis")[] = [1];
+        if (current > 3) pages.push("ellipsis");
+        const start = Math.max(2, current - 1);
+        const end = Math.min(total - 1, current + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (current < total - 2) pages.push("ellipsis");
+        pages.push(total);
+        return pages;
     }
 
     return (
-        <div className={`mx-auto max-w-3xl ${className ?? ""}`}>
-            {/* Search and Filter Controls */}
+        <div className={className}>
+            {/* Search and filter controls */}
             <div className="mb-6 space-y-4">
-                {/* Search Input */}
                 <div className="relative">
                     <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <Input
@@ -99,10 +108,9 @@ export default function ProblemList({
                     />
                 </div>
 
-                {/* Filter Controls */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                     <div className="flex flex-1 items-center gap-2">
-                        <Filter className="text-muted-foreground h-4 w-4" />
+                        <Filter className="text-muted-foreground h-4 w-4 shrink-0" />
                         <Select
                             value={selectedYear}
                             onValueChange={setSelectedYear}
@@ -111,7 +119,7 @@ export default function ProblemList({
                                 <SelectValue placeholder="Filter by year" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Years</SelectItem>
+                                <SelectItem value="all">All years</SelectItem>
                                 {years.map((year) => (
                                     <SelectItem
                                         key={year}
@@ -133,7 +141,7 @@ export default function ProblemList({
                                 <SelectValue placeholder="Filter by level" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Levels</SelectItem>
+                                <SelectItem value="all">All levels</SelectItem>
                                 <SelectItem value="invA">
                                     Invitational A
                                 </SelectItem>
@@ -151,24 +159,92 @@ export default function ProblemList({
                     </div>
                 </div>
 
-                {/* Results Count */}
-                <div className="text-muted-foreground text-sm">
-                    Showing {pairs.length} of {problems.length} problem
-                    {problems.length !== 1 ? "s" : ""}
-                </div>
+                <p className="text-muted-foreground text-sm">
+                    Showing {pageStart + 1}–
+                    {Math.min(pageStart + ITEMS_PER_PAGE, pairs.length)} of{" "}
+                    {filteredProblems.length} problem
+                    {filteredProblems.length !== 1 ? "s" : ""}
+                    {filteredProblems.length !== problems.length &&
+                        ` (${problems.length} total)`}
+                </p>
             </div>
 
-            {/* Problem List */}
+            {/* Card grid */}
             {pairs.length > 0 ? (
-                <Accordion type="multiple">
-                    {pairs.map(([problem, s]) => (
-                        <ProblemAccordionItem
-                            key={problem.id}
-                            problem={problem}
-                            mostRecentSubmission={s}
-                        />
-                    ))}
-                </Accordion>
+                <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {visiblePairs.map(([problem, submission]) => (
+                            <ProblemCard
+                                key={problem.id}
+                                problem={problem}
+                                mostRecentSubmission={submission}
+                            />
+                        ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <Pagination className="mt-8">
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        onClick={() =>
+                                            setCurrentPage((p) =>
+                                                Math.max(1, p - 1),
+                                            )
+                                        }
+                                        aria-disabled={safePage === 1}
+                                        className={
+                                            safePage === 1
+                                                ? "pointer-events-none opacity-50"
+                                                : "cursor-pointer"
+                                        }
+                                    />
+                                </PaginationItem>
+
+                                {getPageNumbers(safePage, totalPages).map(
+                                    (entry, i) =>
+                                        entry === "ellipsis" ? (
+                                            <PaginationItem
+                                                key={`ellipsis-${i}`}
+                                            >
+                                                <PaginationEllipsis />
+                                            </PaginationItem>
+                                        ) : (
+                                            <PaginationItem key={entry}>
+                                                <PaginationLink
+                                                    isActive={
+                                                        entry === safePage
+                                                    }
+                                                    onClick={() =>
+                                                        setCurrentPage(entry)
+                                                    }
+                                                    className="cursor-pointer"
+                                                >
+                                                    {entry}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        ),
+                                )}
+
+                                <PaginationItem>
+                                    <PaginationNext
+                                        onClick={() =>
+                                            setCurrentPage((p) =>
+                                                Math.min(totalPages, p + 1),
+                                            )
+                                        }
+                                        aria-disabled={safePage === totalPages}
+                                        className={
+                                            safePage === totalPages
+                                                ? "pointer-events-none opacity-50"
+                                                : "cursor-pointer"
+                                        }
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    )}
+                </>
             ) : (
                 <div className="text-muted-foreground py-12 text-center">
                     <p className="text-lg">No problems found</p>

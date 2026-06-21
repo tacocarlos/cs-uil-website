@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { writtenTests } from "~/server/db/schema/written";
 import { user } from "~/server/db/schema/auth";
-import { eq, and, desc, isNotNull, asc, sql } from "drizzle-orm";
+import { eq, and, desc, isNotNull, asc } from "drizzle-orm";
 
 export const writtenRouter = createTRPCRouter({
     getLeaderboard: publicProcedure
@@ -27,16 +27,13 @@ export const writtenRouter = createTRPCRouter({
         )
         .query(async (opts) => {
             const { competition, year } = opts.input;
-
             // Build where conditions
             const conditions = [eq(user.showScoresInLeaderboard, true)];
             if (competition) {
                 conditions.push(eq(writtenTests.competition, competition));
             }
             if (year) {
-                conditions.push(
-                    sql`EXTRACT(YEAR FROM ${writtenTests.takenAt}) = ${year}`,
-                );
+                conditions.push(eq(writtenTests.seasonYear, year));
             }
 
             // Get written test scores for users who want to show their scores
@@ -84,58 +81,70 @@ export const writtenRouter = createTRPCRouter({
                 .sort((a, b) => b.score - a.score);
         }),
 
-    getAvailableCompetitions: publicProcedure.query(async () => {
-        // Get all distinct competitions that have scores
-        const competitions = await db
-            .selectDistinct({
-                competition: writtenTests.competition,
-            })
-            .from(writtenTests)
-            .innerJoin(user, eq(writtenTests.userId, user.id))
-            .where(
-                and(
-                    eq(user.showScoresInLeaderboard, true),
-                    isNotNull(writtenTests.competition),
-                ),
-            );
+    getAvailableCompetitions: publicProcedure
+        .input(z.object({ year: z.number().int().optional() }))
+        .query(async (opts) => {
+            const { year } = opts.input;
+            // Get distinct competitions that have at least one score,
+            // optionally filtered to a specific season year.
+            const conditions = [
+                eq(user.showScoresInLeaderboard, true),
+                isNotNull(writtenTests.competition),
+            ];
+            if (year !== undefined) {
+                conditions.push(eq(writtenTests.seasonYear, year));
+            }
 
-        return competitions
-            .map((c) => c.competition)
-            .filter((c) => c !== null)
-            .sort();
-    }),
+            const competitions = await db
+                .selectDistinct({ competition: writtenTests.competition })
+                .from(writtenTests)
+                .innerJoin(user, eq(writtenTests.userId, user.id))
+                .where(and(...conditions));
 
-    getMostRecentCompetition: publicProcedure.query(async () => {
-        // Get the competition with the most recent score
-        const mostRecent = await db
-            .select({
-                competition: writtenTests.competition,
-                takenAt: writtenTests.takenAt,
-            })
-            .from(writtenTests)
-            .innerJoin(user, eq(writtenTests.userId, user.id))
-            .where(
-                and(
-                    eq(user.showScoresInLeaderboard, true),
-                    isNotNull(writtenTests.competition),
-                ),
-            )
-            .orderBy(desc(writtenTests.takenAt))
-            .limit(1);
+            return competitions
+                .map((c) => c.competition)
+                .filter((c) => c !== null)
+                .sort();
+        }),
 
-        return mostRecent[0]?.competition ?? null;
-    }),
+    getMostRecentCompetition: publicProcedure
+        .input(z.object({ year: z.number().int().optional() }))
+        .query(async (opts) => {
+            const { year } = opts.input;
+            // Get the competition with the most recent score,
+            // optionally filtered to a specific season year.
+            const conditions = [
+                eq(user.showScoresInLeaderboard, true),
+                isNotNull(writtenTests.competition),
+            ];
+            if (year !== undefined) {
+                conditions.push(eq(writtenTests.seasonYear, year));
+            }
+
+            const mostRecent = await db
+                .select({
+                    competition: writtenTests.competition,
+                    takenAt: writtenTests.takenAt,
+                })
+                .from(writtenTests)
+                .innerJoin(user, eq(writtenTests.userId, user.id))
+                .where(and(...conditions))
+                .orderBy(desc(writtenTests.takenAt))
+                .limit(1);
+
+            return mostRecent[0]?.competition ?? null;
+        }),
 
     getAvailableYears: publicProcedure.query(async () => {
         // Get all distinct years from written tests
         const years = await db
             .selectDistinct({
-                year: sql<number>`EXTRACT(YEAR FROM ${writtenTests.takenAt})`,
+                year: writtenTests.seasonYear,
             })
             .from(writtenTests)
             .innerJoin(user, eq(writtenTests.userId, user.id))
             .where(eq(user.showScoresInLeaderboard, true))
-            .orderBy(desc(sql`EXTRACT(YEAR FROM ${writtenTests.takenAt})`));
+            .orderBy(desc(writtenTests.seasonYear));
 
         return years.map((y) => y.year).filter((y): y is number => y !== null);
     }),
@@ -144,7 +153,7 @@ export const writtenRouter = createTRPCRouter({
         // Get the most recent year from written tests
         const mostRecent = await db
             .select({
-                year: sql<number>`EXTRACT(YEAR FROM ${writtenTests.takenAt})`,
+                year: writtenTests.seasonYear,
             })
             .from(writtenTests)
             .innerJoin(user, eq(writtenTests.userId, user.id))

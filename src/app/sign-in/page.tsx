@@ -1,7 +1,10 @@
-import { signIn } from "auth-client";
 import SignInPage from "./signin";
-import { env } from "~/env";
 
-export default function SignIn() {
-    return <SignInPage isLoading={false} />;
+export default async function SignIn({
+    searchParams,
+}: {
+    searchParams: Promise<{ next?: string }>;
+}) {
+    const { next } = await searchParams;
+    return <SignInPage isLoading={false} next={next} />;
 }

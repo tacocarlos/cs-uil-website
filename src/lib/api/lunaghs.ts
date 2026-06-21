@@ -45,7 +45,7 @@ export interface ApiCompetition {
     id: number;
     createdAt: string | null;
     updatedAt: string | null;
-    level: CompetitionLevel | null;
+    level: CompetitionLevel;
     year: number;
     student_packet_url: string;
     data_zip_url: string;
@@ -62,7 +62,13 @@ export interface ApiCompetition {
  * Next.js augments the global RequestInit with a `next` property, so this is
  * well-typed when the project includes `/// <reference types="next" />`.
  */
-const CACHE_OPTS: RequestInit = { next: { revalidate: 3600 } };
+/** Tag applied to every fetch so the entire problem API cache can be
+ * invalidated on demand via `revalidateTag(LUNAGHS_CACHE_TAG)`. */
+export const LUNAGHS_CACHE_TAG = "lunaghs-problems-api";
+
+const CACHE_OPTS: RequestInit = {
+    next: { revalidate: 3600, tags: [LUNAGHS_CACHE_TAG] },
+};
 
 /**
  * Safely fetch the text content at a URL.
@@ -158,6 +164,22 @@ export async function getCompetitionProblems(
         return (await res.json()) as ApiProblem[];
     } catch {
         return [];
+    }
+}
+
+export async function getCompetitionById(
+    competitionId: number,
+): Promise<ApiCompetition | undefined> {
+    try {
+        const res = await fetch(
+            `${API_BASE}/api/competition/${competitionId}`,
+            CACHE_OPTS,
+        );
+        if (!res.ok) return undefined;
+
+        return (await res.json()) as ApiCompetition;
+    } catch {
+        return undefined;
     }
 }
 

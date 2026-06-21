@@ -1,10 +1,13 @@
 import { index } from "drizzle-orm/pg-core";
 import createTable from "./createTable";
 import { user } from "./auth";
+import { randomUUID } from "crypto";
 
 export const writtenTests = createTable(
     "written_tests",
     (d) => ({
+        id: d.text().$defaultFn(randomUUID).primaryKey(),
+        adminShow: d.boolean().default(false),
         userId: d
             .text()
             .notNull()
@@ -22,9 +25,14 @@ export const writtenTests = createTable(
                 "state",
             ],
         }),
+        seasonYear: d
+            .integer()
+            .notNull()
+            .default(2000)
+            .$defaultFn(() => new Date().getUTCFullYear()),
         score: d.integer().notNull(),
         takenAt: d.date().notNull().defaultNow(),
-        accuracy: d.real().notNull().default(1),
+        accuracy: d.real().notNull().default(0),
     }),
     (t) => [
         index("written_tests_user_idx").on(t.userId),

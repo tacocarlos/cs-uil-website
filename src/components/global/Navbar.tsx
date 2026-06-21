@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { signOut, useSession } from "auth-client";
 import { Button } from "../ui/button";
-import { redirect, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { signInUrl } from "~/lib/auth/redirect-utils";
 import { NavigationMenu } from "~/components/ui/navigation-menu";
 import {
     NavigationMenuContent,
@@ -16,6 +17,8 @@ import {
 } from "../ui/navigation-menu";
 import Image from "next/image";
 import { CircleUserRound } from "lucide-react";
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
 function HamburgerSVG() {
     return (
@@ -55,35 +58,7 @@ function CloseButtonSVG() {
     );
 }
 
-function LoginStatus() {
-    const { data: session } = useSession();
-    const pathname = usePathname();
-    if (session === null) {
-        return (
-            <Button asChild>
-                <Link href="/sign-in">Sign In</Link>
-            </Button>
-        );
-    }
-
-    return (
-        <span className="space-x-5">
-            <span>Signed in as: {session.user.name}</span>
-            <Button
-                size="sm"
-                variant="destructive"
-                onClick={(e) => {
-                    signOut();
-
-                    alert(pathname);
-                    redirect(pathname);
-                }}
-            >
-                Sign Out
-            </Button>
-        </span>
-    );
-}
+// ── Desktop nav ───────────────────────────────────────────────────────────────
 
 function DesktopNavbar() {
     const { data: session } = useSession();
@@ -91,9 +66,10 @@ function DesktopNavbar() {
         session?.user.image != null || session?.user.image != undefined;
     const user = session?.user;
     const role = user?.role ?? "student";
+    const pathname = usePathname();
 
     return (
-        <NavigationMenu className="text-foreground space-x-3">
+        <NavigationMenu viewport={false} className="text-foreground space-x-3">
             <NavigationMenuList>
                 <NavigationMenuItem>
                     <NavigationMenuLink
@@ -103,6 +79,7 @@ function DesktopNavbar() {
                         <Link href="/calculator">TI 84 Plus CE Online</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
+
                 <NavigationMenuItem>
                     <NavigationMenuTrigger>Account</NavigationMenuTrigger>
                     <NavigationMenuContent>
@@ -126,7 +103,6 @@ function DesktopNavbar() {
                                         <Link href="/dashboard">Dashboard</Link>
                                     </NavigationMenuLink>
                                 )}
-
                                 <NavigationMenuLink asChild>
                                     <Link
                                         href="/dashboard"
@@ -143,13 +119,14 @@ function DesktopNavbar() {
                                         ) : (
                                             <CircleUserRound />
                                         )}
-                                        Account Setttings
+                                        Account Settings
                                     </Link>
                                 </NavigationMenuLink>
                             </li>
                         </ul>
                     </NavigationMenuContent>
                 </NavigationMenuItem>
+
                 <NavigationMenuItem>
                     <NavigationMenuLink
                         asChild
@@ -158,6 +135,7 @@ function DesktopNavbar() {
                         <Link href="/timeline">Timeline</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
+
                 <NavigationMenuItem>
                     <NavigationMenuLink
                         asChild
@@ -166,6 +144,7 @@ function DesktopNavbar() {
                         <Link href="/resources">Resources</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
+
                 <NavigationMenuItem>
                     <NavigationMenuLink
                         asChild
@@ -174,6 +153,7 @@ function DesktopNavbar() {
                         <Link href="/resources/skill-tree">Skill Tree</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
+
                 <NavigationMenuItem>
                     <NavigationMenuTrigger>Leaderboard</NavigationMenuTrigger>
                     <NavigationMenuContent>
@@ -191,106 +171,173 @@ function DesktopNavbar() {
                         </ul>
                     </NavigationMenuContent>
                 </NavigationMenuItem>
+
+                {session ? (
+                    <NavigationMenuItem>
+                        <Button
+                            onClick={async () => {
+                                await signOut();
+                            }}
+                            className="bg-primary-foreground text-accent-foreground hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                            Sign Out
+                        </Button>
+                    </NavigationMenuItem>
+                ) : (
+                    <NavigationMenuItem>
+                        <NavigationMenuLink
+                            asChild
+                            className={navigationMenuTriggerStyle()}
+                        >
+                            <Link href={signInUrl(pathname)}>Sign In</Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
+                )}
             </NavigationMenuList>
         </NavigationMenu>
     );
 }
 
-function SmallNavbar() {
+// ── Mobile menu ───────────────────────────────────────────────────────────────
+
+function MobileMenu({ onClose }: { onClose: () => void }) {
     const { data: session } = useSession();
+    const user = session?.user;
+    const role = user?.role ?? "student";
+    const pathname = usePathname();
     const haveUserImageURL =
         session?.user.image != null || session?.user.image != undefined;
 
+    const link =
+        "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-100";
+    const sectionLabel =
+        "px-3 pt-3 pb-1 text-xs font-semibold tracking-wider text-gray-400 uppercase";
+
     return (
-        <NavigationMenu
-            className="text-foreground space-x-3 md:invisible"
-            viewport={false}
-        >
-            <NavigationMenuList className="relative m-auto mr-0 flex flex-col space-y-3 rounded-xl bg-white px-4">
-                <NavigationMenuItem>
-                    <NavigationMenuTrigger>Account</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                        <ul className="grid w-[200px] gap-4">
-                            <li>
-                                <NavigationMenuLink asChild>
-                                    <Link href="/dashboard">Dashboard</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link
-                                        href="/dashboard"
-                                        className="flex-row items-center gap-2"
-                                    >
-                                        {haveUserImageURL ? (
-                                            <Image
-                                                src={session!.user.image!}
-                                                width={25}
-                                                height={25}
-                                                alt="User icon"
-                                                className="rounded-xl"
-                                            />
-                                        ) : (
-                                            <CircleUserRound />
-                                        )}
-                                        Account Setttings
-                                    </Link>
-                                </NavigationMenuLink>
-                            </li>
-                        </ul>
-                    </NavigationMenuContent>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
+        <div className="mt-2 rounded-xl border bg-white shadow-lg">
+            <nav className="flex flex-col p-2">
+                {/* Top-level links */}
+                <Link href="/calculator" className={link} onClick={onClose}>
+                    TI 84 Plus CE Online
+                </Link>
+                <Link href="/timeline" className={link} onClick={onClose}>
+                    Timeline
+                </Link>
+                <Link href="/resources" className={link} onClick={onClose}>
+                    Resources
+                </Link>
+                <Link
+                    href="/resources/skill-tree"
+                    className={link}
+                    onClick={onClose}
+                >
+                    Skill Tree
+                </Link>
+
+                {/* Leaderboard */}
+                <p className={sectionLabel}>Leaderboard</p>
+                <Link href="/leaderboard" className={link} onClick={onClose}>
+                    Problems
+                </Link>
+                <Link
+                    href="/leaderboard/written"
+                    className={link}
+                    onClick={onClose}
+                >
+                    Written
+                </Link>
+
+                {/* Account */}
+                <p className={sectionLabel}>Account</p>
+                {session ? (
+                    <>
+                        {role !== "student" ? (
+                            <>
+                                <Link
+                                    href="/dashboard/teacher"
+                                    className={link}
+                                    onClick={onClose}
+                                >
+                                    Teacher Dashboard
+                                </Link>
+                                <Link
+                                    href="/dashboard/student"
+                                    className={link}
+                                    onClick={onClose}
+                                >
+                                    Student Dashboard
+                                </Link>
+                            </>
+                        ) : (
+                            <Link
+                                href="/dashboard"
+                                className={link}
+                                onClick={onClose}
+                            >
+                                Dashboard
+                            </Link>
+                        )}
+                        <Link
+                            href="/dashboard"
+                            className={link}
+                            onClick={onClose}
+                        >
+                            {haveUserImageURL ? (
+                                <Image
+                                    src={session.user.image!}
+                                    width={20}
+                                    height={20}
+                                    alt="User icon"
+                                    className="rounded-full"
+                                />
+                            ) : (
+                                <CircleUserRound className="h-5 w-5" />
+                            )}
+                            Account Settings
+                        </Link>
+
+                        <div className="mt-2 border-t px-3 pt-3 pb-1">
+                            <p className="mb-2 text-sm text-gray-500">
+                                Signed in as{" "}
+                                <span className="font-medium text-gray-700">
+                                    {session.user.name}
+                                </span>
+                            </p>
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                className="w-full"
+                                onClick={() => {
+                                    void signOut();
+                                    onClose();
+                                }}
+                            >
+                                Sign Out
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <Link
+                        href={signInUrl(pathname)}
+                        className={link}
+                        onClick={onClose}
                     >
-                        <Link href="/timeline">Timeline</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
-                    >
-                        <Link href="/resources">Resources</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                    <NavigationMenuTrigger>Leaderboard</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                        <ul className="grid w-[200px] gap-4">
-                            <li>
-                                <NavigationMenuLink asChild>
-                                    <Link href="/leaderboard">Problems</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="/leaderboard/written">
-                                        Written
-                                    </Link>
-                                </NavigationMenuLink>
-                            </li>
-                        </ul>
-                    </NavigationMenuContent>
-                </NavigationMenuItem>
-            </NavigationMenuList>
-        </NavigationMenu>
+                        Sign In
+                    </Link>
+                )}
+            </nav>
+        </div>
     );
 }
+
+// ── Root navbar ───────────────────────────────────────────────────────────────
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const { data: session } = useSession();
 
-    // Handle scroll effect for navbar
     useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 10) {
-                setIsScrolled(true);
-            } else {
-                setIsScrolled(false);
-            }
-        };
-
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
@@ -304,6 +351,7 @@ export default function Navbar() {
             }`}
         >
             <div className="container mx-auto px-4">
+                {/* Top bar */}
                 <div className="flex items-center justify-between">
                     <Link href="/" className="flex items-center">
                         <span className="text-xl font-bold">
@@ -311,63 +359,25 @@ export default function Navbar() {
                         </span>
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <div className="invisible md:visible">
+                    {/* Desktop nav — hidden below md, no layout space reserved */}
+                    <div className="hidden md:block">
                         <DesktopNavbar />
                     </div>
-                    {/* <div className="hidden items-center space-x-8 md:flex">
-                        <LoginStatus />
-                        <Link
-                            href="/timeline"
-                            className="transition-colors hover:text-yellow-400"
-                        >
-                            Events
-                        </Link>
-                        <Link
-                            href="/resources"
-                            className="transition-colors hover:text-yellow-400"
-                        >
-                            Resources
-                        </Link>
-                    </div> */}
 
-                    {/* Mobile Menu Button */}
+                    {/* Hamburger — visible only below md */}
                     <button
                         className="focus:outline-none md:hidden"
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        onClick={() => setIsMenuOpen((o) => !o)}
                         aria-label="Toggle menu"
+                        aria-expanded={isMenuOpen}
                     >
                         {isMenuOpen ? <CloseButtonSVG /> : <HamburgerSVG />}
                     </button>
                 </div>
 
-                {/* Mobile Menu */}
+                {/* Mobile menu — always solid white regardless of scroll state */}
                 {isMenuOpen && (
-                    <SmallNavbar />
-                    // <div
-                    //     className={`motion-opacity-in-0 motion-duration-300 motion-translate-y-in-25 motion-blur-in-md mt-4 rounded-lg py-4 md:hidden ${
-                    //         isScrolled
-                    //             ? "bg-white text-blue-900"
-                    //             : "bg-blue-900 text-white"
-                    //     }`}
-                    // >
-                    //     <div className="flex flex-col space-y-3 px-4">
-                    //         <Link
-                    //             href="/timeline"
-                    //             className="py-2 transition-colors hover:text-yellow-400"
-                    //             onClick={() => setIsMenuOpen(false)}
-                    //         >
-                    //             Events
-                    //         </Link>
-                    //         <Link
-                    //             href="/resources"
-                    //             className="py-2 transition-colors hover:text-yellow-400"
-                    //             onClick={() => setIsMenuOpen(false)}
-                    //         >
-                    //             Resources
-                    //         </Link>
-                    //     </div>
-                    // </div>
+                    <MobileMenu onClose={() => setIsMenuOpen(false)} />
                 )}
             </div>
         </nav>

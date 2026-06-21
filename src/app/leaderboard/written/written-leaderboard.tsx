@@ -19,45 +19,56 @@ import {
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
 
+function getCurrentYear() {
+    return 2027;
+}
+
+function getYearParam(
+    yearParam: "all" | "current" | number | string | undefined,
+): number | undefined {
+    if (yearParam === "current") return getCurrentYear();
+    else if (yearParam === "all" || yearParam === undefined) return undefined;
+    else if (typeof yearParam === "number") return yearParam;
+    else return parseInt(yearParam);
+}
+
 export default function WrittenLeaderboard() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCompetition, setSelectedCompetition] = useState<
         string | "all" | undefined
     >(undefined);
     const [selectedYear, setSelectedYear] = useState<
-        number | "all" | undefined
-    >(undefined);
+        number | string | "all" | "current" | undefined
+    >("current");
 
-    // Fetch available competitions and most recent competition
-    const { data: competitions } =
-        api.written.getAvailableCompetitions.useQuery();
-    const { data: mostRecentCompetition } =
-        api.written.getMostRecentCompetition.useQuery();
-
-    // Fetch available years and most recent year
+    // Fetch available years (not year-dependent)
     const { data: years } = api.written.getAvailableYears.useQuery();
-    const { data: mostRecentYear } = api.written.getMostRecentYear.useQuery();
 
-    // Set default competition to most recent once loaded
+    // Determine year parameter before using it in dependent queries
+    const yearParam = getYearParam(selectedYear);
+
+    // Competitions and most-recent-competition are scoped to the selected year
+    const { data: competitions } =
+        api.written.getAvailableCompetitions.useQuery({ year: yearParam });
+    const { data: mostRecentCompetition } =
+        api.written.getMostRecentCompetition.useQuery({ year: yearParam });
+
+    // When the year changes, reset the competition so the year-scoped
+    // mostRecentCompetition effect below can set the correct default.
+    useEffect(() => {
+        setSelectedCompetition(undefined);
+    }, [selectedYear]);
+
+    // Once the (year-scoped) most-recent competition loads, apply it as default.
     useEffect(() => {
         if (mostRecentCompetition && selectedCompetition === undefined) {
             setSelectedCompetition(mostRecentCompetition);
         }
     }, [mostRecentCompetition, selectedCompetition]);
 
-    // Set default year to most recent once loaded
-    useEffect(() => {
-        if (mostRecentYear && selectedYear === undefined) {
-            setSelectedYear(mostRecentYear);
-        }
-    }, [mostRecentYear, selectedYear]);
-
     // Determine the competition parameter for the query
     const competitionParam =
         selectedCompetition === "all" ? undefined : selectedCompetition;
-
-    // Determine the year parameter for the query
-    const yearParam = selectedYear === "all" ? undefined : selectedYear;
 
     // Fetch leaderboard data based on selected competition and year
     const { data: scores, isLoading } = api.written.getLeaderboard.useQuery(
@@ -88,21 +99,20 @@ export default function WrittenLeaderboard() {
             <div className="mb-4 space-y-4">
                 <div>
                     <label className="mb-2 block text-sm font-medium">
-                        Year
+                        Season Year
                     </label>
                     <Select
                         value={selectedYear?.toString()}
-                        onValueChange={(value) =>
-                            setSelectedYear(
-                                value === "all" ? "all" : parseInt(value),
-                            )
-                        }
+                        onValueChange={(value) => setSelectedYear(value)}
                     >
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select a year" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Years</SelectItem>
+                            <SelectItem value="current">
+                                Current Year ({getCurrentYear()})
+                            </SelectItem>
                             {years?.map((year) => (
                                 <SelectItem key={year} value={year.toString()}>
                                     {year}

@@ -1,4 +1,4 @@
-CREATE TABLE "account" (
+CREATE TABLE "cs-uil-website_account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
 	"provider_id" text NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE "account" (
 	"updated_at" timestamp NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "session" (
+CREATE TABLE "cs-uil-website_session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp NOT NULL,
 	"token" text NOT NULL,
@@ -23,10 +23,10 @@ CREATE TABLE "session" (
 	"ip_address" text,
 	"user_agent" text,
 	"user_id" text NOT NULL,
-	CONSTRAINT "session_token_unique" UNIQUE("token")
+	CONSTRAINT "cs-uil-website_session_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE "user" (
+CREATE TABLE "cs-uil-website_user" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
@@ -35,12 +35,13 @@ CREATE TABLE "user" (
 	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp NOT NULL,
 	"showSubmissionScores" boolean DEFAULT true NOT NULL,
-	"mostRecentProblem" integer,
-	CONSTRAINT "user_id_unique" UNIQUE("id"),
-	CONSTRAINT "user_email_unique" UNIQUE("email")
+	"role" text DEFAULT 'student',
+	"showScoresInLeaderboard" boolean DEFAULT true NOT NULL,
+	CONSTRAINT "cs-uil-website_user_id_unique" UNIQUE("id"),
+	CONSTRAINT "cs-uil-website_user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE "verification" (
+CREATE TABLE "cs-uil-website_verification" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
@@ -49,16 +50,11 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
-CREATE TABLE "cs-uil-website_problems" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"problemName" text NOT NULL,
-	"competitionYear" integer NOT NULL,
-	"competitionLevel" text NOT NULL,
-	"problemText" text NOT NULL,
-	"programName" text NOT NULL,
-	"inputFileName" text,
-	"defaultInputFile" text,
-	"enabled" boolean DEFAULT false NOT NULL
+CREATE TABLE "cs-uil-website_forefeits" (
+	"id" text PRIMARY KEY NOT NULL,
+	"problemId" integer NOT NULL,
+	"userId" text NOT NULL,
+	"forefeitedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "cs-uil-website_permissions" (
@@ -97,21 +93,33 @@ CREATE TABLE "cs-uil-website_submission" (
 	"maxPoints" integer DEFAULT 60 NOT NULL,
 	"accepted" boolean DEFAULT false,
 	"submittedCode" text NOT NULL,
-	"isStudentVisible" boolean NOT NULL,
-	CONSTRAINT "cs-uil-website_submission_id_unique" UNIQUE("id")
+	"isStudentVisible" boolean DEFAULT true NOT NULL,
+	"attemptNumber" integer DEFAULT 1 NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "user" ADD CONSTRAINT "user_mostRecentProblem_cs-uil-website_problems_id_fk" FOREIGN KEY ("mostRecentProblem") REFERENCES "public"."cs-uil-website_problems"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE TABLE "cs-uil-website_written_tests" (
+	"id" text PRIMARY KEY NOT NULL,
+	"adminShow" boolean DEFAULT false,
+	"userId" text NOT NULL,
+	"competition" text,
+	"seasonYear" integer DEFAULT 2000 NOT NULL,
+	"score" integer NOT NULL,
+	"takenAt" date DEFAULT now() NOT NULL,
+	"accuracy" real DEFAULT 0 NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "cs-uil-website_account" ADD CONSTRAINT "cs-uil-website_account_user_id_cs-uil-website_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cs-uil-website_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cs-uil-website_session" ADD CONSTRAINT "cs-uil-website_session_user_id_cs-uil-website_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cs-uil-website_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cs-uil-website_forefeits" ADD CONSTRAINT "cs-uil-website_forefeits_userId_cs-uil-website_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."cs-uil-website_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cs-uil-website_role_permissions" ADD CONSTRAINT "cs-uil-website_role_permissions_role_id_cs-uil-website_role_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."cs-uil-website_role"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cs-uil-website_role_permissions" ADD CONSTRAINT "cs-uil-website_role_permissions_permission_id_cs-uil-website_permissions_id_fk" FOREIGN KEY ("permission_id") REFERENCES "public"."cs-uil-website_permissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "cs-uil-website_user_roles" ADD CONSTRAINT "cs-uil-website_user_roles_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cs-uil-website_user_roles" ADD CONSTRAINT "cs-uil-website_user_roles_userId_cs-uil-website_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."cs-uil-website_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cs-uil-website_user_roles" ADD CONSTRAINT "cs-uil-website_user_roles_roleId_cs-uil-website_role_id_fk" FOREIGN KEY ("roleId") REFERENCES "public"."cs-uil-website_role"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "cs-uil-website_submission" ADD CONSTRAINT "cs-uil-website_submission_problemId_cs-uil-website_problems_id_fk" FOREIGN KEY ("problemId") REFERENCES "public"."cs-uil-website_problems"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "cs-uil-website_submission" ADD CONSTRAINT "cs-uil-website_submission_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "year_idx" ON "cs-uil-website_problems" USING btree ("competitionYear");--> statement-breakpoint
-CREATE INDEX "level_idx" ON "cs-uil-website_problems" USING btree ("competitionLevel");--> statement-breakpoint
-CREATE INDEX "problem_name_idx" ON "cs-uil-website_problems" USING btree ("problemName");--> statement-breakpoint
+ALTER TABLE "cs-uil-website_submission" ADD CONSTRAINT "cs-uil-website_submission_userId_cs-uil-website_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."cs-uil-website_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cs-uil-website_written_tests" ADD CONSTRAINT "cs-uil-website_written_tests_userId_cs-uil-website_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."cs-uil-website_user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "u_idx" ON "cs-uil-website_forefeits" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "p_idx" ON "cs-uil-website_forefeits" USING btree ("problemId");--> statement-breakpoint
 CREATE INDEX "problem_idx" ON "cs-uil-website_submission" USING btree ("problemId");--> statement-breakpoint
-CREATE INDEX "user_idx" ON "cs-uil-website_submission" USING btree ("userId");
+CREATE INDEX "user_idx" ON "cs-uil-website_submission" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "written_tests_user_idx" ON "cs-uil-website_written_tests" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "written_tests_competition_idx" ON "cs-uil-website_written_tests" USING btree ("competition");

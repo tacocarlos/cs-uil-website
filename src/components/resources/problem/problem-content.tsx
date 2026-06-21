@@ -46,7 +46,7 @@ ${problem.sampleOutput}
                         {problem.inputFileName && (
                             <li>
                                 <span className="font-medium">Input File:</span>{" "}
-                                {problem.inputFileName}
+                                {problem.problemName + ".dat"}
                             </li>
                         )}
                     </ul>

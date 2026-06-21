@@ -2,6 +2,7 @@ import { auth } from "auth";
 import { headers } from "next/headers";
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import { signInUrl } from "~/lib/auth/redirect-utils";
 import SettingsSection from "./settings";
 import { api } from "~/trpc/server";
 import InProgressProblems from "./in-progress";
@@ -12,11 +13,11 @@ export default async function DashboardPage() {
     const user = session?.user;
     const isAuthenticated = session !== null;
     if (!isAuthenticated) {
-        redirect("/sign-in");
+        redirect(signInUrl("/dashboard/student"));
     }
 
     if (user === undefined) {
-        redirect("/sign-in");
+        redirect(signInUrl("/dashboard/student"));
     }
 
     if (session?.user === undefined || session?.user === null) {

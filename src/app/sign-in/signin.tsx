@@ -12,13 +12,20 @@ import {
 } from "~/components/ui/card";
 import Image from "next/image";
 import { signIn } from "auth-client";
+import { getSafeRedirectUrl } from "~/lib/auth/redirect-utils";
 
 type SignInPageProps = {
     error?: string;
     isLoading: boolean;
+    next?: string;
 };
 
-export default function SignInPage({ error, isLoading }: SignInPageProps) {
+export default function SignInPage({
+    error,
+    isLoading,
+    next,
+}: SignInPageProps) {
+    const callbackURL = getSafeRedirectUrl(next, "/dashboard");
     return (
         <main className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
             <div className="w-full max-w-1/3 rounded-xl border border-white px-5">
@@ -63,6 +70,7 @@ export default function SignInPage({ error, isLoading }: SignInPageProps) {
                             onClick={async () => {
                                 await signIn.social({
                                     provider: "google",
+                                    callbackURL,
                                 });
                             }}
                             disabled={isLoading}

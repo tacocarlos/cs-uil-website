@@ -2,16 +2,12 @@ import { index } from "drizzle-orm/pg-core";
 import createTable from "./createTable";
 import { randomUUID } from "crypto";
 import { user } from "./auth";
-import { problems } from "./problem";
 
 export const forefeits = createTable(
     "forefeits",
     (d) => ({
-        id: d.text().primaryKey().$defaultFn(randomUUID).unique(),
-        problemId: d
-            .integer()
-            .notNull()
-            .references(() => problems.id, { onDelete: "cascade" }),
+        id: d.text().primaryKey().$defaultFn(randomUUID),
+        problemId: d.integer().notNull(),
         userId: d
             .text()
             .notNull()

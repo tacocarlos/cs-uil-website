@@ -1,1 +1,0 @@
-ALTER TABLE "cs-uil-website_problems" ADD COLUMN "solutionCode" text DEFAULT '' NOT NULL;

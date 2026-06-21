@@ -4,16 +4,28 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { ExternalLink, Video, FileText } from "lucide-react";
+import {
+    ExternalLink,
+    Video,
+    FileText,
+    Gamepad,
+    Gamepad2,
+    GamepadIcon,
+    Gamepad2Icon,
+    Coffee,
+} from "lucide-react";
 import { type ReactNode } from "react";
 
 // Define the props for our component for type safety
-interface CourseResourceCardProps {
+export interface CourseResourceCardProps {
     title: string;
     description: string;
     href: string;
     tags: string[];
 }
+
+const TagClass = (color: string) =>
+    `border-transparent bg-${color}-100 text-${color}-800 hover:bg-${color}-200`;
 
 /**
  * A map to associate specific tags with icons and custom styles.
@@ -35,9 +47,15 @@ const tagStyles: {
         className:
             "border-transparent bg-green-100 text-green-800 hover:bg-green-200",
     },
-    // Add more custom tags here if needed
-    // "reading": { ... },
-    // "interactive": { ... },
+    multiplayer: {
+        icon: <Gamepad2Icon className="h-3 w-3" />,
+        className:
+            "border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200",
+    },
+    Java: {
+        icon: <Coffee className="h-3 w-3" />,
+        className: TagClass("red"),
+    },
 };
 
 /**
@@ -51,12 +69,12 @@ export function CourseResourceCard({
     tags,
 }: CourseResourceCardProps) {
     return (
-        <Card className="flex h-fit flex-col overflow-hidden transition-shadow hover:shadow-lg">
+        <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
             <CardHeader>
                 <CardTitle className="text-lg leading-snug">{title}</CardTitle>
             </CardHeader>
 
-            <CardContent className="flex flex-grow flex-col">
+            <CardContent className="flex grow flex-col">
                 {/* Custom Description */}
                 <p className="text-muted-foreground mb-4 text-sm">
                     {description}
@@ -84,7 +102,7 @@ export function CourseResourceCard({
             <div className="border-t bg-slate-50 p-4 dark:bg-slate-800/50">
                 <Button asChild className="w-full">
                     <Link href={href} target="_blank" rel="noopener noreferrer">
-                        View Course
+                        View Resource
                         <ExternalLink className="ml-2 h-4 w-4" />
                     </Link>
                 </Button>

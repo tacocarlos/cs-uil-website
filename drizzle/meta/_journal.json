@@ -5,57 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1757275892531,
-      "tag": "0000_eager_ma_gnuci",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1757969185200,
-      "tag": "0001_lame_speedball",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1758125945825,
-      "tag": "0002_crazy_impossible_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1758382231512,
-      "tag": "0003_stiff_maginty",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1758421970722,
-      "tag": "0004_clumsy_vertigo",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1758422219735,
-      "tag": "0005_true_cassandra_nova",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1758428941344,
-      "tag": "0006_cute_killmonger",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1763062814828,
-      "tag": "0007_kind_the_hunter",
+      "when": 1781752816809,
+      "tag": "0000_numerous_blizzard",
       "breakpoints": true
     }
   ]
