@@ -6,6 +6,7 @@ import { submission as submissionTable } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 import { getAllMinimalProblems } from "~/lib/api/lunaghs";
 import { RevalidateCacheButton } from "./revalidate-cache-button";
+import { Judge0StatusCard } from "./judge0-status";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -18,6 +19,8 @@ import {
 } from "~/components/ui/table";
 
 export const dynamic = "force-dynamic";
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function TeacherDashboardPage() {
     const [submissions, apiProblems] = await Promise.all([
@@ -48,6 +51,11 @@ export default async function TeacherDashboardPage() {
             <div className="mb-8 flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Teacher Dashboard</h1>
                 <div className="flex items-center gap-3">
+                    <Button asChild>
+                        <Link href="/dashboard/teacher/contests">
+                            View Contest Page
+                        </Link>
+                    </Button>
                     <RevalidateCacheButton />
                     <Button asChild>
                         <Link href="/dashboard/teacher/written">
@@ -57,6 +65,12 @@ export default async function TeacherDashboardPage() {
                 </div>
             </div>
 
+            {/* ── Judge0 status ──────────────────────────────────────────────── */}
+            <div className="mb-8 max-w-sm">
+                <Judge0StatusCard />
+            </div>
+
+            {/* ── Recent submissions ─────────────────────────────────────── */}
             <section>
                 <h2 className="mb-4 text-lg font-semibold">
                     Recent Submissions
@@ -97,9 +111,7 @@ export default async function TeacherDashboardPage() {
                                             >
                                                 {formatDistanceToNow(
                                                     s.timeSubmitted,
-                                                    {
-                                                        addSuffix: true,
-                                                    },
+                                                    { addSuffix: true },
                                                 )}
                                             </span>
                                         </TableCell>

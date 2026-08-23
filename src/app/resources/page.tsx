@@ -4,7 +4,14 @@ import {
     type CourseResourceCardProps,
 } from "./course-resource-card";
 import PastProblems from "./past-problems";
-import { JavaResources, OnlineCompetitions, OnlineCourses } from "./resources";
+import {
+    CSYoutubeChannels,
+    JavaResources,
+    OnlineCompetitions,
+    OnlineCourses,
+    OnlinePaidCourses,
+} from "./resources";
+import CompetitionBanner from "./competition";
 
 function ResourceSection({
     sectionHeader,
@@ -29,10 +36,11 @@ function ResourceSection({
     );
 }
 
-export default function Resources() {
+export default function ResourcesPage() {
     return (
         <>
             <PastProblems />
+            <CompetitionBanner />
             <ResourceSection
                 sectionHeader="Online Competitions"
                 resources={OnlineCompetitions}
@@ -44,6 +52,14 @@ export default function Resources() {
             <ResourceSection
                 sectionHeader="Online Free Courses"
                 resources={OnlineCourses}
+            />
+            <ResourceSection
+                sectionHeader="Online Paid Courses"
+                resources={OnlinePaidCourses}
+            />
+            <ResourceSection
+                sectionHeader="Computer Science Youtube Channels"
+                resources={CSYoutubeChannels}
             />
         </>
     );

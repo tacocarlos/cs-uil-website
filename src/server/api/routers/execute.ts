@@ -72,6 +72,38 @@ function diffStrings(a: string, b: string): string {
 }
 
 export const executeRouter = createTRPCRouter({
+    /** Fetches live Judge0 status from /about, /workers, and /statistics.
+     *  Runs server-side so the browser never hits Judge0 directly (avoids CORS). */
+    getJudge0Status: publicProcedure.query(async () => {
+        try {
+            const [aboutRes, workersRes, statsRes] = await Promise.all([
+                fetch("http://judge0.lunaghs.dev/about",      { cache: "no-store" }),
+                fetch("http://judge0.lunaghs.dev/workers",    { cache: "no-store" }),
+                fetch("http://judge0.lunaghs.dev/statistics", { cache: "no-store" }),
+            ]);
+            const [about, workers, stats] = (await Promise.all([
+                aboutRes.ok   ? aboutRes.json()   : Promise.resolve(null),
+                workersRes.ok ? workersRes.json() : Promise.resolve(null),
+                statsRes.ok   ? statsRes.json()   : Promise.resolve(null),
+            ])) as [
+                { version: string } | null,
+                { queue: string; size: number; available: number; idle: number;
+                  working: number; paused: number; failed: number }[] | null,
+                { submissions: { total: number; today: number } } | null,
+            ];
+            return {
+                online: true,
+                about:   about   as { version: string } | null,
+                workers: workers as { queue: string; size: number; available: number;
+                                     idle: number; working: number; paused: number;
+                                     failed: number }[] | null,
+                stats:   stats   as { submissions: { total: number; today: number } } | null,
+            };
+        } catch {
+            return { online: false, about: null, workers: null, stats: null };
+        }
+    }),
+
     getJavaRuntimes: publicProcedure.query(async () => {
         type ResponseData = [{ name: string; id: string }];
         const response = await fetch("http://judge0.lunaghs.dev/languages");
