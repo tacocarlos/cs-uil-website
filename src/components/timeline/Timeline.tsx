@@ -106,10 +106,21 @@ export const DefaultTimelineData: TimelineProps["events"] = [
             "A mock contest (mimicing the region contest), consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
     },
     {
+        date: "April 28-29",
+        eventName: "UIL Regional Meet",
+        description:
+            "Region meet. We're in region 4 this year, so new competition!",
+    },
+    {
         date: "April 30th",
         eventName: "Virtual Challenge Meet #5 (SQ Meet Comparison)",
         description:
             "A mock contest (mimicing the state contest), consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
+    },
+    {
+        date: "May 17-18",
+        eventName: "UIL State Meet",
+        description: "State meet. Solve and code, until it is done.",
     },
     //     {
     //         date: "October 24th",
