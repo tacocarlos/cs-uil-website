@@ -179,7 +179,9 @@ export default function ContestEditor({
             selectedLanguageIdRef.current = newLangId;
             const newLang =
                 LANGUAGES.find((l) => l.id === newLangId) ?? LANGUAGES[0]!;
-            const saved = window.localStorage.getItem(codeKeyForLang(newLangId));
+            const saved = window.localStorage.getItem(
+                codeKeyForLang(newLangId),
+            );
             ed.setValue(saved ?? newLang.starterCode);
         }
         setSelectedLanguageId(newLangId);
@@ -236,9 +238,7 @@ export default function ContestEditor({
         userId,
     });
 
-    const myBest = bestPerProblem?.find(
-        (b) => b.apiProblemId === apiProblemId,
-    );
+    const myBest = bestPerProblem?.find((b) => b.apiProblemId === apiProblemId);
 
     const runCodeMutator = api.execute.runCode.useMutation({
         onSuccess: (data) => {
@@ -325,7 +325,8 @@ export default function ContestEditor({
 
     // ── Derived UI state ────────────────────────────────────────────────────
 
-    const canSubmit = contestStatus === "active" && !submitCodeMutator.isPending;
+    const canSubmit =
+        contestStatus === "active" && !submitCodeMutator.isPending;
 
     // ── Render ───────────────────────────────────────────────────────────────
 

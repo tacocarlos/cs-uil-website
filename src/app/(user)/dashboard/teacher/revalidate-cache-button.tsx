@@ -13,7 +13,9 @@ export function RevalidateCacheButton() {
         setPending(true);
         try {
             await invalidateProblemCache();
-            toast.success("Problem cache invalidated — fresh data will load on the next request.");
+            toast.success(
+                "Problem cache invalidated — fresh data will load on the next request.",
+            );
         } catch {
             toast.error("Failed to invalidate cache.");
         } finally {

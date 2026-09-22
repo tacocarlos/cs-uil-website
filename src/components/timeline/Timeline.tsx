@@ -39,14 +39,77 @@ export default function Timeline({
 
 export const DefaultTimelineData: TimelineProps["events"] = [
     {
-        date: "Summer 2026",
-        eventName: "Computer Science Bootcamp",
-        description: "A coding fundamentals bootcamp",
+        date: "October 24th",
+        eventName: "TAMU CS Day",
+        description:
+            "The CS Day schedule is split into a morning session (covering talks on a variety of computing topics) and an afternoon session (covering various hands-on CS activities and demos), with lunch in between. Talks and demos will be happening in parallel sessions.",
     },
     {
-        date: "Summer 2026",
-        eventName: "Problem Solving Bootcamp",
-        description: "A problem solving bootcamp",
+        date: "October 30th",
+        eventName: "Virtual Challenge Meet #1",
+        description:
+            "A mock contest, consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
+    },
+    {
+        date: "November 13th",
+        eventName: "Bebras Challenge",
+        description:
+            "Computational thinking contest - no coding required for this one.",
+    },
+    {
+        date: "November 20th or December 11th",
+        eventName: "Virtual Challenge Meet #2",
+        description:
+            "A mock contest, consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
+    },
+    {
+        date: "Early to Mid January",
+        eventName: "USACO First Contest",
+        description: "The first contest in the USACO gauntlet.",
+    },
+    {
+        date: "January 29th",
+        eventName: "Virtual Challenge Meet #3",
+        description:
+            "A mock contest, consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
+    },
+    {
+        date: "Late Jan. to Early Feb.",
+        eventName: "USACO Second Contest",
+        description: "The second contest in the USACO gauntlet.",
+    },
+    {
+        date: "February 26th",
+        eventName: "Virtual Challenge Meet #4 (District Meet Comparison)",
+        description:
+            "A mock contest (mimicing the district contest), consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
+    },
+    {
+        date: "Late February",
+        eventName: "USACO Third Contest",
+        description: "The first contest in the USACO gauntlet.",
+    },
+    {
+        date: "March 29th",
+        eventName: "UIL District Meet",
+        description: "UIL District Meet (on a Monday).",
+    },
+    {
+        date: "Late March",
+        eventName: "USACO US Open",
+        description: "The final contest in USACO, proctored.",
+    },
+    {
+        date: "April 9th",
+        eventName: "Virtual Challenge Meet #5 (RQ Meet Comparison)",
+        description:
+            "A mock contest (mimicing the region contest), consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
+    },
+    {
+        date: "April 30th",
+        eventName: "Virtual Challenge Meet #5 (SQ Meet Comparison)",
+        description:
+            "A mock contest (mimicing the state contest), consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
     },
     //     {
     //         date: "October 24th",

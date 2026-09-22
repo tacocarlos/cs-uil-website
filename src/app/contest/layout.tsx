@@ -19,8 +19,7 @@ export default async function ContestLayout({
     const session = await auth.api.getSession({ headers: headersList });
 
     if (!session?.user) {
-        const pathname =
-            headersList.get("x-pathname") ?? "/contest";
+        const pathname = headersList.get("x-pathname") ?? "/contest";
         redirect(signInUrl(pathname));
     }
 

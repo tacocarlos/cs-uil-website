@@ -1,9 +1,9 @@
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{}> },
+    request: Request,
+    { params }: { params: Promise<{}> },
 ) {
-  await params;
-  return new Response("Test", {
-    status: 200,
-  });
+    await params;
+    return new Response("Test", {
+        status: 200,
+    });
 }

@@ -4,7 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "auth";
 import { db } from "~/server/db";
 import { contest, contestProblem } from "~/server/db/schema/contest";
-import { getProblemById, getAllCompetitions, toAppProblem } from "~/lib/api/lunaghs";
+import {
+    getProblemById,
+    getAllCompetitions,
+    toAppProblem,
+} from "~/lib/api/lunaghs";
 import { signInUrl } from "~/lib/auth/redirect-utils";
 import type { Problem } from "~/server/db/schema/types";
 import ContestEditor from "./contest-editor";
@@ -29,11 +33,7 @@ export default async function ContestProblemPage({
 
     // ── Fetch contest + contest problem from DB ──────────────────────────────
     const [contestRows, contestProblemRows] = await Promise.all([
-        db
-            .select()
-            .from(contest)
-            .where(eq(contest.id, contestId))
-            .limit(1),
+        db.select().from(contest).where(eq(contest.id, contestId)).limit(1),
         db
             .select()
             .from(contestProblem)
@@ -64,7 +64,9 @@ export default async function ContestProblemPage({
     }
 
     const apiProblem = apiResult.problem;
-    const competition = competitions.find((c) => c.id === apiProblem.competition);
+    const competition = competitions.find(
+        (c) => c.id === apiProblem.competition,
+    );
 
     if (!competition) {
         notFound();

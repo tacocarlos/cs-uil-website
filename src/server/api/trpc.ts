@@ -36,7 +36,6 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
  * errors on the backend.
  */
 const t = initTRPC.context<typeof createTRPCContext>().create({
-     
     transformer: superjson,
     errorFormatter({ shape, error }) {
         return {

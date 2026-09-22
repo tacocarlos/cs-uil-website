@@ -16,8 +16,13 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 // ── Types ───────────────────────────────────────────────────────────────────
 
 interface Judge0Worker {
-    queue: string; size: number; available: number;
-    idle: number; working: number; paused: number; failed: number;
+    queue: string;
+    size: number;
+    available: number;
+    idle: number;
+    working: number;
+    paused: number;
+    failed: number;
 }
 
 interface Judge0Status {
@@ -35,27 +40,42 @@ function deriveHealth(status: Judge0Status): HealthState {
     if (!status.online) return "offline";
     if (!status.workers) return "unknown";
     const working = status.workers.reduce((s, w) => s + w.working, 0);
-    const idle    = status.workers.reduce((s, w) => s + w.idle,    0);
-    const failed  = status.workers.reduce((s, w) => s + w.failed,  0);
-    if (failed > 0)              return "error";
+    const idle = status.workers.reduce((s, w) => s + w.idle, 0);
+    const failed = status.workers.reduce((s, w) => s + w.failed, 0);
+    if (failed > 0) return "error";
     if (working > 0 || idle > 0) return "healthy";
     return "no-workers";
 }
 
 const HEALTH_LABEL: Record<HealthState, string> = {
-    healthy:      "Operational",
+    healthy: "Operational",
     "no-workers": "No active workers",
-    error:        "Worker failures",
-    offline:      "Unreachable",
-    unknown:      "Unknown",
+    error: "Worker failures",
+    offline: "Unreachable",
+    unknown: "Unknown",
 };
 
-const HEALTH_COLOR: Record<HealthState, { dot: string; text: string; ring: string }> = {
-    healthy:      { dot: "bg-green-500",  text: "text-green-700",  ring: "text-green-500"  },
-    "no-workers": { dot: "bg-amber-500",  text: "text-amber-700",  ring: "text-amber-500"  },
-    error:        { dot: "bg-red-500",    text: "text-red-700",    ring: "text-red-500"    },
-    offline:      { dot: "bg-red-500",    text: "text-red-700",    ring: "text-red-500"    },
-    unknown:      { dot: "bg-gray-400",   text: "text-gray-600",   ring: "text-gray-400"   },
+const HEALTH_COLOR: Record<
+    HealthState,
+    { dot: string; text: string; ring: string }
+> = {
+    healthy: {
+        dot: "bg-green-500",
+        text: "text-green-700",
+        ring: "text-green-500",
+    },
+    "no-workers": {
+        dot: "bg-amber-500",
+        text: "text-amber-700",
+        ring: "text-amber-500",
+    },
+    error: { dot: "bg-red-500", text: "text-red-700", ring: "text-red-500" },
+    offline: { dot: "bg-red-500", text: "text-red-700", ring: "text-red-500" },
+    unknown: {
+        dot: "bg-gray-400",
+        text: "text-gray-600",
+        ring: "text-gray-400",
+    },
 };
 
 // ── Countdown ring ────────────────────────────────────────────────────────────
@@ -78,7 +98,7 @@ function CountdownRing({
             width="18"
             height="18"
             viewBox="0 0 18 18"
-            className={`-rotate-90 shrink-0 ${colorClass}`}
+            className={`shrink-0 -rotate-90 ${colorClass}`}
             aria-hidden="true"
         >
             {/* Faint track */}
@@ -136,14 +156,15 @@ export function Judge0StatusCard() {
         stats: null,
     };
 
-    const health  = deriveHealth(status);
-    const colors  = HEALTH_COLOR[health];
+    const health = deriveHealth(status);
+    const colors = HEALTH_COLOR[health];
 
-    const totalWorking = status.workers?.reduce((s, w) => s + w.working, 0) ?? 0;
-    const totalIdle    = status.workers?.reduce((s, w) => s + w.idle,    0) ?? 0;
-    const totalPaused  = status.workers?.reduce((s, w) => s + w.paused,  0) ?? 0;
-    const totalFailed  = status.workers?.reduce((s, w) => s + w.failed,  0) ?? 0;
-    const totalQueued  = status.workers?.reduce((s, w) => s + w.size,    0) ?? 0;
+    const totalWorking =
+        status.workers?.reduce((s, w) => s + w.working, 0) ?? 0;
+    const totalIdle = status.workers?.reduce((s, w) => s + w.idle, 0) ?? 0;
+    const totalPaused = status.workers?.reduce((s, w) => s + w.paused, 0) ?? 0;
+    const totalFailed = status.workers?.reduce((s, w) => s + w.failed, 0) ?? 0;
+    const totalQueued = status.workers?.reduce((s, w) => s + w.size, 0) ?? 0;
 
     const noData = status.workers === null;
 
@@ -154,7 +175,10 @@ export function Judge0StatusCard() {
                     <CardTitle className="text-base">Judge0 Status</CardTitle>
                     <div className="flex items-center gap-2">
                         {status.about && (
-                            <Badge variant="outline" className="font-mono text-xs">
+                            <Badge
+                                variant="outline"
+                                className="font-mono text-xs"
+                            >
                                 v{status.about.version}
                             </Badge>
                         )}
@@ -183,9 +207,9 @@ export function Judge0StatusCard() {
                     {(
                         [
                             ["Working", totalWorking, "text-blue-600"],
-                            ["Idle",    totalIdle,    "text-green-600"],
-                            ["Paused",  totalPaused,  "text-amber-600"],
-                            ["Failed",  totalFailed,  "text-red-600"],
+                            ["Idle", totalIdle, "text-green-600"],
+                            ["Paused", totalPaused, "text-amber-600"],
+                            ["Failed", totalFailed, "text-red-600"],
                         ] as const
                     ).map(([label, value, color]) => (
                         <div

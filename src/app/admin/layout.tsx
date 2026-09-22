@@ -1,4 +1,1 @@
-
-export default function AdminLayout() {
-	
-}
+export default function AdminLayout() {}
