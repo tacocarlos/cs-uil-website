@@ -8,6 +8,7 @@ import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 import { getProblemById, fetchUrlContent } from "~/lib/api/lunaghs";
 import CalculateScore from "~/lib/problems/judge/calculate-score";
+import { env } from "~/env";
 
 const LEVENSHTEIN_DISTANCE_THRESHOLD = 5;
 
@@ -35,7 +36,7 @@ async function executeCode(
     });
 
     const submissionRequest = await fetch(
-        "http://judge0.lunaghs.dev/submissions?wait=true",
+        `${env.JUDGE_URL}/submissions?wait=true`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -46,7 +47,7 @@ async function executeCode(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const submissionToken = (await submissionRequest.json()).token;
     const submissionResponse = await fetch(
-        `http://judge0.lunaghs.dev/submissions/${submissionToken}`,
+        `${env.JUDGE_URL}/submissions/${submissionToken}`,
         {
             method: "GET",
         },
@@ -77,11 +78,11 @@ export const executeRouter = createTRPCRouter({
     getJudge0Status: publicProcedure.query(async () => {
         try {
             const [aboutRes, workersRes, statsRes] = await Promise.all([
-                fetch("http://judge0.lunaghs.dev/about", { cache: "no-store" }),
-                fetch("http://judge0.lunaghs.dev/workers", {
+                fetch(`${env.JUDGE_URL}/about`, { cache: "no-store" }),
+                fetch(`${env.JUDGE_URL}/workers`, {
                     cache: "no-store",
                 }),
-                fetch("http://judge0.lunaghs.dev/statistics", {
+                fetch(`${env.JUDGE_URL}/statistics`, {
                     cache: "no-store",
                 }),
             ]);
@@ -130,7 +131,7 @@ export const executeRouter = createTRPCRouter({
 
     getJavaRuntimes: publicProcedure.query(async () => {
         type ResponseData = [{ name: string; id: string }];
-        const response = await fetch("http://judge0.lunaghs.dev/languages");
+        const response = await fetch(`${env.JUDGE_URL}/languages`);
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }

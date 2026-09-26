@@ -11,12 +11,13 @@ import { user } from "~/server/db/schema/auth";
 import { eq, desc, asc, sql, and } from "drizzle-orm";
 import { getProblemById, fetchUrlContent } from "~/lib/api/lunaghs";
 import { distance } from "fastest-levenshtein";
+import { env } from "~/env";
 
 const LEVENSHTEIN_THRESHOLD = 5;
 
 async function executeCode(code: string, languageId: string, stdin = "") {
     const submissionRequest = await fetch(
-        "http://judge0.lunaghs.dev/submissions?wait=true",
+        `${env.JUDGE_URL}/submissions?wait=true`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -29,7 +30,7 @@ async function executeCode(code: string, languageId: string, stdin = "") {
     );
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const token = (await submissionRequest.json()).token as string;
-    const res = await fetch(`http://judge0.lunaghs.dev/submissions/${token}`);
+    const res = await fetch(`${env.JUDGE_URL}/submissions/${token}`);
     return res.json() as Promise<{
         stdout: string | null;
         stderr: string | null;

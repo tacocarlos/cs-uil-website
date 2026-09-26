@@ -5,6 +5,8 @@ import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
 
 export const auth = betterAuth({
+    baseURL: env.BASE_URL,
+    trustedOrigins: [env.BETTER_AUTH_URL],
     database: drizzleAdapter(db, {
         provider: "pg",
         // Keys must match the modelName configured for each model below so
