@@ -9,7 +9,8 @@ const compat = new FlatCompat({
 
 export default tseslint.config(
     {
-        ignores: [".next"],
+        // lsp-gateway is a separate Bun service with its own tsconfig.
+        ignores: [".next", "lsp-gateway"],
     },
     ...compat.extends("next/core-web-vitals"),
     {

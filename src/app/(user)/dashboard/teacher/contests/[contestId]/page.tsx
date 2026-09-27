@@ -27,18 +27,8 @@ import {
     TableHeader,
     TableRow,
 } from "~/components/ui/table";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ContestStatus = "draft" | "scheduled" | "active" | "frozen" | "ended";
-
-const STATUS_BADGE: Record<ContestStatus, string> = {
-    draft: "bg-gray-100 text-gray-800",
-    scheduled: "bg-blue-100 text-blue-800",
-    active: "bg-green-100 text-green-800",
-    frozen: "bg-amber-100 text-amber-800",
-    ended: "bg-slate-100 text-slate-600",
-};
+import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
+import type { ContestStatus } from "~/server/db/schema/contest";
 
 // ─── ContestControls (inline "use client" component) ─────────────────────────
 
@@ -160,7 +150,7 @@ export default function TeacherContestPage() {
         );
     }
 
-    const status = contest.status as ContestStatus;
+    const status = contest.status;
 
     // Build label map from contest problems for the submissions table
     const problemLabelMap = new Map(
@@ -187,7 +177,7 @@ export default function TeacherContestPage() {
                             </Link>
                         </Button>
                         <h1 className="text-2xl font-bold">{contest.name}</h1>
-                        <Badge className={STATUS_BADGE[status]}>{status}</Badge>
+                        <ContestStatusBadge status={status} />
                     </div>
 
                     <ContestControls contestId={contestId} status={status} />

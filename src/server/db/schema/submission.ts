@@ -1,5 +1,5 @@
 import { index } from "drizzle-orm/pg-core";
-import createTable from "./createTable";
+import createTable, { cascadeFk } from "./createTable";
 
 import { user } from "./auth";
 import { randomUUID } from "crypto";
@@ -9,10 +9,7 @@ export const submission = createTable(
     (d) => ({
         id: d.text().primaryKey().$defaultFn(randomUUID),
         problemId: d.integer().notNull(),
-        userId: d
-            .text()
-            .notNull()
-            .references(() => user.id, { onDelete: "cascade" }),
+        userId: d.text().notNull(),
         timeSubmitted: d.timestamp().defaultNow().notNull(),
         points: d.integer().notNull().default(0),
         maxPoints: d.integer().notNull().default(60),
@@ -24,6 +21,7 @@ export const submission = createTable(
     (t) => [
         index("problem_idx").on(t.problemId),
         index("user_idx").on(t.userId),
+        cascadeFk("submission_user_id_fk", t.userId, user.id),
     ],
 );
 

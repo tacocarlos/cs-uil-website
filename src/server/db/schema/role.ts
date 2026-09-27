@@ -1,4 +1,4 @@
-import createTable from "./createTable";
+import createTable, { cascadeFk } from "./createTable";
 import { primaryKey } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
@@ -34,16 +34,14 @@ export type Permission = typeof permissions.$inferInsert;
 export const userRoles = createTable(
     "user_roles",
     (d) => ({
-        userId: d
-            .text()
-            .notNull()
-            .references(() => user.id, { onDelete: "cascade" }),
-        roleId: d
-            .integer()
-            .notNull()
-            .references(() => roles.id, { onDelete: "cascade" }),
+        userId: d.text().notNull(),
+        roleId: d.integer().notNull(),
     }),
-    (t) => [primaryKey({ columns: [t.userId, t.roleId] })],
+    (t) => [
+        primaryKey({ columns: [t.userId, t.roleId] }),
+        cascadeFk("user_roles_user_id_fk", t.userId, user.id),
+        cascadeFk("user_roles_role_id_fk", t.roleId, roles.id),
+    ],
 );
 
 export type UserRole = typeof userRoles.$inferInsert;
@@ -51,16 +49,18 @@ export type UserRole = typeof userRoles.$inferInsert;
 export const rolePermissions = createTable(
     "role_permissions",
     (d) => ({
-        roleId: d
-            .integer("role_id")
-            .notNull()
-            .references(() => roles.id, { onDelete: "cascade" }),
-        permissionId: d
-            .integer("permission_id")
-            .notNull()
-            .references(() => permissions.id, { onDelete: "cascade" }),
+        roleId: d.integer("role_id").notNull(),
+        permissionId: d.integer("permission_id").notNull(),
     }),
-    (t) => [primaryKey({ columns: [t.roleId, t.permissionId] })],
+    (t) => [
+        primaryKey({ columns: [t.roleId, t.permissionId] }),
+        cascadeFk("role_permissions_role_id_fk", t.roleId, roles.id),
+        cascadeFk(
+            "role_permissions_permission_id_fk",
+            t.permissionId,
+            permissions.id,
+        ),
+    ],
 );
 export type RolePermission = typeof rolePermissions.$inferInsert;
 

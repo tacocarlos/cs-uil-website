@@ -1,5 +1,5 @@
 import { index } from "drizzle-orm/pg-core";
-import createTable from "./createTable";
+import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
 import { randomUUID } from "crypto";
 
@@ -8,10 +8,7 @@ export const writtenTests = createTable(
     (d) => ({
         id: d.text().$defaultFn(randomUUID).primaryKey(),
         adminShow: d.boolean().default(false),
-        userId: d
-            .text()
-            .notNull()
-            .references(() => user.id, { onDelete: "cascade" }),
+        userId: d.text().notNull(),
         competition: d.text({
             enum: [
                 "VCM-1",
@@ -37,5 +34,6 @@ export const writtenTests = createTable(
     (t) => [
         index("written_tests_user_idx").on(t.userId),
         index("written_tests_competition_idx").on(t.competition),
+        cascadeFk("written_tests_user_id_fk", t.userId, user.id),
     ],
 );

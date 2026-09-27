@@ -1,19 +1,14 @@
-DROP TABLE "account" CASCADE;
---> statement-breakpoint
-DROP TABLE "session" CASCADE;
---> statement-breakpoint
-DROP TABLE "user" CASCADE;
---> statement-breakpoint
-DROP TABLE "verification" CASCADE;
---> statement-breakpoint
-DROP TABLE "cs-uil-website_problems" CASCADE;
---> statement-breakpoint
-DROP TABLE "cs-uil-website_permissions" CASCADE;
---> statement-breakpoint
-DROP TABLE "cs-uil-website_role_permissions" CASCADE;
---> statement-breakpoint
-DROP TABLE "cs-uil-website_role" CASCADE;
---> statement-breakpoint
-DROP TABLE "cs-uil-website_user_roles" CASCADE;
---> statement-breakpoint
-DROP TABLE "cs-uil-website_submission" CASCADE;
+-- Drops every app table (those prefixed `uil_`, see TABLE_PREFIX in
+-- src/server/db/schema/createTable.ts). Run `bun run db:push` afterwards to
+-- recreate them. DEV ONLY: this deletes all data.
+DO $$
+DECLARE
+    t text;
+BEGIN
+    FOR t IN
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'public' AND tablename LIKE 'uil\_%'
+    LOOP
+        EXECUTE format('DROP TABLE IF EXISTS %I CASCADE', t);
+    END LOOP;
+END $$;

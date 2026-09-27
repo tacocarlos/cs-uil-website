@@ -21,7 +21,7 @@ import { api } from "~/trpc/server";
 import { db } from "~/server/db";
 import { contestEnrollment } from "~/server/db/schema/contest";
 import { getAllMinimalProblems } from "~/lib/api/lunaghs";
-import { Badge } from "~/components/ui/badge";
+import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
 import { Button } from "~/components/ui/button";
 import { EnrollButton } from "./_enroll-button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -35,16 +35,6 @@ import {
 } from "~/components/ui/table";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type ContestStatus = "draft" | "scheduled" | "active" | "frozen" | "ended";
-
-const STATUS_BADGE: Record<ContestStatus, string> = {
-    draft: "bg-gray-100 text-gray-800",
-    scheduled: "bg-blue-100 text-blue-800",
-    active: "bg-green-100 text-green-800",
-    frozen: "bg-amber-100 text-amber-800",
-    ended: "bg-slate-100 text-slate-600",
-};
 
 // ─── EnrollButton ─────────────────────────────────────────────────────────────
 // "use client" — extract to its own file with `"use client"` for Next.js.
@@ -133,7 +123,7 @@ export default async function ContestLobbyPage({
     // 4. Problem name lookup map
     const problemNameMap = new Map(apiProblems.map((p) => [p.id, p.name]));
 
-    const status = contest.status as ContestStatus;
+    const status = contest.status;
     const canEnroll =
         !isEnrolled &&
         (status === "active" || status === "scheduled") &&
@@ -160,9 +150,7 @@ export default async function ContestLobbyPage({
                                     </p>
                                 )}
                             </div>
-                            <Badge className={STATUS_BADGE[status]}>
-                                {status}
-                            </Badge>
+                            <ContestStatusBadge status={status} />
                         </div>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">

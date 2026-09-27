@@ -155,6 +155,15 @@ function DesktopNavbar() {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
+                    <NavigationMenuLink
+                        asChild
+                        className={navigationMenuTriggerStyle()}
+                    >
+                        <Link href="/sandbox">Sandbox</Link>
+                    </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
                     <NavigationMenuTrigger>Leaderboard</NavigationMenuTrigger>
                     <NavigationMenuContent>
                         <ul className="grid w-[200px] gap-4">
@@ -232,6 +241,9 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                     onClick={onClose}
                 >
                     Skill Tree
+                </Link>
+                <Link href="/sandbox" className={link} onClick={onClose}>
+                    Sandbox
                 </Link>
 
                 {/* Leaderboard */}

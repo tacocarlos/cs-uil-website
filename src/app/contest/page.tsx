@@ -12,9 +12,10 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { api } from "~/trpc/server";
+import type { RouterOutputs } from "~/trpc/react";
 import { db } from "~/server/db";
 import { contestEnrollment } from "~/server/db/schema/contest";
-import { Badge } from "~/components/ui/badge";
+import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
 import { Button } from "~/components/ui/button";
 import {
     Card,
@@ -28,39 +29,9 @@ export const dynamic = "force-dynamic";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ContestStatus = "draft" | "scheduled" | "active" | "frozen" | "ended";
-
-type ContestRow = {
-    id: number;
-    name: string;
-    description: string;
-    startsAt: Date;
-    endsAt: Date;
-    status: string;
-    scoringMode: string;
-    penaltyPoints: number;
-    createdAt: Date;
-    problemCount: number;
-    participantCount: number;
-};
+type ContestRow = RouterOutputs["contest"]["getAll"][number];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const STATUS_BADGE: Record<ContestStatus, string> = {
-    draft: "bg-gray-100 text-gray-700",
-    scheduled: "bg-blue-100 text-blue-800",
-    active: "bg-green-100 text-green-800",
-    frozen: "bg-amber-100 text-amber-800",
-    ended: "bg-slate-100 text-slate-600",
-};
-
-const STATUS_LABEL: Record<ContestStatus, string> = {
-    draft: "Draft",
-    scheduled: "Upcoming",
-    active: "Live",
-    frozen: "Frozen",
-    ended: "Ended",
-};
 
 function timeLabel(contest: ContestRow): string {
     if (isPast(contest.endsAt)) {
@@ -81,18 +52,18 @@ function ContestCard({
     contest: ContestRow;
     enrolled: boolean;
 }) {
-    const status = contest.status as ContestStatus;
+    const status = contest.status;
     const isEnded = status === "ended";
 
     return (
         <Card className="flex flex-col transition-shadow hover:shadow-md">
             <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
-                    <Badge
-                        className={`${STATUS_BADGE[status]} shrink-0 text-xs`}
-                    >
-                        {STATUS_LABEL[status]}
-                    </Badge>
+                    <ContestStatusBadge
+                        status={status}
+                        friendly
+                        className="shrink-0 text-xs"
+                    />
                     {enrolled && (
                         <span className="flex items-center gap-1 text-xs font-medium text-green-600">
                             <CheckCircle2 className="h-3.5 w-3.5" />

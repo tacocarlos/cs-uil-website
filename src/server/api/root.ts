@@ -5,6 +5,7 @@ import { userRouter } from "./routers/user";
 import { problemRouter } from "./routers/problem";
 import { writtenRouter } from "./routers/written";
 import { contestRouter } from "./routers/contest";
+import { lspRouter } from "./routers/lsp";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
     problem: problemRouter,
     written: writtenRouter,
     contest: contestRouter,
+    lsp: lspRouter,
 });
 
 // export type definition of API

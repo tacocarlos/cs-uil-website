@@ -20,7 +20,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { api } from "~/trpc/react";
-import { Badge } from "~/components/ui/badge";
+import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
 import { Button } from "~/components/ui/button";
 import {
     Table,
@@ -32,16 +32,6 @@ import {
 } from "~/components/ui/table";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type ContestStatus = "draft" | "scheduled" | "active" | "frozen" | "ended";
-
-const STATUS_BADGE: Record<ContestStatus, string> = {
-    draft: "bg-gray-100 text-gray-800",
-    scheduled: "bg-blue-100 text-blue-800",
-    active: "bg-green-100 text-green-800",
-    frozen: "bg-amber-100 text-amber-800",
-    ended: "bg-slate-100 text-slate-600",
-};
 
 // ─── LeaderboardRefresher (inline "use client" component) ─────────────────────
 // Renders nothing — silently calls router.refresh() every 15 seconds so the
@@ -96,7 +86,7 @@ export default function LeaderboardPage() {
         );
     }
 
-    const status = contest.status as ContestStatus;
+    const status = contest.status;
 
     // Derive the ordered problem-label columns from the contest's problem list
     const problemColumns = [...contest.problems]
@@ -118,7 +108,7 @@ export default function LeaderboardPage() {
                             </Link>
                         </Button>
                         <h1 className="text-2xl font-bold">{contest.name}</h1>
-                        <Badge className={STATUS_BADGE[status]}>{status}</Badge>
+                        <ContestStatusBadge status={status} />
                     </div>
 
                     {/* ── Frozen banner ────────────────────────────────────── */}

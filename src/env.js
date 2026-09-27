@@ -17,6 +17,10 @@ export const env = createEnv({
             .default("development"),
         JUDGE_URL: z.url(),
         BASE_URL: z.url(),
+        // LSP gateway (lsp-gateway/). Both unset = editor runs without code
+        // intelligence. URL is the WebSocket base, e.g. wss://lsp.example.com
+        LSP_GATEWAY_URL: z.url().optional(),
+        LSP_GATEWAY_SECRET: z.string().min(32).optional(),
     },
 
     /**
@@ -44,6 +48,8 @@ export const env = createEnv({
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
         NODE_ENV: process.env.NODE_ENV,
         JUDGE_URL: process.env.JUDGE_URL,
+        LSP_GATEWAY_URL: process.env.LSP_GATEWAY_URL,
+        LSP_GATEWAY_SECRET: process.env.LSP_GATEWAY_SECRET,
         // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
         NEXT_PUBLIC_JUDGE_URL: process.env.JUDGE_URL,
     },

@@ -12,10 +12,10 @@ export const auth = betterAuth({
         // Keys must match the modelName configured for each model below so
         // Better Auth can resolve the correct Drizzle table object at runtime.
         schema: {
-            "cs-uil-website_user": authSchema.user,
-            "cs-uil-website_session": authSchema.session,
-            "cs-uil-website_account": authSchema.account,
-            "cs-uil-website_verification": authSchema.verification,
+            uil_user: authSchema.user,
+            uil_session: authSchema.session,
+            uil_account: authSchema.account,
+            uil_verification: authSchema.verification,
         },
     }),
     socialProviders: {
@@ -26,7 +26,7 @@ export const auth = betterAuth({
         },
     },
     user: {
-        modelName: "cs-uil-website_user",
+        modelName: "uil_user",
         additionalFields: {
             showSubmissionScores: {
                 type: "boolean",
@@ -47,12 +47,12 @@ export const auth = betterAuth({
         },
     },
     session: {
-        modelName: "cs-uil-website_session",
+        modelName: "uil_session",
     },
     account: {
-        modelName: "cs-uil-website_account",
+        modelName: "uil_account",
     },
     verification: {
-        modelName: "cs-uil-website_verification",
+        modelName: "uil_verification",
     },
 });

@@ -8,11 +8,9 @@ import {
     SelectValue,
 } from "~/components/ui/select";
 import type { Submission } from "~/server/db/schema/submission";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { format } from "date-fns";
 import { Check, X } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { CodeBlock } from "~/components/code-block";
 
 function SubmissionInformation({ submission }: { submission: Submission }) {
     return (
@@ -32,15 +30,14 @@ function SubmissionInformation({ submission }: { submission: Submission }) {
                     <p>Not Accepted</p>
                 </span>
             )}
-            <section className="prose h-80 w-full max-w-none overflow-y-auto p-[10px]">
+            <section className="space-y-2">
                 <header className="text-primary text-xl font-semibold">
                     Submitted Code
                 </header>
-                <Markdown remarkPlugins={[remarkGfm]}>
-                    {`\`\`\`java
-${submission.submittedCode}
-\`\`\``}
-                </Markdown>
+                <CodeBlock
+                    code={submission.submittedCode}
+                    className="max-h-80 overflow-y-auto"
+                />
             </section>
         </div>
     );
@@ -64,7 +61,7 @@ export default function PastSubmissions({
                 }}
             >
                 <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Problem" />
+                    <SelectValue placeholder="Select a submission" />
                 </SelectTrigger>
                 <SelectContent>
                     {submissions.map((s, idx) => {

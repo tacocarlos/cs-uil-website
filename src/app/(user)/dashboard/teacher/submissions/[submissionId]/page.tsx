@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { getProblemById } from "~/lib/api/lunaghs";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CodeBlock } from "~/components/code-block";
 import { OverrideForm } from "./override-form";
 
 export default async function SubmissionDetailPage({
@@ -122,9 +123,7 @@ export default async function SubmissionDetailPage({
                         <CardTitle>Submitted Code</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <pre className="overflow-x-auto rounded-md bg-slate-900 p-4 font-mono text-sm whitespace-pre-wrap text-slate-100">
-                            {row.submittedCode}
-                        </pre>
+                        <CodeBlock code={row.submittedCode} />
                     </CardContent>
                 </Card>
 

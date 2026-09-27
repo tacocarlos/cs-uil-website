@@ -1,8 +1,8 @@
 import { text, timestamp, boolean } from "drizzle-orm/pg-core";
-import createTable from "./createTable";
+import createTable, { cascadeFk } from "./createTable";
 
 export const user = createTable("user", {
-    id: text("id").primaryKey().unique(),
+    id: text("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified")
@@ -23,36 +23,40 @@ export const user = createTable("user", {
 });
 export type User = typeof user.$inferSelect;
 
-export const session = createTable("session", {
-    id: text("id").primaryKey(),
-    expiresAt: timestamp("expires_at").notNull(),
-    token: text("token").notNull().unique(),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
-    ipAddress: text("ip_address"),
-    userAgent: text("user_agent"),
-    userId: text("user_id")
-        .notNull()
-        .references(() => user.id, { onDelete: "cascade" }),
-});
+export const session = createTable(
+    "session",
+    {
+        id: text("id").primaryKey(),
+        expiresAt: timestamp("expires_at").notNull(),
+        token: text("token").notNull().unique(),
+        createdAt: timestamp("created_at").notNull(),
+        updatedAt: timestamp("updated_at").notNull(),
+        ipAddress: text("ip_address"),
+        userAgent: text("user_agent"),
+        userId: text("user_id").notNull(),
+    },
+    (t) => [cascadeFk("session_user_id_fk", t.userId, user.id)],
+);
 
-export const account = createTable("account", {
-    id: text("id").primaryKey(),
-    accountId: text("account_id").notNull(),
-    providerId: text("provider_id").notNull(),
-    userId: text("user_id")
-        .notNull()
-        .references(() => user.id, { onDelete: "cascade" }),
-    accessToken: text("access_token"),
-    refreshToken: text("refresh_token"),
-    idToken: text("id_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at"),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-    scope: text("scope"),
-    password: text("password"),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
-});
+export const account = createTable(
+    "account",
+    {
+        id: text("id").primaryKey(),
+        accountId: text("account_id").notNull(),
+        providerId: text("provider_id").notNull(),
+        userId: text("user_id").notNull(),
+        accessToken: text("access_token"),
+        refreshToken: text("refresh_token"),
+        idToken: text("id_token"),
+        accessTokenExpiresAt: timestamp("access_token_expires_at"),
+        refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+        scope: text("scope"),
+        password: text("password"),
+        createdAt: timestamp("created_at").notNull(),
+        updatedAt: timestamp("updated_at").notNull(),
+    },
+    (t) => [cascadeFk("account_user_id_fk", t.userId, user.id)],
+);
 export type Account = typeof account.$inferSelect;
 
 export const verification = createTable("verification", {

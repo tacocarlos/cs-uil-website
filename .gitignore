@@ -44,3 +44,9 @@ yarn-error.log*
 
 # idea files
 .idea
+
+# local database backups (may contain production data)
+backups/
+
+# lsp-gateway dependencies
+/lsp-gateway/node_modules

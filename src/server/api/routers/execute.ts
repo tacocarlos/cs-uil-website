@@ -2,59 +2,17 @@ import { z } from "zod";
 import { db } from "~/server/db";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { eq, and } from "drizzle-orm";
-import { distance } from "fastest-levenshtein";
 import { diffChars } from "diff";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
-import { getProblemById, fetchUrlContent } from "~/lib/api/lunaghs";
 import CalculateScore from "~/lib/problems/judge/calculate-score";
-import { env } from "~/env";
-
-const LEVENSHTEIN_DISTANCE_THRESHOLD = 5;
-
-async function executeCode(
-    code: string,
-    language_id: string,
-    stdin = "",
-): Promise<{
-    stdout: string | null;
-    stderr: string | null;
-    time: string;
-    memory: number;
-    token: string;
-    compile_output: string | null;
-    status: {
-        id: number;
-        description: string;
-    };
-}> {
-    // 1.) Request Judge0 to start running the code, waiting for it to finish
-    const reqBody = JSON.stringify({
-        source_code: code,
-        language_id,
-        stdin,
-    });
-
-    const submissionRequest = await fetch(
-        `${env.JUDGE_URL}/submissions?wait=true`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: reqBody,
-        },
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const submissionToken = (await submissionRequest.json()).token;
-    const submissionResponse = await fetch(
-        `${env.JUDGE_URL}/submissions/${submissionToken}`,
-        {
-            method: "GET",
-        },
-    );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return submissionResponse.json();
-}
+import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
+import {
+    fetchJudge0Languages,
+    fetchJudge0Status,
+    judge0ResultSchema,
+    runOnJudge0,
+} from "~/lib/problems/execute/judge0";
 
 function diffStrings(a: string, b: string): string {
     const changes: Array<{
@@ -73,80 +31,9 @@ function diffStrings(a: string, b: string): string {
 }
 
 export const executeRouter = createTRPCRouter({
-    /** Fetches live Judge0 status from /about, /workers, and /statistics.
-     *  Runs server-side so the browser never hits Judge0 directly (avoids CORS). */
-    getJudge0Status: publicProcedure.query(async () => {
-        try {
-            const [aboutRes, workersRes, statsRes] = await Promise.all([
-                fetch(`${env.JUDGE_URL}/about`, { cache: "no-store" }),
-                fetch(`${env.JUDGE_URL}/workers`, {
-                    cache: "no-store",
-                }),
-                fetch(`${env.JUDGE_URL}/statistics`, {
-                    cache: "no-store",
-                }),
-            ]);
-            const [about, workers, stats] = (await Promise.all([
-                aboutRes.ok ? aboutRes.json() : Promise.resolve(null),
-                workersRes.ok ? workersRes.json() : Promise.resolve(null),
-                statsRes.ok ? statsRes.json() : Promise.resolve(null),
-            ])) as [
-                { version: string } | null,
-                (
-                    | {
-                          queue: string;
-                          size: number;
-                          available: number;
-                          idle: number;
-                          working: number;
-                          paused: number;
-                          failed: number;
-                      }[]
-                    | null
-                ),
-                { submissions: { total: number; today: number } } | null,
-            ];
-            return {
-                online: true,
-                about: about as { version: string } | null,
-                workers: workers as
-                    | {
-                          queue: string;
-                          size: number;
-                          available: number;
-                          idle: number;
-                          working: number;
-                          paused: number;
-                          failed: number;
-                      }[]
-                    | null,
-                stats: stats as {
-                    submissions: { total: number; today: number };
-                } | null,
-            };
-        } catch {
-            return { online: false, about: null, workers: null, stats: null };
-        }
-    }),
+    getJudge0Status: publicProcedure.query(() => fetchJudge0Status()),
 
-    getJavaRuntimes: publicProcedure.query(async () => {
-        type ResponseData = [{ name: string; id: string }];
-        const response = await fetch(`${env.JUDGE_URL}/languages`);
-        if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
-        }
-
-        const languages: ResponseData = (await response.json()) as ResponseData;
-        const javaJREs = languages.filter((l) => {
-            if (l.name.includes("OpenJDK")) {
-                return true;
-            }
-
-            return false;
-        });
-
-        return javaJREs;
-    }),
+    getLanguages: publicProcedure.query(() => fetchJudge0Languages()),
 
     runCode: publicProcedure
         .input(
@@ -156,24 +43,10 @@ export const executeRouter = createTRPCRouter({
                 languageId: z.string(),
             }),
         )
-        .output(
-            z.object({
-                stdout: z.string().nullable(),
-                stderr: z.string().nullable(),
-                time: z.string().nullable(),
-                memory: z.number().nullable(),
-                token: z.string(),
-                compile_output: z.string().nullable(),
-                status: z.object({
-                    id: z.number(),
-                    description: z.string(),
-                }),
-            }),
-        )
-        .mutation(async (opts) => {
-            const { code, input, languageId } = opts.input;
-            return executeCode(code, languageId, input);
-        }),
+        .output(judge0ResultSchema)
+        .mutation(({ input }) =>
+            runOnJudge0(input.code, input.languageId, input.input),
+        ),
 
     submitCode: publicProcedure
         .input(
@@ -191,88 +64,44 @@ export const executeRouter = createTRPCRouter({
                 score: z.number(),
                 diff: z.string(),
                 distance: z.number(),
-                executionResult: z.object({
-                    stdout: z.string().nullable(),
-                    stderr: z.string().nullable(),
-                    time: z.string(),
-                    memory: z.number(),
-                    token: z.string(),
-                    compile_output: z.string().nullable(),
-                    status: z.object({
-                        id: z.number(),
-                        description: z.string(),
-                    }),
-                }),
+                executionResult: judge0ResultSchema,
             }),
         )
         .mutation(async (opts) => {
             const { userID, problemId, code, languageId } = opts.input;
 
-            // Fetch user and problem data in parallel – problem comes from the
-            // external API rather than the local database.
-            const [user, apiResult] = await Promise.all([
+            const [user, prevSubmissions] = await Promise.all([
                 db
                     .select()
                     .from(userTable)
                     .where(eq(userTable.id, userID))
                     .limit(1)
                     .then((rows) => rows[0]),
-                getProblemById(problemId),
-            ]);
-
-            if (!apiResult.success || !apiResult.problem) {
-                throw new Error("Failed to read problem");
-            }
-
-            const apiProblem = apiResult.problem;
-
-            // Fetch test input and output from their respective URLs in parallel.
-            console.log(apiProblem.test_output_url);
-            const [testInput, testOutput] = await Promise.all([
-                fetchUrlContent(apiProblem.test_data_url),
-                fetchUrlContent(apiProblem.test_output_url),
-            ]);
-
-            const normalizedTestOutput = testOutput.replaceAll("\r", "");
-
-            const prevSubmissions = await db
-                .select()
-                .from(submission)
-                .where(
-                    and(
-                        eq(submission.userId, userID),
-                        eq(submission.problemId, problemId),
+                db
+                    .select()
+                    .from(submission)
+                    .where(
+                        and(
+                            eq(submission.userId, userID),
+                            eq(submission.problemId, problemId),
+                        ),
                     ),
-                );
+            ]);
 
             const numSubmissions = prevSubmissions.length + 1;
 
-            const executionResult = await executeCode(
-                code,
-                languageId,
-                testInput,
-            );
-
-            const diff = diffStrings(
-                executionResult.stdout ?? "",
-                normalizedTestOutput,
-            );
-            const dist = distance(
-                executionResult.stdout ?? "",
-                normalizedTestOutput,
-            );
-            const accepted = dist < LEVENSHTEIN_DISTANCE_THRESHOLD;
-            const score = accepted ? CalculateScore(numSubmissions) : 0;
-            const alreadySucceeded =
-                prevSubmissions.find((ps) => ps.accepted) !== undefined;
+            const graded = await gradeSubmission(problemId, code, languageId);
+            const diff = diffStrings(graded.actual, graded.expected);
+            const score = graded.accepted ? CalculateScore(numSubmissions) : 0;
+            const alreadySucceeded = prevSubmissions.some((ps) => ps.accepted);
 
             if (!alreadySucceeded) {
                 await db.insert(submission).values({
-                    problemId: apiProblem.id,
+                    problemId: graded.problem.id,
                     userId: userID,
                     maxPoints: 60,
                     points: score,
-                    accepted: accepted,
+                    accepted: graded.accepted,
                     isStudentVisible: user?.showSubmissionScores ?? false,
                     submittedCode: code,
                     attemptNumber: numSubmissions,
@@ -280,22 +109,21 @@ export const executeRouter = createTRPCRouter({
             }
 
             console.dir({
-                accepted,
-                distance: dist,
+                accepted: graded.accepted,
+                distance: graded.distance,
                 diff,
-                output: executionResult.stdout,
-                expected: normalizedTestOutput,
-                compileOutput: executionResult.compile_output,
+                output: graded.actual,
+                expected: graded.expected,
+                compileOutput: graded.result.compile_output,
             });
 
             return {
-                accepted,
+                accepted: graded.accepted,
                 attemptNumber: numSubmissions,
                 score,
                 diff,
-                distance: dist,
-                executionResult: executionResult,
-                compileOutput: executionResult.compile_output,
+                distance: graded.distance,
+                executionResult: graded.result,
             };
         }),
 });
