@@ -6,13 +6,8 @@ import { Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 
-export function EnrollButton({
-    contestId,
-    userId,
-}: {
-    contestId: number;
-    userId: string;
-}) {
+/** Enrolls the signed-in user in the contest. */
+export function EnrollButton({ contestId }: { contestId: number }) {
     const router = useRouter();
     const enroll = api.contest.enroll.useMutation({
         onSuccess: () => {
@@ -25,7 +20,7 @@ export function EnrollButton({
     return (
         <Button
             size="sm"
-            onClick={() => enroll.mutate({ contestId, userId })}
+            onClick={() => enroll.mutate({ contestId })}
             disabled={enroll.isPending}
         >
             {enroll.isPending ? (

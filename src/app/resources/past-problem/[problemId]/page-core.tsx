@@ -36,7 +36,6 @@ export default function PageCore({ problem }: { problem: Problem }) {
     const { data: pastSubmissions } =
         api.submission.getProblemSubmissions.useQuery({
             problemId: problem.id,
-            userId: session?.user.id ?? "",
         });
     const solved = pastSubmissions?.at(0)?.accepted ?? false;
 
@@ -55,7 +54,6 @@ export default function PageCore({ problem }: { problem: Problem }) {
         toast("Submitting solution...");
         submitMutation.mutate({
             problemId: problem.id,
-            userID: session.user.id,
             code,
             languageId: codeEditor.language.id,
         });

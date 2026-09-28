@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useSession } from "auth-client";
 import { api } from "~/trpc/react";
 import type { ApiMinimalProblem } from "~/lib/api/lunaghs";
 import { Button } from "~/components/ui/button";
@@ -32,7 +31,6 @@ interface SelectedProblem {
 
 export default function NewContestPage() {
     const router = useRouter();
-    const { data: session } = useSession();
 
     const [settings, setSettings] = useState<ContestSettings>(
         EMPTY_CONTEST_SETTINGS,
@@ -90,18 +88,12 @@ export default function NewContestPage() {
             toast.error(error);
             return;
         }
-        const userId = session?.user?.id;
-        if (!userId) {
-            toast.error("You must be signed in to create a contest");
-            return;
-        }
-
         setSubmitting(true);
         try {
-            const created = await createContest.mutateAsync({
-                ...settingsToMutationInput(settings),
-                createdBy: userId,
-            });
+            // The server records the signed-in teacher as the creator.
+            const created = await createContest.mutateAsync(
+                settingsToMutationInput(settings),
+            );
 
             // Add problems sequentially to preserve display order
             for (const [i, p] of selectedProblems.entries()) {

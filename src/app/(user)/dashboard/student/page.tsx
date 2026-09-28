@@ -24,7 +24,7 @@ export default async function DashboardPage() {
         return null;
     }
 
-    api.user.getUser.prefetch({ userId: session!.user.id });
+    void api.user.getMe.prefetch();
 
     return (
         <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -51,10 +51,10 @@ export default async function DashboardPage() {
                         <h2 className="mt-6 mb-4 text-lg font-semibold">
                             Settings
                         </h2>
-                        <SettingsSection userId={user.id} />
+                        <SettingsSection />
                     </section>
-                    <InProgressProblems userId={user.id} />
-                    <SubmittedProblems userId={user.id} />
+                    <InProgressProblems />
+                    <SubmittedProblems />
                 </div>
             )}
         </div>

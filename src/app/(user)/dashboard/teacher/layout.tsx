@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { signInUrl } from "~/lib/auth/redirect-utils";
+import { isTeacher } from "~/lib/auth/roles";
 
 export default async function TeacherLayout({
     children,
@@ -19,7 +20,7 @@ export default async function TeacherLayout({
     const user = session?.user;
     if (user === null || user === undefined) redirect(signInUrl(pathname));
 
-    if (user.role != "teacher") {
+    if (!isTeacher(user)) {
         redirect("/dashboard/student");
     }
 

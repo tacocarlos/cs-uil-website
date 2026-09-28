@@ -1,20 +1,22 @@
 import z from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import {
+    createTRPCRouter,
+    protectedProcedure,
+    teacherProcedure,
+} from "../trpc";
 import { db } from "~/server/db";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 import { and, desc, eq, sql } from "drizzle-orm";
 
-const userProblemObject = z.object({
-    problemId: z.number(),
-    userId: z.string(),
-});
-
+// Student procedures return the signed-in user's own submissions only;
+// teacher procedures can see everyone's.
 export const submissionRouter = createTRPCRouter({
-    getProblemSubmissions: publicProcedure
-        .input(userProblemObject)
-        .query(async (opts) => {
-            const { problemId, userId } = opts.input;
+    getProblemSubmissions: protectedProcedure
+        .input(z.object({ problemId: z.number() }))
+        .query(async ({ ctx, input }) => {
+            const { problemId } = input;
+            const userId = ctx.user.id;
             return await db
                 .select()
                 .from(submission)
@@ -27,64 +29,60 @@ export const submissionRouter = createTRPCRouter({
                 );
         }),
 
-    getAcceptedSubmissions: publicProcedure
-        .input(z.object({ userId: z.string() }))
-        .query(async (opts) => {
-            const { userId } = opts.input;
-            return db
-                .select()
-                .from(submission)
-                .orderBy(desc(submission.timeSubmitted))
-                .where(
-                    and(
-                        eq(submission.userId, userId),
-                        eq(submission.accepted, true),
-                    ),
-                );
-        }),
+    getAcceptedSubmissions: protectedProcedure.query(async ({ ctx }) => {
+        const userId = ctx.user.id;
+        return db
+            .select()
+            .from(submission)
+            .orderBy(desc(submission.timeSubmitted))
+            .where(
+                and(
+                    eq(submission.userId, userId),
+                    eq(submission.accepted, true),
+                ),
+            );
+    }),
 
-    getDeniedSubmissions: publicProcedure
-        .input(z.object({ userId: z.string() }))
-        .query(async (opts) => {
-            const { userId } = opts.input;
-            // Subquery to get the latest timeSubmitted for each problem+user combo
-            const subquery = db
-                .select({
-                    problemId: submission.problemId,
-                    userId: submission.userId,
-                    latestTime: sql`max(${submission.timeSubmitted})`.as(
-                        "latestTime",
-                    ),
-                })
-                .from(submission)
-                .where(
-                    and(
-                        eq(submission.accepted, false),
-                        eq(submission.userId, userId),
-                    ),
-                )
-                .groupBy(submission.problemId, submission.userId)
-                .as("latest_per_problem_user");
+    getDeniedSubmissions: protectedProcedure.query(async ({ ctx }) => {
+        const userId = ctx.user.id;
+        // Subquery to get the latest timeSubmitted for each problem+user combo
+        const subquery = db
+            .select({
+                problemId: submission.problemId,
+                userId: submission.userId,
+                latestTime: sql`max(${submission.timeSubmitted})`.as(
+                    "latestTime",
+                ),
+            })
+            .from(submission)
+            .where(
+                and(
+                    eq(submission.accepted, false),
+                    eq(submission.userId, userId),
+                ),
+            )
+            .groupBy(submission.problemId, submission.userId)
+            .as("latest_per_problem_user");
 
-            return await db
-                .select()
-                .from(submission)
-                .innerJoin(
-                    subquery,
-                    and(
-                        eq(submission.problemId, subquery.problemId),
-                        eq(submission.userId, subquery.userId),
-                        eq(submission.timeSubmitted, subquery.latestTime),
-                    ),
-                )
-                .where(eq(submission.accepted, false));
-        }),
+        return await db
+            .select()
+            .from(submission)
+            .innerJoin(
+                subquery,
+                and(
+                    eq(submission.problemId, subquery.problemId),
+                    eq(submission.userId, subquery.userId),
+                    eq(submission.timeSubmitted, subquery.latestTime),
+                ),
+            )
+            .where(eq(submission.accepted, false));
+    }),
 
-    getMostRecentSubmission: publicProcedure
-        .input(z.object({ userId: z.string(), problemId: z.number().int() }))
-        .query(async (opts) => {
-            const { userId, problemId } = opts.input;
-            if (userId === "") return undefined;
+    getMostRecentSubmission: protectedProcedure
+        .input(z.object({ problemId: z.number().int() }))
+        .query(async ({ ctx, input }) => {
+            const { problemId } = input;
+            const userId = ctx.user.id;
             const mostRecent = (
                 await db
                     .select()
@@ -109,7 +107,7 @@ export const submissionRouter = createTRPCRouter({
             }
         }),
 
-    getAllSubmissions: publicProcedure
+    getAllSubmissions: teacherProcedure
         .input(
             z.object({
                 limit: z.number().int().min(1).max(100).default(50),
@@ -139,7 +137,7 @@ export const submissionRouter = createTRPCRouter({
                 .offset(offset);
         }),
 
-    getSubmissionById: publicProcedure
+    getSubmissionById: teacherProcedure
         .input(z.object({ submissionId: z.string() }))
         .query(async (opts) => {
             const { submissionId } = opts.input;
@@ -165,7 +163,7 @@ export const submissionRouter = createTRPCRouter({
             return rows.at(0) ?? null;
         }),
 
-    overrideSubmission: publicProcedure
+    overrideSubmission: teacherProcedure
         .input(
             z.object({
                 submissionId: z.string(),

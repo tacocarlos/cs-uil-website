@@ -1,10 +1,14 @@
 import { z } from "zod";
 import { db } from "~/server/db";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+    createTRPCRouter,
+    protectedProcedure,
+    publicProcedure,
+    teacherProcedure,
+} from "~/server/api/trpc";
 import { eq, and } from "drizzle-orm";
 import { diffChars } from "diff";
 import { submission } from "~/server/db/schema/submission";
-import { user as userTable } from "~/server/db/schema/auth";
 import CalculateScore from "~/lib/problems/judge/calculate-score";
 import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
 import {
@@ -31,11 +35,12 @@ function diffStrings(a: string, b: string): string {
 }
 
 export const executeRouter = createTRPCRouter({
-    getJudge0Status: publicProcedure.query(() => fetchJudge0Status()),
+    getJudge0Status: teacherProcedure.query(() => fetchJudge0Status()),
 
     getLanguages: publicProcedure.query(() => fetchJudge0Languages()),
 
-    runCode: publicProcedure
+    // Signed-in only: runs cost Judge0 capacity.
+    runCode: protectedProcedure
         .input(
             z.object({
                 code: z.string(),
@@ -48,11 +53,10 @@ export const executeRouter = createTRPCRouter({
             runOnJudge0(input.code, input.languageId, input.input),
         ),
 
-    submitCode: publicProcedure
+    submitCode: protectedProcedure
         .input(
             z.object({
                 problemId: z.number(),
-                userID: z.string(),
                 code: z.string(),
                 languageId: z.string(),
             }),
@@ -62,31 +66,23 @@ export const executeRouter = createTRPCRouter({
                 accepted: z.boolean(),
                 attemptNumber: z.number(),
                 score: z.number(),
-                diff: z.string(),
-                distance: z.number(),
+                // No diff or distance: both reveal the hidden expected output.
                 executionResult: judge0ResultSchema,
             }),
         )
-        .mutation(async (opts) => {
-            const { userID, problemId, code, languageId } = opts.input;
+        .mutation(async ({ ctx, input }) => {
+            const { problemId, code, languageId } = input;
+            const userId = ctx.user.id;
 
-            const [user, prevSubmissions] = await Promise.all([
-                db
-                    .select()
-                    .from(userTable)
-                    .where(eq(userTable.id, userID))
-                    .limit(1)
-                    .then((rows) => rows[0]),
-                db
-                    .select()
-                    .from(submission)
-                    .where(
-                        and(
-                            eq(submission.userId, userID),
-                            eq(submission.problemId, problemId),
-                        ),
+            const prevSubmissions = await db
+                .select()
+                .from(submission)
+                .where(
+                    and(
+                        eq(submission.userId, userId),
+                        eq(submission.problemId, problemId),
                     ),
-            ]);
+                );
 
             const numSubmissions = prevSubmissions.length + 1;
 
@@ -98,17 +94,20 @@ export const executeRouter = createTRPCRouter({
             if (!alreadySucceeded) {
                 await db.insert(submission).values({
                     problemId: graded.problem.id,
-                    userId: userID,
+                    userId,
                     maxPoints: 60,
                     points: score,
                     accepted: graded.accepted,
-                    isStudentVisible: user?.showSubmissionScores ?? false,
+                    isStudentVisible: ctx.user.showSubmissionScores,
                     submittedCode: code,
                     attemptNumber: numSubmissions,
                 });
             }
 
+            // Server log only; the expected output must not reach students.
             console.dir({
+                userId,
+                problemId,
                 accepted: graded.accepted,
                 distance: graded.distance,
                 diff,
@@ -121,8 +120,6 @@ export const executeRouter = createTRPCRouter({
                 accepted: graded.accepted,
                 attemptNumber: numSubmissions,
                 score,
-                diff,
-                distance: graded.distance,
                 executionResult: graded.result,
             };
         }),

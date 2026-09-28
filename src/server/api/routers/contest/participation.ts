@@ -1,6 +1,7 @@
 import z from "zod";
 import { and, eq } from "drizzle-orm";
-import { publicProcedure } from "../../trpc";
+import { TRPCError } from "@trpc/server";
+import { protectedProcedure } from "../../trpc";
 import { db } from "~/server/db";
 import {
     contest,
@@ -11,10 +12,10 @@ import {
 import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
 import { contestPoints, pickBestPerProblem } from "~/lib/contest/scoring";
 
-const contestAndUser = z.object({
-    contestId: z.number().int(),
-    userId: z.string(),
-});
+const byContest = z.object({ contestId: z.number().int() });
+
+/** Contest statuses in which students may enroll. */
+const ENROLLABLE_STATUSES = new Set(["scheduled", "active"]);
 
 function findEnrollment(contestId: number, userId: string) {
     return db
@@ -29,35 +30,56 @@ function findEnrollment(contestId: number, userId: string) {
         .limit(1);
 }
 
-/** What a student does in a contest: enroll, submit, and check progress. */
+/**
+ * What a student does in a contest: enroll, submit, and check progress.
+ * Always acts as the signed-in user.
+ */
 export const contestParticipation = {
-    isEnrolled: publicProcedure
-        .input(contestAndUser)
-        .query(async ({ input }) => {
-            const rows = await findEnrollment(input.contestId, input.userId);
+    isEnrolled: protectedProcedure
+        .input(byContest)
+        .query(async ({ ctx, input }) => {
+            const rows = await findEnrollment(input.contestId, ctx.user.id);
             return rows.length > 0;
         }),
 
-    enroll: publicProcedure
-        .input(contestAndUser)
-        .mutation(async ({ input }) => {
-            const existing = await findEnrollment(
-                input.contestId,
-                input.userId,
-            );
+    enroll: protectedProcedure
+        .input(byContest)
+        .mutation(async ({ ctx, input }) => {
+            const [contestRow] = await db
+                .select({ status: contest.status })
+                .from(contest)
+                .where(eq(contest.id, input.contestId))
+                .limit(1);
+            if (!contestRow) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Contest not found",
+                });
+            }
+            if (!ENROLLABLE_STATUSES.has(contestRow.status)) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: "This contest isn't open for enrollment",
+                });
+            }
+
+            const existing = await findEnrollment(input.contestId, ctx.user.id);
             if (existing.length > 0) {
-                throw new Error("Already enrolled in this contest");
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "Already enrolled in this contest",
+                });
             }
             const [row] = await db
                 .insert(contestEnrollment)
-                .values(input)
+                .values({ contestId: input.contestId, userId: ctx.user.id })
                 .returning();
             return row;
         }),
 
-    getMyBestPerProblem: publicProcedure
-        .input(contestAndUser)
-        .query(async ({ input }) => {
+    getMyBestPerProblem: protectedProcedure
+        .input(byContest)
+        .query(async ({ ctx, input }) => {
             const submissions = await db
                 .select({
                     apiProblemId: contestSubmission.apiProblemId,
@@ -69,22 +91,30 @@ export const contestParticipation = {
                 .where(
                     and(
                         eq(contestSubmission.contestId, input.contestId),
-                        eq(contestSubmission.userId, input.userId),
+                        eq(contestSubmission.userId, ctx.user.id),
                     ),
                 );
             return pickBestPerProblem(submissions);
         }),
 
-    submitCode: publicProcedure
+    submitCode: protectedProcedure
         .input(
-            contestAndUser.extend({
+            byContest.extend({
                 apiProblemId: z.number().int(),
                 code: z.string(),
                 languageId: z.string(),
             }),
         )
-        .mutation(async ({ input }) => {
-            const { contestId, apiProblemId, userId, code, languageId } = input;
+        .mutation(async ({ ctx, input }) => {
+            const { contestId, apiProblemId, code, languageId } = input;
+            const userId = ctx.user.id;
+
+            if ((await findEnrollment(contestId, userId)).length === 0) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: "Enroll in this contest before submitting",
+                });
+            }
 
             const [[contestRow], [problem], priorSubmissions] =
                 await Promise.all([

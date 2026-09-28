@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { auth } from "auth";
 import { env } from "~/env";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { LSP_SERVER_IDS } from "~/lib/lsp/servers";
@@ -18,14 +17,14 @@ export const lspRouter = createTRPCRouter({
         .mutation(async ({ ctx, input }) => {
             if (!env.LSP_GATEWAY_URL || !env.LSP_GATEWAY_SECRET) return null;
 
-            const session = await auth.api.getSession({ headers: ctx.headers });
-            if (!session) return null;
+            // Signed out: quietly no LSP (the editor still works).
+            if (!ctx.session) return null;
 
             const base = env.LSP_GATEWAY_URL.replace(/\/+$/, "");
             return {
                 url: `${base}/lsp/${input.server}`,
                 token: signLspToken(
-                    { sub: session.user.id, srv: input.server },
+                    { sub: ctx.session.user.id, srv: input.server },
                     env.LSP_GATEWAY_SECRET,
                 ),
             };

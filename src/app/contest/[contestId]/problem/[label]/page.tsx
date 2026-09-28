@@ -86,7 +86,6 @@ export default async function ContestProblemPage({
                     maxPoints: cp.maxPoints,
                 }}
                 contestStatus={contestRow.status}
-                userId={session.user.id}
             />
         </div>
     );

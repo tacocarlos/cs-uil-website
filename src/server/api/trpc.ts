@@ -6,9 +6,11 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import { auth } from "auth";
+import { isTeacher } from "~/lib/auth/roles";
 
 /**
  * 1. CONTEXT
@@ -23,8 +25,12 @@ import { ZodError } from "zod";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+    // Resolved once per request from the session cookie. Procedures must use
+    // this (never a user ID sent by the client) to decide who is asking.
+    const session = await auth.api.getSession({ headers: opts.headers });
     return {
         ...opts,
+        session,
     };
 };
 
@@ -103,3 +109,30 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Requires a signed-in user, available as `ctx.user`. Use `ctx.user.id` for
+ * "my" data; never accept the caller's user ID as input.
+ */
+export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
+    if (!ctx.session) {
+        throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "You must be signed in.",
+        });
+    }
+    return next({
+        ctx: { session: ctx.session, user: ctx.session.user },
+    });
+});
+
+/** Requires a signed-in teacher (or site admin). */
+export const teacherProcedure = protectedProcedure.use(({ ctx, next }) => {
+    if (!isTeacher(ctx.user)) {
+        throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only teachers can do that.",
+        });
+    }
+    return next();
+});

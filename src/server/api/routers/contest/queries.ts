@@ -1,6 +1,10 @@
 import z from "zod";
 import { asc, desc, eq, sql } from "drizzle-orm";
-import { publicProcedure } from "../../trpc";
+import {
+    protectedProcedure,
+    publicProcedure,
+    teacherProcedure,
+} from "../../trpc";
 import { db } from "~/server/db";
 import {
     contest,
@@ -66,7 +70,8 @@ export const contestQueries = {
         };
     }),
 
-    getEnrollments: publicProcedure.input(byContest).query(({ input }) =>
+    // Names and emails: teachers only.
+    getEnrollments: teacherProcedure.input(byContest).query(({ input }) =>
         db
             .select({
                 id: contestEnrollment.id,
@@ -81,7 +86,8 @@ export const contestQueries = {
             .orderBy(asc(contestEnrollment.enrolledAt)),
     ),
 
-    getAllSubmissions: publicProcedure
+    // Every student's submissions: teachers only.
+    getAllSubmissions: teacherProcedure
         .input(
             byContest.extend({
                 limit: z.number().int().min(1).max(200).optional(),
@@ -108,7 +114,8 @@ export const contestQueries = {
                 .offset(input.offset ?? 0),
         ),
 
-    getLeaderboard: publicProcedure
+    // Shows students' names, so signed-in users only.
+    getLeaderboard: protectedProcedure
         .input(byContest)
         .query(async ({ input }) => {
             const [submissions, problems] = await Promise.all([

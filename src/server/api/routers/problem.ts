@@ -6,6 +6,7 @@ import {
     getProblemById as API_getProblemById,
     getProblemMarkdown,
     fetchUrlContent,
+    toPublicProblem,
 } from "~/lib/api/lunaghs";
 
 export const problemRouter = createTRPCRouter({
@@ -20,10 +21,15 @@ export const problemRouter = createTRPCRouter({
         return getAllMinimalProblems();
     }),
 
+    /** Without the reference solution or hidden test URLs. */
     getProblemById: publicProcedure
         .input(z.object({ id: z.number().int() }))
         .query(async ({ input }) => {
-            return API_getProblemById(input.id);
+            const { success, problem } = await API_getProblemById(input.id);
+            return {
+                success,
+                problem: problem ? toPublicProblem(problem) : null,
+            };
         }),
 
     /** Fetches markdown + sample I/O for a single problem. Used by the contest

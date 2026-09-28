@@ -41,14 +41,12 @@ interface ContestEditorProps {
         maxPoints: number;
     };
     contestStatus: ContestStatus;
-    userId: string;
 }
 
 export default function ContestEditor({
     problem,
     contestProblem,
     contestStatus,
-    userId,
 }: ContestEditorProps) {
     const { contestId, apiProblemId, maxPoints } = contestProblem;
 
@@ -61,16 +59,12 @@ export default function ContestEditor({
 
     const { data: bestPerProblem } = api.contest.getMyBestPerProblem.useQuery({
         contestId,
-        userId,
     });
     const myBest = bestPerProblem?.find((b) => b.apiProblemId === apiProblemId);
 
     const submitMutation = api.contest.submitCode.useMutation({
         onSuccess: async (data) => {
-            await utils.contest.getMyBestPerProblem.invalidate({
-                contestId,
-                userId,
-            });
+            await utils.contest.getMyBestPerProblem.invalidate({ contestId });
             // Mirror run output so the user can see what happened.
             io.showOutput({
                 stdout: data.stdout,
@@ -94,7 +88,6 @@ export default function ContestEditor({
         submitMutation.mutate({
             contestId,
             apiProblemId,
-            userId,
             code,
             languageId: codeEditor.language.id,
         });

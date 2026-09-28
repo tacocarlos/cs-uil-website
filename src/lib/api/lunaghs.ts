@@ -218,9 +218,38 @@ export async function toAppProblem(
         inputFileName: filenameFromUrl(apiProblem.student_data_url),
         defaultInputFile: defaultInput || null,
         enabled: true,
-        solutionCode: apiProblem.solution,
-        testInput: "",
-        testOutput: "",
+    };
+}
+
+/**
+ * An API problem without the reference solution or hidden test data, safe
+ * to send to browsers. Only server-side grading may see the full problem.
+ * Built from an allow-list, so fields the API adds later stay private.
+ */
+export type PublicApiProblem = Pick<
+    ApiProblem,
+    | "id"
+    | "competition"
+    | "createdAt"
+    | "updatedAt"
+    | "name"
+    | "number"
+    | "problem_text_url"
+    | "student_data_url"
+    | "student_output_url"
+>;
+
+export function toPublicProblem(problem: ApiProblem): PublicApiProblem {
+    return {
+        id: problem.id,
+        competition: problem.competition,
+        createdAt: problem.createdAt,
+        updatedAt: problem.updatedAt,
+        name: problem.name,
+        number: problem.number,
+        problem_text_url: problem.problem_text_url,
+        student_data_url: problem.student_data_url,
+        student_output_url: problem.student_output_url,
     };
 }
 

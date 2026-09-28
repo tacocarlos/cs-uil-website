@@ -1,6 +1,6 @@
 import z from "zod";
 import { eq } from "drizzle-orm";
-import { publicProcedure } from "../../trpc";
+import { teacherProcedure } from "../../trpc";
 import { db } from "~/server/db";
 import { contest, contestProblem } from "~/server/db/schema/contest";
 
@@ -8,7 +8,7 @@ const scoringMode = z.enum(contest.scoringMode.enumValues);
 
 /** Creating and editing contests and their problem lists (teacher tools). */
 export const contestAdmin = {
-    create: publicProcedure
+    create: teacherProcedure
         .input(
             z.object({
                 name: z.string().min(1),
@@ -17,22 +17,22 @@ export const contestAdmin = {
                 endsAt: z.string(),
                 scoringMode,
                 penaltyPoints: z.number().int().min(0).optional(),
-                createdBy: z.string(),
             }),
         )
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
             const [row] = await db
                 .insert(contest)
                 .values({
                     ...input,
                     startsAt: new Date(input.startsAt),
                     endsAt: new Date(input.endsAt),
+                    createdBy: ctx.user.id,
                 })
                 .returning();
             return row!;
         }),
 
-    update: publicProcedure
+    update: teacherProcedure
         .input(
             z.object({
                 contestId: z.number().int(),
@@ -65,7 +65,7 @@ export const contestAdmin = {
             return row ?? null;
         }),
 
-    setStatus: publicProcedure
+    setStatus: teacherProcedure
         .input(
             z.object({
                 contestId: z.number().int(),
@@ -81,13 +81,13 @@ export const contestAdmin = {
             return row ?? null;
         }),
 
-    delete: publicProcedure
+    delete: teacherProcedure
         .input(z.object({ contestId: z.number().int() }))
         .mutation(async ({ input }) => {
             await db.delete(contest).where(eq(contest.id, input.contestId));
         }),
 
-    addProblem: publicProcedure
+    addProblem: teacherProcedure
         .input(
             z.object({
                 contestId: z.number().int(),
@@ -105,7 +105,7 @@ export const contestAdmin = {
             return row!;
         }),
 
-    removeProblem: publicProcedure
+    removeProblem: teacherProcedure
         .input(z.object({ contestProblemId: z.number().int() }))
         .mutation(async ({ input }) => {
             await db
@@ -113,7 +113,7 @@ export const contestAdmin = {
                 .where(eq(contestProblem.id, input.contestProblemId));
         }),
 
-    updateProblem: publicProcedure
+    updateProblem: teacherProcedure
         .input(
             z.object({
                 contestProblemId: z.number().int(),

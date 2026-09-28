@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { env } from "~/env";
+import { devLoginEnabled } from "~/lib/auth/dev-login";
 import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
 
@@ -18,6 +19,9 @@ export const auth = betterAuth({
             uil_verification: authSchema.verification,
         },
     }),
+    // Only for the fake dev accounts (see src/lib/auth/dev-login.ts);
+    // everyone else signs in with Google.
+    emailAndPassword: { enabled: devLoginEnabled() },
     socialProviders: {
         google: {
             prompt: "select_account",
@@ -38,6 +42,9 @@ export const auth = betterAuth({
                 type: "string",
                 required: true,
                 defaultValue: "student",
+                // Never settable at sign-up, or anyone could make
+                // themselves a teacher.
+                input: false,
             },
             showScoresInLeaderboard: {
                 type: "boolean",

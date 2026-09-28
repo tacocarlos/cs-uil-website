@@ -37,9 +37,9 @@ function UnsolvedProblem({
     );
 }
 
-export default function InProgressProblems({ userId }: { userId: string }) {
+export default function InProgressProblems() {
     const { isPending: isIncompleteProblemsPending, data: incompleteProblems } =
-        api.submission.getDeniedSubmissions.useQuery({ userId });
+        api.submission.getDeniedSubmissions.useQuery();
 
     if (incompleteProblems !== undefined) {
         console.dir(incompleteProblems);

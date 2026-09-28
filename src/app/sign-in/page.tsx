@@ -1,3 +1,4 @@
+import { devLoginEnabled } from "~/lib/auth/dev-login";
 import SignInPage from "./signin";
 
 export default async function SignIn({
@@ -6,5 +7,11 @@ export default async function SignIn({
     searchParams: Promise<{ next?: string }>;
 }) {
     const { next } = await searchParams;
-    return <SignInPage isLoading={false} next={next} />;
+    return (
+        <SignInPage
+            isLoading={false}
+            next={next}
+            showDevLogin={devLoginEnabled()}
+        />
+    );
 }

@@ -7,9 +7,9 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 
-export default function SettingsSection({ userId }: { userId: string }) {
+export default function SettingsSection() {
     const { isPending: userDataPending, data: user } =
-        api.user.getUser.useQuery({ userId });
+        api.user.getMe.useQuery();
     const leaderboardVisibility = user?.showScoresInLeaderboard;
     const utils = api.useUtils();
     const lvMutation = api.user.toggleLeaderboardVisibility.useMutation({
@@ -36,7 +36,6 @@ export default function SettingsSection({ userId }: { userId: string }) {
                     onClick={async () => {
                         toast("updating");
                         lvMutation.mutate({
-                            userId,
                             currentVisibility: leaderboardVisibility,
                         });
                     }}

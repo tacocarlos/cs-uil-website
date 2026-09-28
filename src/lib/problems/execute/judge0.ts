@@ -1,4 +1,5 @@
 import { env } from "~/env";
+import { decodeJudge0Response, encodeSubmission } from "./judge0-codec";
 import { judge0ResultSchema, type Judge0Result } from "./judge0-result";
 
 export { judge0ResultSchema, type Judge0Result };
@@ -13,22 +14,22 @@ export async function runOnJudge0(
     stdin = "",
 ): Promise<Judge0Result> {
     // `wait=true` makes Judge0 respond with the finished submission, so no
-    // follow-up GET by token is needed.
-    const res = await fetch(`${env.JUDGE_URL}/submissions?wait=true`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            source_code: code,
-            language_id: languageId,
-            stdin,
-        }),
-    });
+    // follow-up GET by token is needed. base64 keeps non-UTF-8 output from
+    // breaking the response (see judge0-codec.ts).
+    const res = await fetch(
+        `${env.JUDGE_URL}/submissions?wait=true&base64_encoded=true`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(encodeSubmission(code, languageId, stdin)),
+        },
+    );
     if (!res.ok) {
         throw new Error(
             `Judge0 submission failed (${res.status}): ${await res.text()}`,
         );
     }
-    return judge0ResultSchema.parse(await res.json());
+    return decodeJudge0Response(await res.json());
 }
 
 export type Judge0Worker = {

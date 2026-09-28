@@ -1,25 +1,13 @@
-/**
- * Student contest lobby — server component.
- *
- * EnrollButton is a "use client" component whose source lives inline below
- * the server-component page for colocation. Because Next.js requires
- * `"use client"` to be a file-level directive, this component must be moved
- * to its own file (e.g. `./_enroll-button.tsx`) with `"use client"` at the
- * top before deploying.  The logic and props contract are shown here so the
- * full feature is visible in one place.
- */
+/** Student contest lobby — server component. */
 
 export const dynamic = "force-dynamic";
 
 import { auth } from "auth";
 import { headers } from "next/headers";
-import { and, eq } from "drizzle-orm";
 import Link from "next/link";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import { CheckCircle, Lock, XCircle } from "lucide-react";
 import { api } from "~/trpc/server";
-import { db } from "~/server/db";
-import { contestEnrollment } from "~/server/db/schema/contest";
 import { getAllMinimalProblems } from "~/lib/api/lunaghs";
 import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
 import { Button } from "~/components/ui/button";
@@ -33,43 +21,6 @@ import {
     TableHeader,
     TableRow,
 } from "~/components/ui/table";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-// ─── EnrollButton ─────────────────────────────────────────────────────────────
-// "use client" — extract to its own file with `"use client"` for Next.js.
-// Props: contestId (string), userId (string).
-// Calls api.contest.enroll.useMutation({ contestId, userId }), then router.refresh().
-//
-// import { useRouter } from "next/navigation";
-// import { toast } from "sonner";
-// import { api } from "~/trpc/react";
-//
-// export function EnrollButton({
-//   contestId,
-//   userId,
-// }: {
-//   contestId: string;
-//   userId: string;
-// }) {
-//   const router = useRouter();
-//   const enroll = api.contest.enroll.useMutation({
-//     onSuccess: () => {
-//       toast.success("You're enrolled!");
-//       router.refresh();
-//     },
-//     onError: (err) => toast.error(err.message),
-//   });
-//   return (
-//     <Button
-//       onClick={() => enroll.mutate({ contestId, userId })}
-//       disabled={enroll.isPending}
-//     >
-//       {enroll.isPending ? "Enrolling…" : "Enroll in Contest"}
-//     </Button>
-//   );
-// }
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -98,27 +49,15 @@ export default async function ContestLobbyPage({
         );
     }
 
-    const userId = session?.user?.id ?? "";
+    const signedIn = !!session;
 
-    // 2. Enrollment check — direct DB query per spec
-    const enrolledRows = userId
-        ? await db
-              .select()
-              .from(contestEnrollment)
-              .where(
-                  and(
-                      eq(contestEnrollment.contestId, contestId),
-                      eq(contestEnrollment.userId, userId),
-                  ),
-              )
+    // 2. Enrollment and per-problem best, for the signed-in user
+    const isEnrolled = signedIn
+        ? await api.contest.isEnrolled({ contestId })
+        : false;
+    const myBest = isEnrolled
+        ? await api.contest.getMyBestPerProblem({ contestId })
         : [];
-    const isEnrolled = enrolledRows.length > 0;
-
-    // 3. Per-problem best — only if enrolled
-    const myBest =
-        isEnrolled && userId
-            ? await api.contest.getMyBestPerProblem({ contestId, userId })
-            : [];
 
     // 4. Problem name lookup map
     const problemNameMap = new Map(apiProblems.map((p) => [p.id, p.name]));
@@ -127,7 +66,7 @@ export default async function ContestLobbyPage({
     const canEnroll =
         !isEnrolled &&
         (status === "active" || status === "scheduled") &&
-        !!userId;
+        signedIn;
 
     const sortedProblems = [...contest.problems].sort(
         (a, b) => a.displayOrder - b.displayOrder,
@@ -191,7 +130,7 @@ export default async function ContestLobbyPage({
                         <p className="text-sm text-blue-800">
                             You are not enrolled in this contest.
                         </p>
-                        <EnrollButton contestId={contestId} userId={userId} />
+                        <EnrollButton contestId={contestId} />
                     </div>
                 )}
 

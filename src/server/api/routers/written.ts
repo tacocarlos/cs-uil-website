@@ -1,5 +1,5 @@
 import z from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure, teacherProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { writtenTests } from "~/server/db/schema/written";
 import { user } from "~/server/db/schema/auth";
@@ -164,7 +164,8 @@ export const writtenRouter = createTRPCRouter({
         return mostRecent[0]?.year ?? null;
     }),
 
-    addScore: publicProcedure
+    // Teachers record scores for their students.
+    addScore: teacherProcedure
         .input(
             z.object({
                 userId: z.string(),
@@ -197,7 +198,8 @@ export const writtenRouter = createTRPCRouter({
             });
         }),
 
-    getAllUsers: publicProcedure.query(async () => {
+    // Names and emails of everyone: teachers only.
+    getAllUsers: teacherProcedure.query(async () => {
         // Get all users sorted by name
         const users = await db
             .select({

@@ -3,6 +3,9 @@
  * Drizzle schema so that all existing UI components continue to compile
  * without modification, while allowing the data to be sourced from the
  * external API instead of the database.
+ *
+ * This is sent to the browser, so it must never carry the reference solution
+ * or hidden test data; grading fetches those server-side.
  */
 export interface Problem {
     id: number;
@@ -21,7 +24,4 @@ export interface Problem {
     inputFileName: string | null;
     defaultInputFile: string | null;
     enabled: boolean;
-    solutionCode: string;
-    testInput: string;
-    testOutput: string;
 }

@@ -13,17 +13,21 @@ import {
 import Image from "next/image";
 import { signIn } from "auth-client";
 import { getSafeRedirectUrl } from "~/lib/auth/redirect-utils";
+import { DevLoginButtons } from "./dev-login-buttons";
 
 type SignInPageProps = {
     error?: string;
     isLoading: boolean;
     next?: string;
+    /** Show the fake dev-account buttons (development only). */
+    showDevLogin?: boolean;
 };
 
 export default function SignInPage({
     error,
     isLoading,
     next,
+    showDevLogin = false,
 }: SignInPageProps) {
     const callbackURL = getSafeRedirectUrl(next, "/dashboard");
     return (
@@ -104,6 +108,9 @@ export default function SignInPage({
                                     : "Sign in with Google"}
                             </span>
                         </Button>
+                        {showDevLogin && (
+                            <DevLoginButtons callbackURL={callbackURL} />
+                        )}
                     </CardContent>
                     <CardFooter className="flex flex-col">
                         <p className="mt-2 text-center text-xs text-gray-500">

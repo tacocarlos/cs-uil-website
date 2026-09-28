@@ -21,6 +21,9 @@ export const env = createEnv({
         // intelligence. URL is the WebSocket base, e.g. wss://lsp.example.com
         LSP_GATEWAY_URL: z.url().optional(),
         LSP_GATEWAY_SECRET: z.string().min(32).optional(),
+        // Development only: comma-separated host:port of databases where the
+        // fake "Dev Student"/"Dev Teacher" logins may be used.
+        DEV_LOGIN_DATABASE_HOSTS: z.string().optional(),
     },
 
     /**
@@ -50,6 +53,7 @@ export const env = createEnv({
         JUDGE_URL: process.env.JUDGE_URL,
         LSP_GATEWAY_URL: process.env.LSP_GATEWAY_URL,
         LSP_GATEWAY_SECRET: process.env.LSP_GATEWAY_SECRET,
+        DEV_LOGIN_DATABASE_HOSTS: process.env.DEV_LOGIN_DATABASE_HOSTS,
         // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
         NEXT_PUBLIC_JUDGE_URL: process.env.JUDGE_URL,
     },
