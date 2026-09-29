@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { headers } from "next/headers";
 import { auth } from "auth";
+import { parseSchoolFilter, type SchoolFilter } from "~/lib/schools";
 import {
     getActiveMembership,
     type ActiveMembership,
@@ -31,4 +32,21 @@ export function leaderboardScope(
     membership: ActiveMembership | null,
 ): LeaderboardScope {
     return view === "global" || !membership ? "global" : "school";
+}
+
+type SearchParams = Record<string, string | string[] | undefined>;
+
+/**
+ * A leaderboard page's scope plus, on the global view, its school filter
+ * (?conference=&region=&district=).
+ */
+export function leaderboardView(
+    searchParams: SearchParams,
+    membership: ActiveMembership | null,
+): { scope: LeaderboardScope; filter: SchoolFilter } {
+    const scope = leaderboardScope(searchParams.view, membership);
+    return {
+        scope,
+        filter: scope === "global" ? parseSchoolFilter(searchParams) : {},
+    };
 }

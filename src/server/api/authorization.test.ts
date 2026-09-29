@@ -12,7 +12,7 @@ import { TRPCError } from "@trpc/server";
 import { type MemberRole } from "~/lib/auth/organizations";
 import { appRouter, createCaller } from "./root";
 
-type Access = "public" | "signed-in" | "teacher";
+type Access = "public" | "signed-in" | "teacher" | "site-admin";
 
 const ACCESS: Record<string, Access> = {
     // Contests
@@ -52,6 +52,12 @@ const ACCESS: Record<string, Access> = {
     "submission.getAllSubmissions": "teacher",
     "submission.getSubmissionById": "teacher",
     "submission.overrideSubmission": "teacher",
+    // School classification: teachers edit their own school, site admins
+    // any school
+    "school.getMine": "teacher",
+    "school.setMyClassification": "teacher",
+    "school.search": "site-admin",
+    "school.setClassification": "site-admin",
     // Own account
     "user.getMe": "signed-in",
     "user.getUserLeaderboardVisibility": "signed-in",
@@ -75,18 +81,22 @@ type Caller = ReturnType<typeof createCaller>;
 
 /**
  * A caller who is signed out (null), signed in with no active school
- * ("no-school"), or signed in with the given role in their active school.
+ * ("no-school"), a site admin with no active school ("site-admin"), or
+ * signed in with the given role in their active school.
  */
-function callerAs(who: MemberRole | "no-school" | null): Caller {
+function callerAs(who: MemberRole | "no-school" | "site-admin" | null): Caller {
     const session =
         who === null
             ? null
             : {
-                  user: { id: `test-${who}` },
+                  user: {
+                      id: `test-${who}`,
+                      role: who === "site-admin" ? "site-admin" : "student",
+                  },
                   session: { id: "s", userId: `test-${who}` },
               };
     const membership =
-        who === null || who === "no-school"
+        who === null || who === "no-school" || who === "site-admin"
             ? null
             : { organizationId: "test-school", role: who };
     return createCaller({
@@ -120,12 +130,13 @@ describe("authorization", () => {
         expect(procedurePaths).toEqual(Object.keys(ACCESS).sort());
     });
 
-    test.each([...pathsWith("signed-in"), ...pathsWith("teacher")])(
-        "%s rejects signed-out callers",
-        async (path) => {
-            expect(await errorCode(callerAs(null), path)).toBe("UNAUTHORIZED");
-        },
-    );
+    test.each([
+        ...pathsWith("signed-in"),
+        ...pathsWith("teacher"),
+        ...pathsWith("site-admin"),
+    ])("%s rejects signed-out callers", async (path) => {
+        expect(await errorCode(callerAs(null), path)).toBe("UNAUTHORIZED");
+    });
 
     test.each(pathsWith("teacher"))("%s rejects students", async (path) => {
         expect(await errorCode(callerAs("member"), path)).toBe("FORBIDDEN");
@@ -151,6 +162,23 @@ describe("authorization", () => {
                 );
                 expect(["UNAUTHORIZED", "FORBIDDEN"]).not.toContain(code);
             }
+        },
+    );
+
+    test.each(pathsWith("site-admin"))(
+        "%s rejects school owners who aren't site admins",
+        async (path) => {
+            expect(await errorCode(callerAs("owner"), path)).toBe("FORBIDDEN");
+        },
+    );
+
+    test.each(pathsWith("site-admin"))(
+        "%s lets site admins past the role check",
+        async (path) => {
+            const code = await errorCode(callerAs("site-admin"), path).catch(
+                () => "OTHER",
+            );
+            expect(["UNAUTHORIZED", "FORBIDDEN"]).not.toContain(code);
         },
     );
 });

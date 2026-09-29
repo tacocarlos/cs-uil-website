@@ -152,3 +152,14 @@ export const teacherProcedure = protectedProcedure.use(
         return next({ ctx: { organizationId: membership.organizationId } });
     },
 );
+
+/** Requires a site admin (global role), who can manage every school. */
+export const siteAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
+    if (ctx.user.role !== "site-admin") {
+        throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only site admins can do that.",
+        });
+    }
+    return next();
+});

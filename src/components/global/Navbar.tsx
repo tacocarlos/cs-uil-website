@@ -105,6 +105,11 @@ function DesktopNavbar() {
                                         <Link href="/dashboard">Dashboard</Link>
                                     </NavigationMenuLink>
                                 )}
+                                {user?.role === "site-admin" && (
+                                    <NavigationMenuLink asChild>
+                                        <Link href="/admin">Site Admin</Link>
+                                    </NavigationMenuLink>
+                                )}
                                 <NavigationMenuLink asChild>
                                     <Link
                                         href="/dashboard"
@@ -290,6 +295,15 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                 onClick={onClose}
                             >
                                 Dashboard
+                            </Link>
+                        )}
+                        {user?.role === "site-admin" && (
+                            <Link
+                                href="/admin"
+                                className={link}
+                                onClick={onClose}
+                            >
+                                Site Admin
                             </Link>
                         )}
                         <Link

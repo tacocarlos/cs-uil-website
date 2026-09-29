@@ -1,15 +1,22 @@
 import Link from "next/link";
+import { type SchoolFilter } from "~/lib/schools";
 import { cn } from "~/lib/utils";
 import { type LeaderboardScope } from "~/server/organizations";
+import { SchoolFilterControls } from "./school-filter";
 
-/** Switches a leaderboard page between the viewer's school and everyone. */
+/**
+ * Switches a leaderboard page between the viewer's school and everyone,
+ * with conference/region/district filters for the latter.
+ */
 export function LeaderboardScopeTabs({
     path,
     scope,
+    filter,
     hasSchool,
 }: {
     path: string;
     scope: LeaderboardScope;
+    filter: SchoolFilter;
     hasSchool: boolean;
 }) {
     const tab = (active: boolean) =>
@@ -34,10 +41,13 @@ export function LeaderboardScopeTabs({
                 </Link>
             </nav>
             {scope === "global" && (
-                <p className="text-xs text-white/80">
-                    Only students who chose to share their scores with other
-                    schools appear here.
-                </p>
+                <>
+                    <p className="mb-2 text-xs text-white/80">
+                        Only students who chose to share their scores with other
+                        schools appear here.
+                    </p>
+                    <SchoolFilterControls filter={filter} />
+                </>
             )}
         </div>
     );

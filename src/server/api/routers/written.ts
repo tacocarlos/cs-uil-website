@@ -15,18 +15,38 @@ import {
     leaderboardVisibility,
     type LeaderboardScope,
 } from "~/server/organizations";
+import {
+    CONFERENCES,
+    MAX_DISTRICT,
+    REGIONS,
+    type SchoolFilter,
+} from "~/lib/schools";
 
 /** School (the viewer's active school) or global (opted-in users). */
 const scopeInput = z.enum(["school", "global"]).default("school");
+
+/** Global leaderboards only: limit to schools with this classification. */
+const filterInput = z
+    .object({
+        conference: z.enum(CONFERENCES).optional(),
+        region: z.number().int().min(1).max(REGIONS.length).optional(),
+        district: z.number().int().min(1).max(MAX_DISTRICT).optional(),
+    })
+    .default({});
 
 /** Condition selecting the users whose scores a leaderboard may show. */
 async function visibleUsers(
     ctx: Awaited<ReturnType<typeof createTRPCContext>>,
     scope: LeaderboardScope,
+    filter: SchoolFilter,
 ) {
     const membership =
         scope === "school" ? await ctx.getActiveMembership() : null;
-    return leaderboardVisibility(scope, membership?.organizationId ?? null);
+    return leaderboardVisibility(
+        scope,
+        membership?.organizationId ?? null,
+        filter,
+    );
 }
 
 export const writtenRouter = createTRPCRouter({
@@ -48,12 +68,13 @@ export const writtenRouter = createTRPCRouter({
                     .optional(),
                 year: z.number().int().optional(),
                 scope: scopeInput,
+                filter: filterInput,
             }),
         )
         .query(async ({ ctx, input }) => {
-            const { competition, year, scope } = input;
+            const { competition, year, scope, filter } = input;
             // Build where conditions
-            const conditions = [await visibleUsers(ctx, scope)];
+            const conditions = [await visibleUsers(ctx, scope, filter)];
             if (competition) {
                 conditions.push(eq(writtenTests.competition, competition));
             }
@@ -111,14 +132,15 @@ export const writtenRouter = createTRPCRouter({
             z.object({
                 year: z.number().int().optional(),
                 scope: scopeInput,
+                filter: filterInput,
             }),
         )
         .query(async ({ ctx, input }) => {
-            const { year, scope } = input;
+            const { year, scope, filter } = input;
             // Get distinct competitions that have at least one score,
             // optionally filtered to a specific season year.
             const conditions = [
-                await visibleUsers(ctx, scope),
+                await visibleUsers(ctx, scope, filter),
                 isNotNull(writtenTests.competition),
             ];
             if (year !== undefined) {
@@ -142,14 +164,15 @@ export const writtenRouter = createTRPCRouter({
             z.object({
                 year: z.number().int().optional(),
                 scope: scopeInput,
+                filter: filterInput,
             }),
         )
         .query(async ({ ctx, input }) => {
-            const { year, scope } = input;
+            const { year, scope, filter } = input;
             // Get the competition with the most recent score,
             // optionally filtered to a specific season year.
             const conditions = [
-                await visibleUsers(ctx, scope),
+                await visibleUsers(ctx, scope, filter),
                 isNotNull(writtenTests.competition),
             ];
             if (year !== undefined) {
@@ -171,7 +194,7 @@ export const writtenRouter = createTRPCRouter({
         }),
 
     getAvailableYears: publicProcedure
-        .input(z.object({ scope: scopeInput }))
+        .input(z.object({ scope: scopeInput, filter: filterInput }))
         .query(async ({ ctx, input }) => {
             // Get all distinct years from written tests
             const years = await db
@@ -180,7 +203,7 @@ export const writtenRouter = createTRPCRouter({
                 })
                 .from(writtenTests)
                 .innerJoin(user, eq(writtenTests.userId, user.id))
-                .where(await visibleUsers(ctx, input.scope))
+                .where(await visibleUsers(ctx, input.scope, input.filter))
                 .orderBy(desc(writtenTests.seasonYear));
 
             return years
@@ -189,7 +212,7 @@ export const writtenRouter = createTRPCRouter({
         }),
 
     getMostRecentYear: publicProcedure
-        .input(z.object({ scope: scopeInput }))
+        .input(z.object({ scope: scopeInput, filter: filterInput }))
         .query(async ({ ctx, input }) => {
             // Get the most recent year from written tests
             const mostRecent = await db
@@ -198,7 +221,7 @@ export const writtenRouter = createTRPCRouter({
                 })
                 .from(writtenTests)
                 .innerJoin(user, eq(writtenTests.userId, user.id))
-                .where(await visibleUsers(ctx, input.scope))
+                .where(await visibleUsers(ctx, input.scope, input.filter))
                 .orderBy(desc(writtenTests.takenAt))
                 .limit(1);
 

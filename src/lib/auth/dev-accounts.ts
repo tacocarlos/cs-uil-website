@@ -14,6 +14,12 @@ export const DEV_ACCOUNTS = {
         email: "dev-teacher@dev.local",
         role: "teacher",
     },
+    // Site admin (e.g. /admin); also owner of the default school.
+    admin: {
+        name: "Admin Test",
+        email: "dev-admin@dev.local",
+        role: "site-admin",
+    },
 } as const;
 
 export type DevAccountKind = keyof typeof DEV_ACCOUNTS;

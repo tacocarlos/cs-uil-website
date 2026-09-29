@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { getAllCompetitions, getAllMinimalProblems } from "~/lib/api/lunaghs";
 import {
     getCurrentMembership,
-    leaderboardScope,
+    leaderboardView,
 } from "~/server/current-membership";
 import { leaderboardVisibility } from "~/server/organizations";
 import Leaderboard, { type CompetitionLeaderboardData } from "./leaderboard";
@@ -16,10 +16,10 @@ export const dynamic = "force-dynamic";
 export default async function LeaderboardPage({
     searchParams,
 }: {
-    searchParams: Promise<{ view?: string | string[] }>;
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
     const { membership } = await getCurrentMembership();
-    const scope = leaderboardScope((await searchParams).view, membership);
+    const { scope, filter } = leaderboardView(await searchParams, membership);
 
     const [rows, apiProblems, apiCompetitions] = await Promise.all([
         db
@@ -31,6 +31,7 @@ export default async function LeaderboardPage({
                     leaderboardVisibility(
                         scope,
                         membership?.organizationId ?? null,
+                        filter,
                     ),
                     eq(submission.accepted, true),
                 ),
@@ -102,6 +103,7 @@ export default async function LeaderboardPage({
             <LeaderboardScopeTabs
                 path="/leaderboard"
                 scope={scope}
+                filter={filter}
                 hasSchool={membership !== null}
             />
             <Leaderboard

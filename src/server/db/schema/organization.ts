@@ -1,4 +1,13 @@
-import { index, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+    check,
+    index,
+    integer,
+    text,
+    timestamp,
+    unique,
+} from "drizzle-orm/pg-core";
+import { CONFERENCES, MAX_DISTRICT, REGIONS } from "~/lib/schools";
 import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
 
@@ -8,14 +17,37 @@ import { user } from "./auth";
 
 // ── organization ──────────────────────────────────────────────────────────────
 
-export const organization = createTable("organization", {
-    id: text("id").primaryKey(),
-    name: text("name").notNull(),
-    slug: text("slug").notNull().unique(),
-    logo: text("logo"),
-    createdAt: timestamp("created_at").notNull(),
-    metadata: text("metadata"),
-});
+export const organization = createTable(
+    "organization",
+    {
+        id: text("id").primaryKey(),
+        name: text("name").notNull(),
+        slug: text("slug").notNull().unique(),
+        logo: text("logo"),
+        createdAt: timestamp("created_at").notNull(),
+        metadata: text("metadata"),
+        // UIL academic classification (see src/lib/schools.ts). Set by site
+        // admins; null until known.
+        conference: text("conference", { enum: CONFERENCES }),
+        district: integer("district"),
+        region: integer("region"),
+    },
+    (t) => [
+        index("organization_conference_idx").on(t.conference),
+        check(
+            "organization_conference_check",
+            sql`${t.conference} IN (${sql.raw(CONFERENCES.map((c) => `'${c}'`).join(", "))})`,
+        ),
+        check(
+            "organization_district_check",
+            sql`${t.district} BETWEEN 1 AND ${sql.raw(String(MAX_DISTRICT))}`,
+        ),
+        check(
+            "organization_region_check",
+            sql`${t.region} BETWEEN 1 AND ${sql.raw(String(REGIONS.length))}`,
+        ),
+    ],
+);
 export type Organization = typeof organization.$inferSelect;
 
 // ── member ────────────────────────────────────────────────────────────────────

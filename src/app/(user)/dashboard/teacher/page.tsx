@@ -9,6 +9,7 @@ import { getCurrentMembership } from "~/server/current-membership";
 import { inSchool } from "~/server/organizations";
 import { RevalidateCacheButton } from "./revalidate-cache-button";
 import { Judge0StatusCard } from "./judge0-status";
+import { SchoolClassificationCard } from "./school-classification";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -72,9 +73,12 @@ export default async function TeacherDashboardPage() {
                 </div>
             </div>
 
-            {/* ── Judge0 status ──────────────────────────────────────────────── */}
-            <div className="mb-8 max-w-sm">
-                <Judge0StatusCard />
+            {/* ── Judge0 status and school ──────────────────────────────────── */}
+            <div className="mb-8 flex flex-wrap items-start gap-4">
+                <div className="w-full max-w-sm">
+                    <Judge0StatusCard />
+                </div>
+                <SchoolClassificationCard />
             </div>
 
             {/* ── Recent submissions ─────────────────────────────────────── */}

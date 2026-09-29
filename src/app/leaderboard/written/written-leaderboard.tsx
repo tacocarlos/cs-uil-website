@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { type SchoolFilter } from "~/lib/schools";
 import { type LeaderboardScope } from "~/server/organizations";
 
 function getCurrentYear() {
@@ -35,8 +36,10 @@ function getYearParam(
 
 export default function WrittenLeaderboard({
     scope,
+    filter,
 }: {
     scope: LeaderboardScope;
+    filter: SchoolFilter;
 }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCompetition, setSelectedCompetition] = useState<
@@ -47,7 +50,10 @@ export default function WrittenLeaderboard({
     >("current");
 
     // Fetch available years (not year-dependent)
-    const { data: years } = api.written.getAvailableYears.useQuery({ scope });
+    const { data: years } = api.written.getAvailableYears.useQuery({
+        scope,
+        filter,
+    });
 
     // Determine year parameter before using it in dependent queries
     const yearParam = getYearParam(selectedYear);
@@ -57,11 +63,13 @@ export default function WrittenLeaderboard({
         api.written.getAvailableCompetitions.useQuery({
             year: yearParam,
             scope,
+            filter,
         });
     const { data: mostRecentCompetition } =
         api.written.getMostRecentCompetition.useQuery({
             year: yearParam,
             scope,
+            filter,
         });
 
     // When the year changes, reset the competition so the year-scoped
@@ -87,6 +95,7 @@ export default function WrittenLeaderboard({
             competition: competitionParam as any,
             year: yearParam,
             scope,
+            filter,
         },
         {
             enabled:

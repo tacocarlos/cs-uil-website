@@ -34,7 +34,29 @@ export const auth = betterAuth({
             // Schools are set up by site admins, not self-serve.
             allowUserToCreateOrganization: (user) => user.role === "site-admin",
             schema: {
-                organization: { modelName: "uil_organization" },
+                organization: {
+                    modelName: "uil_organization",
+                    // UIL classification. Not settable through the auth API
+                    // (input: false), so teachers can't reclassify their own
+                    // school; site admins set it.
+                    additionalFields: {
+                        conference: {
+                            type: "string",
+                            required: false,
+                            input: false,
+                        },
+                        district: {
+                            type: "number",
+                            required: false,
+                            input: false,
+                        },
+                        region: {
+                            type: "number",
+                            required: false,
+                            input: false,
+                        },
+                    },
+                },
                 member: { modelName: "uil_member" },
                 invitation: { modelName: "uil_invitation" },
             },
