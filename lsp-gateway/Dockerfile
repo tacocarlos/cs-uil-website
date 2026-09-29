@@ -33,7 +33,9 @@ RUN apt-get update \
         "https://download.eclipse.org/jdtls/milestones/${JDTLS_VERSION}/${JDTLS_TAR}" \
     && echo "${JDTLS_SHA256}  /tmp/${JDTLS_TAR}" | sha256sum -c - \
     && mkdir -p /opt/jdtls \
-    && tar -xzf "/tmp/${JDTLS_TAR}" -C /opt/jdtls \
+    # The tarball's files belong to a very high UID that user-namespaced
+    # Docker hosts can't map, so don't try to keep it; we chown below anyway.
+    && tar -xzf "/tmp/${JDTLS_TAR}" -C /opt/jdtls --no-same-owner \
     && rm "/tmp/${JDTLS_TAR}" \
     && ln -s /opt/jdtls/bin/jdtls /usr/local/bin/jdtls \
     # jdtls writes to its configuration area inside the install directory.
