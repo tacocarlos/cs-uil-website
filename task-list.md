@@ -26,44 +26,41 @@ practice on the site.
 | # | Phase | Size | Notes |
 | - | ----- | ---- | ----- |
 | 1 | ✅ **Server-side authorization** | M–L | Done. `protectedProcedure` / `teacherProcedure` read the user from the session; no procedure accepts a client `userId`. `src/server/api/authorization.test.ts` classifies every procedure and fails on unclassified ones. |
-| 2 | **Organizations** | S–M | Enable the better-auth organization plugin, generate the migration, move existing users into a default org for the current school (prod migration via `db:migrate`). |
-| 3 | **Scoped data** | M | Practice submissions, written tests, teacher dashboard, score overrides, and leaderboards filter by organization; teachers only see/override their own students. |
+| 2 | **Organizations** | S–M | Code done 2026-09-29; **not deployed yet**. Production Vercel builds now apply pending migrations (`scripts/vercel-build.sh`), so deploying applies `drizzle/0001`–`0002`; first confirm prod's `drizzle.__drizzle_migrations` has the baseline row and take a backup. Organization plugin enabled (site admins create schools); tables `uil_organization` / `uil_member` / `uil_invitation` plus `uil_session.active_organization_id`. Every user is in Groveton High School (`groveton-hs`): site admins → owner, teachers → admin, others → member. New users join it automatically (hook in `auth.ts`) until join codes exist; sessions start in the user's earliest school. |
+| 3 | **Scoped data** | M | Practice submissions, written tests, teacher dashboard, score overrides, and leaderboards filter by the session's active organization; teachers only see/override their own students. Also: make `teacherProcedure` and `dashboard/teacher/layout.tsx` check the owner/admin membership role instead of the global `role`, and replace `schema/role.ts` / `permission-utils.ts`. Leaderboard: per-school by default, plus an opt-in global leaderboard (new per-user setting, default off). |
 | 4 | **Cross-school contests** | M | Contests owned by an org with visibility (org-only / invite-only / open) and matching enrollment rules; leaderboards show each student's school. |
-| 5 | **Management UI** | M–L | Create org, invite teachers, students join, member management, site-admin view, school switcher (if multi-membership). |
+| 5 | **Management UI** | M–L | Site-admin: create schools and add teachers. Teachers: join code/link and member management. Students: join with a code. School switcher. Once join codes exist, remove the auto-join-default-school hook in `auth.ts`. |
 
 Phases 1–3 make the site safely multi-school; 4–5 make it feel like a
 platform.
 
-### Decisions needed before Phase 2
+### Decisions (2026-09-29)
 
-1. **Membership:** can a user belong to more than one school? (Yes means a
-   school switcher and an "active school" on every request.)
-2. **Joining:** how do students join — join code/link from their teacher
-   (recommended), email-domain matching, or teacher-created accounts?
-3. **Creating schools:** self-serve for any teacher, or approved by a site
-   admin? (Approval recommended, to prevent spam schools.)
-4. **Visibility:** is the practice leaderboard shared across schools (with a
-   school filter) or per-school only? Users are mostly minors, so exposing
-   names and scores across schools should be a deliberate choice (the
-   `showScoresInLeaderboard` setting helps).
-5. **Roles:** keep "site admin" global; make "teacher" a per-school role
-   (owner/admin) instead of a global flag?
+1. **Membership:** users can belong to multiple schools (e.g. a site admin
+   who also teaches). Needs an active school on the session and a school
+   switcher.
+2. **Joining:** join code/link from a teacher only. Students can't be
+   assumed to receive email, and there is no email server, so no email
+   invitations or domain matching.
+3. **Creating schools:** site admins only; no request/approval flow.
+4. **Visibility:** the leaderboard defaults to the user's school. A global
+   leaderboard (separate view or page) is opt-in per student: only students
+   who explicitly allow it appear there. Anyone can view it.
+5. **Roles:** "site admin" stays global; "teacher" becomes a per-school
+   role (owner/admin) instead of the global flag.
 
 ## Other follow-ups
 
-- **Problem API data (urgent, api.lunaghs.dev's domain): 37 of 48 problems
-  can't be solved here.** Their `test_output_url` file contains the problem
+- **Problem API data (api.lunaghs.dev's domain; owner aware, fix planned
+  there as of 2026-09-29): 37 of 48 problems can't be solved here.** Their `test_output_url` file contains the problem
   statement Markdown instead of the expected output, so every submission is
   rejected. Found 2026-09-27; broken IDs: 4–12, 15–17, 19–25, 29, 31–37,
   40–49. This site only compares against the stored test output; producing
   and validating it (including running reference solutions) belongs to
   api.lunaghs.dev.
-- **Student code written UIL-style may not match the judge:** UIL programs
-  typically use `public class <ProblemName>` (Judge0 compiles `Main.java`)
-  and read input from `<name>.dat` (the judge feeds stdin). Students who
-  follow the starter code are fine. Options: rename a student's public class
-  to `Main` before judging, and/or supply the test input as `<name>.dat` via
-  Judge0 `additional_files`.
+- ~~Student code written UIL-style may not match the judge~~ (`public class
+  <ProblemName>`, reading `<name>.dat`). Won't fix (2026-09-29): the starter
+  code's `Main` + stdin doesn't change how students solve problems.
 - F# on this Judge0 takes ~3–5 s of the 5 s CPU limit just to start, so even
   `printfn "hello"` can time out. Consider a higher per-submission limit for
   F#, or hiding it.
@@ -78,10 +75,8 @@ platform.
   `getProblemSubmissions`, `contest.getEnrollments`,
   `written.getMostRecentYear`, and `problem.getProblems`.
 
-- Rebuild the Judge0 VM on Ubuntu 24.04 (systemd 259 on 26.04 dropped
-  cgroup v1, so no code can run until then). Then re-run a real submission
-  to confirm stdin and grading work.
+- ✅ Rebuilt the Judge0 VM; real submissions run (2026-09-29).
 - Pin pyright and clangd in `lsp-gateway/Dockerfile` (jdtls is pinned).
 - `NEXT_PUBLIC_JUDGE_URL` in `src/env.js` is declared but unused; remove it.
-- Deploy the LSP gateway for production: `wss://` behind a proxy,
-  `ALLOWED_ORIGINS` set to the real site, a separate secret.
+- ✅ Deployed the LSP gateway for production (2026-09-29) with
+  `lsp-gateway/deploy.sh`, behind Caddy.

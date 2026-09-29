@@ -34,6 +34,8 @@ export const session = createTable(
         ipAddress: text("ip_address"),
         userAgent: text("user_agent"),
         userId: text("user_id").notNull(),
+        /** School the user is currently acting in (organization plugin). */
+        activeOrganizationId: text("active_organization_id"),
     },
     (t) => [cascadeFk("session_user_id_fk", t.userId, user.id)],
 );
