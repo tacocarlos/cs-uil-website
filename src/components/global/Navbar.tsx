@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { signOut, useSession } from "auth-client";
+import { signOut, useActiveMember, useSession } from "auth-client";
 import { Button } from "../ui/button";
 import { usePathname } from "next/navigation";
 import { signInUrl } from "~/lib/auth/redirect-utils";
+import { isTeacherRole } from "~/lib/auth/organizations";
 import { NavigationMenu } from "~/components/ui/navigation-menu";
 import {
     NavigationMenuContent,
@@ -65,7 +66,8 @@ function DesktopNavbar() {
     const haveUserImageURL =
         session?.user.image != null || session?.user.image != undefined;
     const user = session?.user;
-    const role = user?.role ?? "student";
+    const { data: activeMember } = useActiveMember();
+    const isTeacher = isTeacherRole(activeMember?.role);
     const pathname = usePathname();
 
     return (
@@ -85,7 +87,7 @@ function DesktopNavbar() {
                     <NavigationMenuContent>
                         <ul className="grid w-[200px] gap-4">
                             <li>
-                                {role !== "student" ? (
+                                {isTeacher ? (
                                     <>
                                         <NavigationMenuLink asChild>
                                             <Link href="/dashboard/teacher">
@@ -212,7 +214,8 @@ function DesktopNavbar() {
 function MobileMenu({ onClose }: { onClose: () => void }) {
     const { data: session } = useSession();
     const user = session?.user;
-    const role = user?.role ?? "student";
+    const { data: activeMember } = useActiveMember();
+    const isTeacher = isTeacherRole(activeMember?.role);
     const pathname = usePathname();
     const haveUserImageURL =
         session?.user.image != null || session?.user.image != undefined;
@@ -263,7 +266,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                 <p className={sectionLabel}>Account</p>
                 {session ? (
                     <>
-                        {role !== "student" ? (
+                        {isTeacher ? (
                             <>
                                 <Link
                                     href="/dashboard/teacher"

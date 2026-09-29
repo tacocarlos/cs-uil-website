@@ -3,11 +3,24 @@ import { user } from "~/server/db/schema/auth";
 import { submission } from "~/server/db/schema/submission";
 import { and, eq } from "drizzle-orm";
 import { getAllCompetitions, getAllMinimalProblems } from "~/lib/api/lunaghs";
+import {
+    getCurrentMembership,
+    leaderboardScope,
+} from "~/server/current-membership";
+import { leaderboardVisibility } from "~/server/organizations";
 import Leaderboard, { type CompetitionLeaderboardData } from "./leaderboard";
+import { LeaderboardScopeTabs } from "./scope-tabs";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeaderboardPage() {
+export default async function LeaderboardPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ view?: string | string[] }>;
+}) {
+    const { membership } = await getCurrentMembership();
+    const scope = leaderboardScope((await searchParams).view, membership);
+
     const [rows, apiProblems, apiCompetitions] = await Promise.all([
         db
             .select()
@@ -15,7 +28,10 @@ export default async function LeaderboardPage() {
             .innerJoin(submission, eq(user.id, submission.userId))
             .where(
                 and(
-                    eq(user.showScoresInLeaderboard, true),
+                    leaderboardVisibility(
+                        scope,
+                        membership?.organizationId ?? null,
+                    ),
                     eq(submission.accepted, true),
                 ),
             ),
@@ -82,7 +98,12 @@ export default async function LeaderboardPage() {
     console.log("api problems: ");
     console.dir(apiProblems);
     return (
-        <main className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+            <LeaderboardScopeTabs
+                path="/leaderboard"
+                scope={scope}
+                hasSchool={membership !== null}
+            />
             <Leaderboard
                 scores={scores}
                 problems={problems}

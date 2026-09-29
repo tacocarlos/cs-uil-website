@@ -11,6 +11,11 @@ export const DEFAULT_ORGANIZATION = {
 
 export type MemberRole = "owner" | "admin" | "member";
 
+/** Owners and admins of a school are its teachers. */
+export function isTeacherRole(role: string | null | undefined): boolean {
+    return role === "owner" || role === "admin";
+}
+
 /**
  * Membership role matching a user's global role: site admins own the
  * school, teachers administer it, everyone else is a member (student).

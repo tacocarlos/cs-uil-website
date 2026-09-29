@@ -5,6 +5,8 @@ import { db } from "~/server/db";
 import { submission as submissionTable } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 import { getAllMinimalProblems } from "~/lib/api/lunaghs";
+import { getCurrentMembership } from "~/server/current-membership";
+import { inSchool } from "~/server/organizations";
 import { RevalidateCacheButton } from "./revalidate-cache-button";
 import { Judge0StatusCard } from "./judge0-status";
 import { Badge } from "~/components/ui/badge";
@@ -23,6 +25,10 @@ export const dynamic = "force-dynamic";
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function TeacherDashboardPage() {
+    // The layout already checked that this is a teacher of the active school.
+    const { membership } = await getCurrentMembership();
+    if (!membership) return null;
+
     const [submissions, apiProblems] = await Promise.all([
         db
             .select({
@@ -39,6 +45,7 @@ export default async function TeacherDashboardPage() {
             })
             .from(submissionTable)
             .leftJoin(userTable, eq(submissionTable.userId, userTable.id))
+            .where(inSchool(submissionTable.userId, membership.organizationId))
             .orderBy(desc(submissionTable.timeSubmitted))
             .limit(10),
         getAllMinimalProblems(),

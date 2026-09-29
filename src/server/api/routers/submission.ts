@@ -1,4 +1,5 @@
 import z from "zod";
+import { TRPCError } from "@trpc/server";
 import {
     createTRPCRouter,
     protectedProcedure,
@@ -8,9 +9,10 @@ import { db } from "~/server/db";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 import { and, desc, eq, sql } from "drizzle-orm";
+import { inSchool } from "~/server/organizations";
 
 // Student procedures return the signed-in user's own submissions only;
-// teacher procedures can see everyone's.
+// teacher procedures see and change only their school's students'.
 export const submissionRouter = createTRPCRouter({
     getProblemSubmissions: protectedProcedure
         .input(z.object({ problemId: z.number() }))
@@ -114,8 +116,8 @@ export const submissionRouter = createTRPCRouter({
                 offset: z.number().int().min(0).default(0),
             }),
         )
-        .query(async (opts) => {
-            const { limit, offset } = opts.input;
+        .query(async ({ ctx, input }) => {
+            const { limit, offset } = input;
             return await db
                 .select({
                     id: submission.id,
@@ -132,6 +134,7 @@ export const submissionRouter = createTRPCRouter({
                 })
                 .from(submission)
                 .leftJoin(userTable, eq(submission.userId, userTable.id))
+                .where(inSchool(submission.userId, ctx.organizationId))
                 .orderBy(desc(submission.timeSubmitted))
                 .limit(limit)
                 .offset(offset);
@@ -139,8 +142,8 @@ export const submissionRouter = createTRPCRouter({
 
     getSubmissionById: teacherProcedure
         .input(z.object({ submissionId: z.string() }))
-        .query(async (opts) => {
-            const { submissionId } = opts.input;
+        .query(async ({ ctx, input }) => {
+            const { submissionId } = input;
             const rows = await db
                 .select({
                     id: submission.id,
@@ -158,7 +161,12 @@ export const submissionRouter = createTRPCRouter({
                 })
                 .from(submission)
                 .leftJoin(userTable, eq(submission.userId, userTable.id))
-                .where(eq(submission.id, submissionId))
+                .where(
+                    and(
+                        eq(submission.id, submissionId),
+                        inSchool(submission.userId, ctx.organizationId),
+                    ),
+                )
                 .limit(1);
             return rows.at(0) ?? null;
         }),
@@ -171,15 +179,23 @@ export const submissionRouter = createTRPCRouter({
                 points: z.number().int().min(0),
             }),
         )
-        .mutation(async (opts) => {
-            const { submissionId, accepted, points } = opts.input;
+        .mutation(async ({ ctx, input }) => {
+            const { submissionId, accepted, points } = input;
             const rows = await db
                 .update(submission)
                 .set({ accepted, points })
-                .where(eq(submission.id, submissionId))
+                .where(
+                    and(
+                        eq(submission.id, submissionId),
+                        inSchool(submission.userId, ctx.organizationId),
+                    ),
+                )
                 .returning();
             if (rows.length === 0) {
-                throw new Error("Submission not found");
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Submission not found",
+                });
             }
             return rows[0]!;
         }),

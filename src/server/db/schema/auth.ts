@@ -20,6 +20,11 @@ export const user = createTable("user", {
         "student",
     ),
     showScoresInLeaderboard: boolean().notNull().default(true),
+    /**
+     * Opt-in: also appear on the leaderboards shared by all schools. Only
+     * applies when showScoresInLeaderboard is on.
+     */
+    showInGlobalLeaderboard: boolean().notNull().default(false),
 });
 export type User = typeof user.$inferSelect;
 

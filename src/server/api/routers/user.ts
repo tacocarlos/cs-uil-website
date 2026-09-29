@@ -37,6 +37,18 @@ export const userRouter = createTRPCRouter({
             return updatedUser;
         }),
 
+    /** Opt in to (or out of) the leaderboards shared by all schools. */
+    setGlobalLeaderboardVisibility: protectedProcedure
+        .input(z.object({ visible: z.boolean() }))
+        .mutation(async ({ ctx, input }) => {
+            const [updatedUser] = await db
+                .update(userTable)
+                .set({ showInGlobalLeaderboard: input.visible })
+                .where(eq(userTable.id, ctx.user.id))
+                .returning();
+            return updatedUser;
+        }),
+
     getProblemSubmissions: protectedProcedure
         .input(z.object({ problemId: z.number().int().optional() }))
         .query(async ({ ctx, input }) => {

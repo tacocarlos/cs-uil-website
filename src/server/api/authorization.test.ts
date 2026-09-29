@@ -4,10 +4,12 @@
  * accidentally public.
  *
  * The rejection tests never reach the database: the auth middleware runs
- * before input parsing and the procedure body.
+ * before input parsing and the procedure body, and the caller's school
+ * membership is supplied by the test instead of looked up.
  */
 import { describe, expect, test } from "bun:test";
 import { TRPCError } from "@trpc/server";
+import { type MemberRole } from "~/lib/auth/organizations";
 import { appRouter, createCaller } from "./root";
 
 type Access = "public" | "signed-in" | "teacher";
@@ -54,8 +56,10 @@ const ACCESS: Record<string, Access> = {
     "user.getMe": "signed-in",
     "user.getUserLeaderboardVisibility": "signed-in",
     "user.toggleLeaderboardVisibility": "signed-in",
+    "user.setGlobalLeaderboardVisibility": "signed-in",
     "user.getProblemSubmissions": "signed-in",
-    // Written tests (leaderboards only include users who opted in)
+    // Written tests (leaderboards only include users who opted in; the
+    // school leaderboard is empty without a school)
     "written.getLeaderboard": "public",
     "written.getAvailableCompetitions": "public",
     "written.getMostRecentCompetition": "public",
@@ -69,17 +73,26 @@ const procedurePaths = Object.keys(appRouter._def.procedures).sort();
 
 type Caller = ReturnType<typeof createCaller>;
 
-function callerAs(role: string | null): Caller {
+/**
+ * A caller who is signed out (null), signed in with no active school
+ * ("no-school"), or signed in with the given role in their active school.
+ */
+function callerAs(who: MemberRole | "no-school" | null): Caller {
     const session =
-        role === null
+        who === null
             ? null
             : {
-                  user: { id: `test-${role}`, role },
-                  session: { id: "s", userId: `test-${role}` },
+                  user: { id: `test-${who}` },
+                  session: { id: "s", userId: `test-${who}` },
               };
+    const membership =
+        who === null || who === "no-school"
+            ? null
+            : { organizationId: "test-school", role: who };
     return createCaller({
         headers: new Headers(),
         session: session as never,
+        getActiveMembership: async () => membership,
     });
 }
 
@@ -115,18 +128,29 @@ describe("authorization", () => {
     );
 
     test.each(pathsWith("teacher"))("%s rejects students", async (path) => {
-        expect(await errorCode(callerAs("student"), path)).toBe("FORBIDDEN");
+        expect(await errorCode(callerAs("member"), path)).toBe("FORBIDDEN");
     });
 
     test.each(pathsWith("teacher"))(
-        "%s lets teachers past the role check",
+        "%s rejects users without an active school",
         async (path) => {
-            // Passes auth, then fails on the missing input (or DB); either
-            // way, not an auth error.
-            const code = await errorCode(callerAs("teacher"), path).catch(
-                () => "OTHER",
+            expect(await errorCode(callerAs("no-school"), path)).toBe(
+                "FORBIDDEN",
             );
-            expect(["UNAUTHORIZED", "FORBIDDEN"]).not.toContain(code);
+        },
+    );
+
+    test.each(pathsWith("teacher"))(
+        "%s lets school owners and admins past the role check",
+        async (path) => {
+            for (const role of ["owner", "admin"] as const) {
+                // Passes auth, then fails on the missing input (or DB);
+                // either way, not an auth error.
+                const code = await errorCode(callerAs(role), path).catch(
+                    () => "OTHER",
+                );
+                expect(["UNAUTHORIZED", "FORBIDDEN"]).not.toContain(code);
+            }
         },
     );
 });

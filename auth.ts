@@ -112,6 +112,12 @@ export const auth = betterAuth({
                 required: true,
                 defaultValue: true,
             },
+            showInGlobalLeaderboard: {
+                type: "boolean",
+                required: true,
+                defaultValue: false,
+                input: false,
+            },
         },
     },
     session: {

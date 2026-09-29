@@ -19,6 +19,10 @@ export default function SettingsSection() {
         },
     });
 
+    const globalMutation = api.user.setGlobalLeaderboardVisibility.useMutation({
+        onSuccess: () => utils.user.invalidate(),
+    });
+
     if (leaderboardVisibility === undefined) return null;
 
     if (userDataPending && lvMutation.isPending) {
@@ -39,6 +43,25 @@ export default function SettingsSection() {
                             currentVisibility: leaderboardVisibility,
                         });
                     }}
+                />
+            </span>
+            <span className="mt-3 flex space-x-3">
+                <Label htmlFor="global-lv-switch">
+                    Also show my scores to other schools
+                </Label>
+                <Switch
+                    disabled={
+                        !leaderboardVisibility ||
+                        globalMutation.isPending ||
+                        userDataPending
+                    }
+                    id="global-lv-switch"
+                    checked={
+                        leaderboardVisibility && user?.showInGlobalLeaderboard
+                    }
+                    onCheckedChange={(visible) =>
+                        globalMutation.mutate({ visible })
+                    }
                 />
             </span>
         </div>

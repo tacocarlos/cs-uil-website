@@ -1,9 +1,33 @@
 import z from "zod";
-import { createTRPCRouter, publicProcedure, teacherProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
+import {
+    createTRPCRouter,
+    publicProcedure,
+    teacherProcedure,
+    type createTRPCContext,
+} from "../trpc";
 import { db } from "~/server/db";
 import { writtenTests } from "~/server/db/schema/written";
 import { user } from "~/server/db/schema/auth";
 import { eq, and, desc, isNotNull, asc } from "drizzle-orm";
+import {
+    inSchool,
+    leaderboardVisibility,
+    type LeaderboardScope,
+} from "~/server/organizations";
+
+/** School (the viewer's active school) or global (opted-in users). */
+const scopeInput = z.enum(["school", "global"]).default("school");
+
+/** Condition selecting the users whose scores a leaderboard may show. */
+async function visibleUsers(
+    ctx: Awaited<ReturnType<typeof createTRPCContext>>,
+    scope: LeaderboardScope,
+) {
+    const membership =
+        scope === "school" ? await ctx.getActiveMembership() : null;
+    return leaderboardVisibility(scope, membership?.organizationId ?? null);
+}
 
 export const writtenRouter = createTRPCRouter({
     getLeaderboard: publicProcedure
@@ -23,12 +47,13 @@ export const writtenRouter = createTRPCRouter({
                     ])
                     .optional(),
                 year: z.number().int().optional(),
+                scope: scopeInput,
             }),
         )
-        .query(async (opts) => {
-            const { competition, year } = opts.input;
+        .query(async ({ ctx, input }) => {
+            const { competition, year, scope } = input;
             // Build where conditions
-            const conditions = [eq(user.showScoresInLeaderboard, true)];
+            const conditions = [await visibleUsers(ctx, scope)];
             if (competition) {
                 conditions.push(eq(writtenTests.competition, competition));
             }
@@ -82,13 +107,18 @@ export const writtenRouter = createTRPCRouter({
         }),
 
     getAvailableCompetitions: publicProcedure
-        .input(z.object({ year: z.number().int().optional() }))
-        .query(async (opts) => {
-            const { year } = opts.input;
+        .input(
+            z.object({
+                year: z.number().int().optional(),
+                scope: scopeInput,
+            }),
+        )
+        .query(async ({ ctx, input }) => {
+            const { year, scope } = input;
             // Get distinct competitions that have at least one score,
             // optionally filtered to a specific season year.
             const conditions = [
-                eq(user.showScoresInLeaderboard, true),
+                await visibleUsers(ctx, scope),
                 isNotNull(writtenTests.competition),
             ];
             if (year !== undefined) {
@@ -108,13 +138,18 @@ export const writtenRouter = createTRPCRouter({
         }),
 
     getMostRecentCompetition: publicProcedure
-        .input(z.object({ year: z.number().int().optional() }))
-        .query(async (opts) => {
-            const { year } = opts.input;
+        .input(
+            z.object({
+                year: z.number().int().optional(),
+                scope: scopeInput,
+            }),
+        )
+        .query(async ({ ctx, input }) => {
+            const { year, scope } = input;
             // Get the competition with the most recent score,
             // optionally filtered to a specific season year.
             const conditions = [
-                eq(user.showScoresInLeaderboard, true),
+                await visibleUsers(ctx, scope),
                 isNotNull(writtenTests.competition),
             ];
             if (year !== undefined) {
@@ -135,36 +170,42 @@ export const writtenRouter = createTRPCRouter({
             return mostRecent[0]?.competition ?? null;
         }),
 
-    getAvailableYears: publicProcedure.query(async () => {
-        // Get all distinct years from written tests
-        const years = await db
-            .selectDistinct({
-                year: writtenTests.seasonYear,
-            })
-            .from(writtenTests)
-            .innerJoin(user, eq(writtenTests.userId, user.id))
-            .where(eq(user.showScoresInLeaderboard, true))
-            .orderBy(desc(writtenTests.seasonYear));
+    getAvailableYears: publicProcedure
+        .input(z.object({ scope: scopeInput }))
+        .query(async ({ ctx, input }) => {
+            // Get all distinct years from written tests
+            const years = await db
+                .selectDistinct({
+                    year: writtenTests.seasonYear,
+                })
+                .from(writtenTests)
+                .innerJoin(user, eq(writtenTests.userId, user.id))
+                .where(await visibleUsers(ctx, input.scope))
+                .orderBy(desc(writtenTests.seasonYear));
 
-        return years.map((y) => y.year).filter((y): y is number => y !== null);
-    }),
+            return years
+                .map((y) => y.year)
+                .filter((y): y is number => y !== null);
+        }),
 
-    getMostRecentYear: publicProcedure.query(async () => {
-        // Get the most recent year from written tests
-        const mostRecent = await db
-            .select({
-                year: writtenTests.seasonYear,
-            })
-            .from(writtenTests)
-            .innerJoin(user, eq(writtenTests.userId, user.id))
-            .where(eq(user.showScoresInLeaderboard, true))
-            .orderBy(desc(writtenTests.takenAt))
-            .limit(1);
+    getMostRecentYear: publicProcedure
+        .input(z.object({ scope: scopeInput }))
+        .query(async ({ ctx, input }) => {
+            // Get the most recent year from written tests
+            const mostRecent = await db
+                .select({
+                    year: writtenTests.seasonYear,
+                })
+                .from(writtenTests)
+                .innerJoin(user, eq(writtenTests.userId, user.id))
+                .where(await visibleUsers(ctx, input.scope))
+                .orderBy(desc(writtenTests.takenAt))
+                .limit(1);
 
-        return mostRecent[0]?.year ?? null;
-    }),
+            return mostRecent[0]?.year ?? null;
+        }),
 
-    // Teachers record scores for their students.
+    // Teachers record scores for their own school's students.
     addScore: teacherProcedure
         .input(
             z.object({
@@ -185,9 +226,25 @@ export const writtenRouter = createTRPCRouter({
                 takenAt: z.string().optional(),
             }),
         )
-        .mutation(async (opts) => {
-            const { userId, competition, score, accuracy, takenAt } =
-                opts.input;
+        .mutation(async ({ ctx, input }) => {
+            const { userId, competition, score, accuracy, takenAt } = input;
+
+            const [student] = await db
+                .select({ id: user.id })
+                .from(user)
+                .where(
+                    and(
+                        eq(user.id, userId),
+                        inSchool(user.id, ctx.organizationId),
+                    ),
+                )
+                .limit(1);
+            if (!student) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "That student isn't in your school.",
+                });
+            }
 
             return await db.insert(writtenTests).values({
                 userId,
@@ -198,9 +255,8 @@ export const writtenRouter = createTRPCRouter({
             });
         }),
 
-    // Names and emails of everyone: teachers only.
-    getAllUsers: teacherProcedure.query(async () => {
-        // Get all users sorted by name
+    // Names and emails of the teacher's school's members.
+    getAllUsers: teacherProcedure.query(async ({ ctx }) => {
         const users = await db
             .select({
                 id: user.id,
@@ -208,6 +264,7 @@ export const writtenRouter = createTRPCRouter({
                 email: user.email,
             })
             .from(user)
+            .where(inSchool(user.id, ctx.organizationId))
             .orderBy(asc(user.name));
 
         return users;

@@ -5,8 +5,10 @@ import { ChevronLeft } from "lucide-react";
 import { db } from "~/server/db";
 import { submission as submissionTable } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getProblemById } from "~/lib/api/lunaghs";
+import { getCurrentMembership } from "~/server/current-membership";
+import { inSchool } from "~/server/organizations";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { CodeBlock } from "~/components/code-block";
@@ -18,6 +20,9 @@ export default async function SubmissionDetailPage({
     params: Promise<{ submissionId: string }>;
 }) {
     const { submissionId } = await params;
+    // The layout already checked that this is a teacher of the active school.
+    const { membership } = await getCurrentMembership();
+    if (!membership) notFound();
 
     const [row] = await db
         .select({
@@ -37,7 +42,13 @@ export default async function SubmissionDetailPage({
         })
         .from(submissionTable)
         .leftJoin(userTable, eq(submissionTable.userId, userTable.id))
-        .where(eq(submissionTable.id, submissionId));
+        // Other schools' submissions look the same as missing ones.
+        .where(
+            and(
+                eq(submissionTable.id, submissionId),
+                inSchool(submissionTable.userId, membership.organizationId),
+            ),
+        );
 
     if (!row) {
         notFound();

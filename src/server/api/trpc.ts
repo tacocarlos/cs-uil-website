@@ -10,7 +10,11 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { auth } from "auth";
-import { isTeacher } from "~/lib/auth/roles";
+import {
+    getActiveMembership,
+    isSchoolTeacher,
+    type ActiveMembership,
+} from "~/server/organizations";
 
 /**
  * 1. CONTEXT
@@ -28,9 +32,15 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
     // Resolved once per request from the session cookie. Procedures must use
     // this (never a user ID sent by the client) to decide who is asking.
     const session = await auth.api.getSession({ headers: opts.headers });
+    // The user's role in their active school, looked up on first use.
+    let membership: Promise<ActiveMembership | null> | undefined;
     return {
         ...opts,
         session,
+        getActiveMembership: () =>
+            (membership ??= session
+                ? getActiveMembership(session)
+                : Promise.resolve(null)),
     };
 };
 
@@ -126,13 +136,19 @@ export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
     });
 });
 
-/** Requires a signed-in teacher (or site admin). */
-export const teacherProcedure = protectedProcedure.use(({ ctx, next }) => {
-    if (!isTeacher(ctx.user)) {
-        throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Only teachers can do that.",
-        });
-    }
-    return next();
-});
+/**
+ * Requires a teacher (owner or admin) of the active school, available as
+ * `ctx.organizationId`. Only show or change that school's students' data.
+ */
+export const teacherProcedure = protectedProcedure.use(
+    async ({ ctx, next }) => {
+        const membership = await ctx.getActiveMembership();
+        if (!membership || !isSchoolTeacher(membership)) {
+            throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Only teachers can do that.",
+            });
+        }
+        return next({ ctx: { organizationId: membership.organizationId } });
+    },
+);

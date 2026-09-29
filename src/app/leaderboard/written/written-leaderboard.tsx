@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { type LeaderboardScope } from "~/server/organizations";
 
 function getCurrentYear() {
     return 2027;
@@ -32,7 +33,11 @@ function getYearParam(
     else return parseInt(yearParam);
 }
 
-export default function WrittenLeaderboard() {
+export default function WrittenLeaderboard({
+    scope,
+}: {
+    scope: LeaderboardScope;
+}) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCompetition, setSelectedCompetition] = useState<
         string | "all" | undefined
@@ -42,16 +47,22 @@ export default function WrittenLeaderboard() {
     >("current");
 
     // Fetch available years (not year-dependent)
-    const { data: years } = api.written.getAvailableYears.useQuery();
+    const { data: years } = api.written.getAvailableYears.useQuery({ scope });
 
     // Determine year parameter before using it in dependent queries
     const yearParam = getYearParam(selectedYear);
 
     // Competitions and most-recent-competition are scoped to the selected year
     const { data: competitions } =
-        api.written.getAvailableCompetitions.useQuery({ year: yearParam });
+        api.written.getAvailableCompetitions.useQuery({
+            year: yearParam,
+            scope,
+        });
     const { data: mostRecentCompetition } =
-        api.written.getMostRecentCompetition.useQuery({ year: yearParam });
+        api.written.getMostRecentCompetition.useQuery({
+            year: yearParam,
+            scope,
+        });
 
     // When the year changes, reset the competition so the year-scoped
     // mostRecentCompetition effect below can set the correct default.
@@ -75,6 +86,7 @@ export default function WrittenLeaderboard() {
         {
             competition: competitionParam as any,
             year: yearParam,
+            scope,
         },
         {
             enabled:
