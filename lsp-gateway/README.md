@@ -16,6 +16,15 @@ editor falls back to syntax highlighting and shows a toast.
 ## Deploy
 
 ```sh
+./deploy.sh   # builds, restarts, waits for /health, rolls back on failure
+```
+
+It reads settings from `lsp-gateway/.env` (git-ignored) and generates
+`LSP_GATEWAY_SECRET` there on first run. Run `./deploy.sh --help` for options;
+set `DOCKER_HOST=ssh://user@host` to deploy to a remote machine. The
+equivalent manual steps:
+
+```sh
 docker build -t lsp-gateway .
 docker run -d --name lsp-gateway --restart unless-stopped \
   -p 3100:3100 \

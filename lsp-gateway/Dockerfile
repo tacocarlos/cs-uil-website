@@ -5,7 +5,15 @@
 # Recent jdtls releases need Java 21 to run (they can still target older Java).
 FROM eclipse-temurin:21-jre AS jre
 
-FROM oven/bun:1-debian
+FROM oven/bun:1.4.2-debian
+
+# The stock x64 Bun needs AVX2, which some servers (including the Judge0 host)
+# lack; on x64 swap in Bun's "baseline" build, which runs on any x64 CPU.
+# Keep BUN_VERSION in step with the base image tag. The hash comes from the
+# release's SHASUMS256.txt.
+ARG TARGETARCH
+ARG BUN_VERSION=1.4.2
+ARG BUN_BASELINE_SHA256=c678040f14fe0440eb839d37cbd0ce4c051a32da72806ac97de6a6aab6bf728f
 
 # jdtls milestone, pinned and checksum-verified. To upgrade, pick a version
 # from https://download.eclipse.org/jdtls/milestones/, then take the tarball
@@ -30,6 +38,14 @@ RUN apt-get update \
     && ln -s /opt/jdtls/bin/jdtls /usr/local/bin/jdtls \
     # jdtls writes to its configuration area inside the install directory.
     && chown -R bun:bun /opt/jdtls \
+    && if [ "${TARGETARCH:-$(dpkg --print-architecture)}" = "amd64" ]; then \
+        curl -fsSL -o /tmp/bun.zip \
+            "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64-baseline.zip" \
+        && echo "${BUN_BASELINE_SHA256}  /tmp/bun.zip" | sha256sum -c - \
+        && python3 -m zipfile -e /tmp/bun.zip /tmp/bun \
+        && install -m 755 /tmp/bun/bun-linux-x64-baseline/bun "$(command -v bun)" \
+        && rm -rf /tmp/bun.zip /tmp/bun; \
+    fi \
     && apt-get purge -y curl \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
