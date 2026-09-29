@@ -99,7 +99,7 @@ export default async function LeaderboardPage({
     console.log("api problems: ");
     console.dir(apiProblems);
     return (
-        <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
             <LeaderboardScopeTabs
                 path="/leaderboard"
                 scope={scope}

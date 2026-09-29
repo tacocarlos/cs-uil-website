@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { LeaderboardPagination, usePagination } from "../pagination";
 import { type SchoolFilter } from "~/lib/schools";
 import { type LeaderboardScope } from "~/server/organizations";
 
@@ -103,13 +104,21 @@ export default function WrittenLeaderboard({
         },
     );
 
-    // Filter by search term
+    // Rank before filtering by search term, so ranks don't change while
+    // searching. Scores arrive sorted, highest first.
     const filteredData = useMemo(() => {
         if (!scores) return [];
-        return scores.filter((entry) =>
-            entry.name.toLowerCase().includes(searchTerm.toLowerCase()),
-        );
+        return scores
+            .map((entry, index) => ({ ...entry, rank: index + 1 }))
+            .filter((entry) =>
+                entry.name.toLowerCase().includes(searchTerm.toLowerCase()),
+            );
     }, [scores, searchTerm]);
+    const pagination = usePagination(filteredData);
+
+    // Back to the first page when another year or competition loads.
+    const { setPage } = pagination;
+    useEffect(() => setPage(0), [scores, setPage]);
 
     return (
         <div className="mx-auto w-full max-w-md rounded-xl bg-white p-4">
@@ -174,7 +183,10 @@ export default function WrittenLeaderboard({
                     type="text"
                     placeholder="Search by name"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        pagination.setPage(0);
+                    }}
                     className="w-full"
                 />
             </div>
@@ -203,10 +215,10 @@ export default function WrittenLeaderboard({
                             </TableCell>
                         </TableRow>
                     ) : (
-                        filteredData.map((entry, index) => (
+                        pagination.pageItems.map((entry) => (
                             <TableRow key={entry.id}>
                                 <TableCell className="font-medium">
-                                    {index + 1}
+                                    {entry.rank}
                                 </TableCell>
                                 <TableCell>{entry.name}</TableCell>
                                 <TableCell className="text-right">
@@ -217,6 +229,7 @@ export default function WrittenLeaderboard({
                     )}
                 </TableBody>
             </Table>
+            <LeaderboardPagination pagination={pagination} />
         </div>
     );
 }

@@ -16,7 +16,7 @@ export default async function WrittenLeaderboardPage({
     const { scope, filter } = leaderboardView(await searchParams, membership);
 
     return (
-        <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
             <LeaderboardScopeTabs
                 path="/leaderboard/written"
                 scope={scope}

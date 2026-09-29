@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { LeaderboardPagination, usePagination } from "./pagination";
 import { CheckCircle2, ExternalLink } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -169,6 +170,7 @@ export default function Leaderboard({
                 entry.name.toLowerCase().includes(searchTerm.toLowerCase()),
             );
     }, [scores, searchTerm]);
+    const pagination = usePagination(filteredAndSortedData);
 
     function rowClassName(rank: number) {
         if (rank === 1) return "bg-yellow-400 hover:bg-yellow-200";
@@ -187,7 +189,10 @@ export default function Leaderboard({
                     type="text"
                     placeholder="Search by name"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        pagination.setPage(0);
+                    }}
                     className="w-full"
                 />
             </div>
@@ -208,7 +213,7 @@ export default function Leaderboard({
                             </TableCell>
                         </TableRow>
                     ) : (
-                        filteredAndSortedData.map((entry) => (
+                        pagination.pageItems.map((entry) => (
                             <TableRow
                                 key={entry.id}
                                 className={`text-[1rem] font-medium ${rowClassName(entry.globalRank)}`}
@@ -232,6 +237,7 @@ export default function Leaderboard({
                     )}
                 </TableBody>
             </Table>
+            <LeaderboardPagination pagination={pagination} />
 
             {selectedEntry && (
                 <SolvedProblemsDialog
