@@ -9,6 +9,12 @@ import {
     contestProblem,
     contestSubmission,
 } from "~/server/db/schema/contest";
+import {
+    findVisibleContest,
+    invitedSchoolIds,
+    pickCompetingSchool,
+    schoolIdsOf,
+} from "~/server/contests";
 import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
 import { contestPoints, pickBestPerProblem } from "~/lib/contest/scoring";
 
@@ -42,14 +48,14 @@ export const contestParticipation = {
             return rows.length > 0;
         }),
 
+    /** Enrolls the student, recording which school they compete for. */
     enroll: protectedProcedure
         .input(byContest)
         .mutation(async ({ ctx, input }) => {
-            const [contestRow] = await db
-                .select({ status: contest.status })
-                .from(contest)
-                .where(eq(contest.id, input.contestId))
-                .limit(1);
+            const contestRow = await findVisibleContest(
+                input.contestId,
+                ctx.user.id,
+            );
             if (!contestRow) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
@@ -70,9 +76,35 @@ export const contestParticipation = {
                     message: "Already enrolled in this contest",
                 });
             }
+
+            const [schools, invited, membership] = await Promise.all([
+                schoolIdsOf(ctx.user.id),
+                contestRow.visibility === "invite"
+                    ? invitedSchoolIds(contestRow.id)
+                    : [],
+                ctx.getActiveMembership(),
+            ]);
+            const school = pickCompetingSchool(
+                { ...contestRow, invited },
+                schools,
+                membership?.organizationId ?? null,
+            );
+            // Unreachable while seeing a contest implies eligibility, but
+            // kept so enrollment never depends on that staying true.
+            if (school === undefined) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: "Your school isn't taking part in this contest",
+                });
+            }
+
             const [row] = await db
                 .insert(contestEnrollment)
-                .values({ contestId: input.contestId, userId: ctx.user.id })
+                .values({
+                    contestId: input.contestId,
+                    userId: ctx.user.id,
+                    organizationId: school,
+                })
                 .returning();
             return row;
         }),

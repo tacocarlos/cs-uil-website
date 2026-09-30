@@ -26,11 +26,13 @@ export const organization = createTable(
         logo: text("logo"),
         createdAt: timestamp("created_at").notNull(),
         metadata: text("metadata"),
-        // UIL academic classification (see src/lib/schools.ts). Set by site
-        // admins; null until known.
+        // UIL academic classification (see src/lib/schools.ts). Set by the
+        // school's teachers or site admins; null until known.
         conference: text("conference", { enum: CONFERENCES }),
         district: integer("district"),
         region: integer("region"),
+        /** Code students enter to join (src/lib/join-codes.ts). */
+        joinCode: text("join_code").unique(),
     },
     (t) => [
         index("organization_conference_idx").on(t.conference),
@@ -61,6 +63,13 @@ export const member = createTable(
         /** owner | admin (teachers) | member (students) */
         role: text("role").notNull().default("member"),
         createdAt: timestamp("created_at").notNull(),
+        /**
+         * When a teacher marked this student as former (graduated or left);
+         * null for current members. Former students stay in the school, so
+         * their history remains, but are left out of leaderboards and
+         * student pickers. Not a better-auth field.
+         */
+        formerAt: timestamp("former_at"),
     },
     (t) => [
         unique("member_organization_user_unique").on(

@@ -17,10 +17,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "~/components/ui/select";
+import {
+    LeaderboardPagination,
+    usePagination,
+} from "~/app/leaderboard/pagination";
 import { api } from "~/trpc/react";
-import { LeaderboardPagination, usePagination } from "../pagination";
-import { type SchoolFilter } from "~/lib/schools";
-import { type LeaderboardScope } from "~/server/organizations";
+import { FormerBadge, IncludeFormerCheckbox } from "../former";
 
 function getCurrentYear() {
     return 2027;
@@ -35,13 +37,8 @@ function getYearParam(
     else return parseInt(yearParam);
 }
 
-export default function WrittenLeaderboard({
-    scope,
-    filter,
-}: {
-    scope: LeaderboardScope;
-    filter: SchoolFilter;
-}) {
+/** The teacher's students ranked by written test score. */
+export default function WrittenLeaderboard() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCompetition, setSelectedCompetition] = useState<
         string | "all" | undefined
@@ -49,12 +46,10 @@ export default function WrittenLeaderboard({
     const [selectedYear, setSelectedYear] = useState<
         number | string | "all" | "current" | undefined
     >("current");
+    const [includeFormer, setIncludeFormer] = useState(false);
 
     // Fetch available years (not year-dependent)
-    const { data: years } = api.written.getAvailableYears.useQuery({
-        scope,
-        filter,
-    });
+    const { data: years } = api.written.getAvailableYears.useQuery();
 
     // Determine year parameter before using it in dependent queries
     const yearParam = getYearParam(selectedYear);
@@ -63,14 +58,12 @@ export default function WrittenLeaderboard({
     const { data: competitions } =
         api.written.getAvailableCompetitions.useQuery({
             year: yearParam,
-            scope,
-            filter,
+            includeFormer,
         });
-    const { data: mostRecentCompetition } =
+    const { data: mostRecentCompetition, isSuccess: mostRecentLoaded } =
         api.written.getMostRecentCompetition.useQuery({
             year: yearParam,
-            scope,
-            filter,
+            includeFormer,
         });
 
     // When the year changes, reset the competition so the year-scoped
@@ -79,12 +72,13 @@ export default function WrittenLeaderboard({
         setSelectedCompetition(undefined);
     }, [selectedYear]);
 
-    // Once the (year-scoped) most-recent competition loads, apply it as default.
+    // Once the (year-scoped) most-recent competition loads, apply it as
+    // default; with no scores yet, show all competitions.
     useEffect(() => {
-        if (mostRecentCompetition && selectedCompetition === undefined) {
-            setSelectedCompetition(mostRecentCompetition);
+        if (selectedCompetition === undefined && mostRecentLoaded) {
+            setSelectedCompetition(mostRecentCompetition ?? "all");
         }
-    }, [mostRecentCompetition, selectedCompetition]);
+    }, [mostRecentCompetition, mostRecentLoaded, selectedCompetition]);
 
     // Determine the competition parameter for the query
     const competitionParam =
@@ -95,8 +89,7 @@ export default function WrittenLeaderboard({
         {
             competition: competitionParam as any,
             year: yearParam,
-            scope,
-            filter,
+            includeFormer,
         },
         {
             enabled:
@@ -108,11 +101,10 @@ export default function WrittenLeaderboard({
     // searching. Scores arrive sorted, highest first.
     const filteredData = useMemo(() => {
         if (!scores) return [];
+        const term = searchTerm.toLowerCase();
         return scores
             .map((entry, index) => ({ ...entry, rank: index + 1 }))
-            .filter((entry) =>
-                entry.name.toLowerCase().includes(searchTerm.toLowerCase()),
-            );
+            .filter((entry) => entry.name.toLowerCase().includes(term));
     }, [scores, searchTerm]);
     const pagination = usePagination(filteredData);
 
@@ -121,11 +113,7 @@ export default function WrittenLeaderboard({
     useEffect(() => setPage(0), [scores, setPage]);
 
     return (
-        <div className="mx-auto w-full max-w-md rounded-xl bg-white p-4">
-            <h2 className="mb-4 text-center text-2xl font-bold">
-                Written Test Leaderboard
-            </h2>
-
+        <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-sm">
             <div className="mb-4 space-y-4">
                 <div>
                     <label className="mb-2 block text-sm font-medium">
@@ -168,10 +156,7 @@ export default function WrittenLeaderboard({
                                 All Competitions
                             </SelectItem>
                             {competitions?.map((comp) => (
-                                <SelectItem
-                                    key={comp ?? "district"}
-                                    value={comp ?? "district"}
-                                >
+                                <SelectItem key={comp} value={comp}>
                                     {comp}
                                 </SelectItem>
                             ))}
@@ -189,20 +174,26 @@ export default function WrittenLeaderboard({
                     }}
                     className="w-full"
                 />
+                <IncludeFormerCheckbox
+                    checked={includeFormer}
+                    onChange={(checked) => {
+                        setIncludeFormer(checked);
+                        // The default competition may change too.
+                        setSelectedCompetition(undefined);
+                    }}
+                />
             </div>
 
             <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[50px]">Rank</TableHead>
-                        <TableHead>Username</TableHead>
+                        <TableHead>Student</TableHead>
                         <TableHead className="text-right">Score</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading ||
-                    selectedCompetition === undefined ||
-                    selectedYear === undefined ? (
+                    {isLoading || selectedCompetition === undefined ? (
                         <TableRow>
                             <TableCell colSpan={3} className="h-24 text-center">
                                 Loading...
@@ -211,7 +202,7 @@ export default function WrittenLeaderboard({
                     ) : filteredData.length === 0 ? (
                         <TableRow>
                             <TableCell colSpan={3} className="h-24 text-center">
-                                No results found.
+                                No scores yet.
                             </TableCell>
                         </TableRow>
                     ) : (
@@ -220,7 +211,10 @@ export default function WrittenLeaderboard({
                                 <TableCell className="font-medium">
                                     {entry.rank}
                                 </TableCell>
-                                <TableCell>{entry.name}</TableCell>
+                                <TableCell>
+                                    {entry.name}
+                                    {entry.former && <FormerBadge />}
+                                </TableCell>
                                 <TableCell className="text-right">
                                     {entry.score}
                                 </TableCell>

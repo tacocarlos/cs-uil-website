@@ -1,0 +1,1 @@
+ALTER TABLE "uil_member" ADD COLUMN "former_at" timestamp;

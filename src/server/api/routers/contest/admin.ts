@@ -1,12 +1,55 @@
 import z from "zod";
-import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { and, eq, inArray } from "drizzle-orm";
 import { teacherProcedure } from "../../trpc";
 import { db } from "~/server/db";
-import { contest, contestProblem } from "~/server/db/schema/contest";
+import {
+    CONTEST_VISIBILITIES,
+    contest,
+    contestInvite,
+    contestProblem,
+} from "~/server/db/schema/contest";
+import { requireHostedContest } from "~/server/contests";
 
 const scoringMode = z.enum(contest.scoringMode.enumValues);
+const visibility = z.enum(CONTEST_VISIBILITIES);
+/** Schools invited to an invite-only contest (replaces the previous list). */
+const invitedSchoolIds = z.array(z.string()).max(500);
 
-/** Creating and editing contests and their problem lists (teacher tools). */
+/** Contests hosted by a school, for limiting changes to them. */
+function hostedBy(organizationId: string) {
+    return db
+        .select({ id: contest.id })
+        .from(contest)
+        .where(eq(contest.organizationId, organizationId));
+}
+
+/** Replaces a contest's invited schools (never including the host). */
+async function setInvites(
+    contestId: number,
+    hostId: string,
+    schoolIds: string[],
+) {
+    const guests = [...new Set(schoolIds)].filter((id) => id !== hostId);
+    await db.transaction(async (tx) => {
+        await tx
+            .delete(contestInvite)
+            .where(eq(contestInvite.contestId, contestId));
+        if (guests.length > 0) {
+            await tx.insert(contestInvite).values(
+                guests.map((organizationId) => ({
+                    contestId,
+                    organizationId,
+                })),
+            );
+        }
+    });
+}
+
+/**
+ * Creating and editing contests and their problem lists (teacher tools).
+ * Teachers only manage contests hosted by their active school.
+ */
 export const contestAdmin = {
     create: teacherProcedure
         .input(
@@ -17,18 +60,23 @@ export const contestAdmin = {
                 endsAt: z.string(),
                 scoringMode,
                 penaltyPoints: z.number().int().min(0).optional(),
+                visibility: visibility.default("school"),
+                invitedSchoolIds: invitedSchoolIds.default([]),
             }),
         )
         .mutation(async ({ ctx, input }) => {
+            const { invitedSchoolIds, ...fields } = input;
             const [row] = await db
                 .insert(contest)
                 .values({
-                    ...input,
+                    ...fields,
                     startsAt: new Date(input.startsAt),
                     endsAt: new Date(input.endsAt),
                     createdBy: ctx.user.id,
+                    organizationId: ctx.organizationId,
                 })
                 .returning();
+            await setInvites(row!.id, ctx.organizationId, invitedSchoolIds);
             return row!;
         }),
 
@@ -42,10 +90,22 @@ export const contestAdmin = {
                 endsAt: z.string().optional(),
                 scoringMode: scoringMode.optional(),
                 penaltyPoints: z.number().int().min(0).optional(),
+                visibility: visibility.optional(),
+                invitedSchoolIds: invitedSchoolIds.optional(),
             }),
         )
-        .mutation(async ({ input }) => {
-            const { contestId, startsAt, endsAt, ...rest } = input;
+        .mutation(async ({ ctx, input }) => {
+            const { contestId, startsAt, endsAt, invitedSchoolIds, ...rest } =
+                input;
+            await requireHostedContest(contestId, ctx.organizationId);
+            if (invitedSchoolIds) {
+                await setInvites(
+                    contestId,
+                    ctx.organizationId,
+                    invitedSchoolIds,
+                );
+            }
+
             // Drizzle skips undefined values in `.set()`, so omitted fields
             // are left unchanged.
             const changes = {
@@ -72,19 +132,31 @@ export const contestAdmin = {
                 status: z.enum(contest.status.enumValues),
             }),
         )
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
             const [row] = await db
                 .update(contest)
                 .set({ status: input.status })
-                .where(eq(contest.id, input.contestId))
+                .where(
+                    and(
+                        eq(contest.id, input.contestId),
+                        eq(contest.organizationId, ctx.organizationId),
+                    ),
+                )
                 .returning();
             return row ?? null;
         }),
 
     delete: teacherProcedure
         .input(z.object({ contestId: z.number().int() }))
-        .mutation(async ({ input }) => {
-            await db.delete(contest).where(eq(contest.id, input.contestId));
+        .mutation(async ({ ctx, input }) => {
+            await db
+                .delete(contest)
+                .where(
+                    and(
+                        eq(contest.id, input.contestId),
+                        eq(contest.organizationId, ctx.organizationId),
+                    ),
+                );
         }),
 
     addProblem: teacherProcedure
@@ -97,7 +169,8 @@ export const contestAdmin = {
                 displayOrder: z.number().int().min(0),
             }),
         )
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+            await requireHostedContest(input.contestId, ctx.organizationId);
             const [row] = await db
                 .insert(contestProblem)
                 .values(input)
@@ -107,10 +180,18 @@ export const contestAdmin = {
 
     removeProblem: teacherProcedure
         .input(z.object({ contestProblemId: z.number().int() }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
             await db
                 .delete(contestProblem)
-                .where(eq(contestProblem.id, input.contestProblemId));
+                .where(
+                    and(
+                        eq(contestProblem.id, input.contestProblemId),
+                        inArray(
+                            contestProblem.contestId,
+                            hostedBy(ctx.organizationId),
+                        ),
+                    ),
+                );
         }),
 
     updateProblem: teacherProcedure
@@ -121,7 +202,7 @@ export const contestAdmin = {
                 maxPoints: z.number().int().min(0).optional(),
             }),
         )
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
             const { contestProblemId, ...changes } = input;
             if (Object.values(changes).every((v) => v === undefined)) {
                 return null;
@@ -130,8 +211,22 @@ export const contestAdmin = {
             const [row] = await db
                 .update(contestProblem)
                 .set(changes)
-                .where(eq(contestProblem.id, contestProblemId))
+                .where(
+                    and(
+                        eq(contestProblem.id, contestProblemId),
+                        inArray(
+                            contestProblem.contestId,
+                            hostedBy(ctx.organizationId),
+                        ),
+                    ),
+                )
                 .returning();
-            return row ?? null;
+            if (!row) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "No such contest problem at your school",
+                });
+            }
+            return row;
         }),
 };

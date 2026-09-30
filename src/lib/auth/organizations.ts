@@ -1,7 +1,6 @@
 /**
  * The school every existing user was moved into when organizations were
- * added (see the backfill migration in drizzle/). New users also join it
- * until students can join schools with a code.
+ * added (see the backfill migration in drizzle/). Dev accounts join it too.
  */
 export const DEFAULT_ORGANIZATION = {
     id: "groveton-hs",

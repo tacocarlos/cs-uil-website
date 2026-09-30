@@ -19,6 +19,7 @@ import {
     TableRow,
 } from "~/components/ui/table";
 import { api } from "~/trpc/react";
+import { AddTeacherDialog } from "./add-teacher";
 
 /**
  * Schools matching a name search, a page at a time (there could be one per
@@ -85,6 +86,7 @@ export function SchoolList() {
                                 <TableRow>
                                     <TableHead>School</TableHead>
                                     <TableHead>UIL classification</TableHead>
+                                    <TableHead />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -113,6 +115,9 @@ export function SchoolList() {
                                                         school.id
                                                 }
                                             />
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <AddTeacherDialog school={school} />
                                         </TableCell>
                                     </TableRow>
                                 ))}

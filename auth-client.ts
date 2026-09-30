@@ -4,7 +4,14 @@ import {
     organizationClient,
 } from "better-auth/client/plugins";
 import { type auth } from "auth";
-export const { signIn, signUp, signOut, useSession, useActiveMember } =
-    createAuthClient({
-        plugins: [inferAdditionalFields<typeof auth>(), organizationClient()],
-    });
+export const {
+    signIn,
+    signUp,
+    signOut,
+    useSession,
+    useActiveMember,
+    useListOrganizations,
+    organization,
+} = createAuthClient({
+    plugins: [inferAdditionalFields<typeof auth>(), organizationClient()],
+});

@@ -7,7 +7,10 @@ import {
     getCurrentMembership,
     leaderboardView,
 } from "~/server/current-membership";
-import { leaderboardVisibility } from "~/server/organizations";
+import {
+    leaderboardVisibility,
+    schoolNamesByUser,
+} from "~/server/organizations";
 import Leaderboard, { type CompetitionLeaderboardData } from "./leaderboard";
 import { LeaderboardScopeTabs } from "./scope-tabs";
 
@@ -80,11 +83,18 @@ export default async function LeaderboardPage({
         }
     });
 
+    // On the shared leaderboard, say which school each student is from.
+    const schoolNames =
+        scope === "global"
+            ? await schoolNamesByUser(Array.from(userMap.keys()))
+            : null;
+
     let scores = Array.from(userMap.entries()).map(([id, data]) => ({
         id,
         name: data.name,
         score: data.score,
         solvedProblemIds: Array.from(data.solvedIds),
+        schools: schoolNames?.get(id) ?? [],
     }));
 
     console.dir(scores);
@@ -110,6 +120,7 @@ export default async function LeaderboardPage({
                 scores={scores}
                 problems={problems}
                 competitions={competitions}
+                showSchools={scope === "global"}
             />
         </main>
     );

@@ -36,6 +36,27 @@
       "when": 1790708776991,
       "tag": "0004_school_classification",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790717806704,
+      "tag": "0005_join_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790780920463,
+      "tag": "0006_contest_schools",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790783853001,
+      "tag": "0007_former_students",
+      "breakpoints": true
     }
   ]
 }

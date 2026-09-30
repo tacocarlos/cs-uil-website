@@ -1,4 +1,13 @@
-import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
+import {
+    and,
+    asc,
+    eq,
+    inArray,
+    isNull,
+    notInArray,
+    sql,
+    type SQL,
+} from "drizzle-orm";
 import { type AnyPgColumn } from "drizzle-orm/pg-core";
 import { isTeacherRole, type MemberRole } from "~/lib/auth/organizations";
 import { type SchoolFilter } from "~/lib/schools";
@@ -36,6 +45,29 @@ export async function getActiveMembership(session: {
     return row ? { organizationId, role: row.role as MemberRole } : null;
 }
 
+/**
+ * Names of each user's current schools (not ones they're a former student
+ * of), alphabetical, for showing next to them on leaderboards shared by all
+ * schools. Users without a current school are omitted.
+ */
+export async function schoolNamesByUser(
+    userIds: string[],
+): Promise<Map<string, string[]>> {
+    const names = new Map<string, string[]>();
+    if (userIds.length === 0) return names;
+
+    const rows = await db
+        .select({ userId: member.userId, name: organization.name })
+        .from(member)
+        .innerJoin(organization, eq(member.organizationId, organization.id))
+        .where(and(inArray(member.userId, userIds), isNull(member.formerAt)))
+        .orderBy(asc(organization.name));
+    for (const { userId, name } of rows) {
+        names.set(userId, [...(names.get(userId) ?? []), name]);
+    }
+    return names;
+}
+
 /** Whether the user teaches (owns or administers) their active school. */
 export function isSchoolTeacher(membership: ActiveMembership | null): boolean {
     return isTeacherRole(membership?.role);
@@ -43,15 +75,40 @@ export function isSchoolTeacher(membership: ActiveMembership | null): boolean {
 
 /**
  * Condition limiting a user ID column to members of a school, e.g.
- * `.where(inSchool(submission.userId, organizationId))`.
+ * `.where(inSchool(submission.userId, organizationId))`. Includes former
+ * students unless `currentOnly` is set.
  */
-export function inSchool(userId: AnyPgColumn, organizationId: string): SQL {
+export function inSchool(
+    userId: AnyPgColumn,
+    organizationId: string,
+    { currentOnly = false } = {},
+): SQL {
     return inArray(
         userId,
         db
             .select({ id: member.userId })
             .from(member)
-            .where(eq(member.organizationId, organizationId)),
+            .where(
+                and(
+                    eq(member.organizationId, organizationId),
+                    currentOnly ? isNull(member.formerAt) : undefined,
+                ),
+            ),
+    );
+}
+
+/**
+ * Condition excluding users who are former students at every school they
+ * belong to (users in no school at all still pass).
+ */
+function notFormerEverywhere(userId: AnyPgColumn): SQL {
+    return notInArray(
+        userId,
+        db
+            .select({ id: member.userId })
+            .from(member)
+            .groupBy(member.userId)
+            .having(sql`bool_and(${member.formerAt} IS NOT NULL)`),
     );
 }
 
@@ -59,9 +116,10 @@ export type LeaderboardScope = "school" | "global";
 
 /**
  * Which users a leaderboard may show. School leaderboards show the school's
- * members; the global one shows only users who opted in, optionally only
- * from schools matching `filter`. Either way, users who hid their scores
- * never appear. A school leaderboard without a school shows no one.
+ * current members; the global one shows only users who opted in, optionally
+ * only from schools matching `filter`, and not those who are former
+ * students everywhere. Either way, users who hid their scores never appear.
+ * A school leaderboard without a school shows no one.
  */
 export function leaderboardVisibility(
     scope: LeaderboardScope,
@@ -73,16 +131,20 @@ export function leaderboardVisibility(
         return and(
             visible,
             eq(user.showInGlobalLeaderboard, true),
+            notFormerEverywhere(user.id),
             inMatchingSchool(user.id, filter),
         )!;
     }
     if (!organizationId) return sql`false`;
-    return and(visible, inSchool(user.id, organizationId))!;
+    return and(
+        visible,
+        inSchool(user.id, organizationId, { currentOnly: true }),
+    )!;
 }
 
 /**
- * Condition limiting a user ID column to members of schools matching the
- * filter; undefined (no condition) when the filter is empty.
+ * Condition limiting a user ID column to current members of schools
+ * matching the filter; undefined (no condition) when the filter is empty.
  */
 function inMatchingSchool(
     userId: AnyPgColumn,
@@ -97,6 +159,7 @@ function inMatchingSchool(
             .innerJoin(organization, eq(member.organizationId, organization.id))
             .where(
                 and(
+                    isNull(member.formerAt),
                     eq(organization.conference, conference),
                     region === undefined
                         ? undefined

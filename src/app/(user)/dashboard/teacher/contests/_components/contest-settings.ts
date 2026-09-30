@@ -1,7 +1,12 @@
 import { format } from "date-fns";
-import type { ScoringMode } from "~/server/db/schema/contest";
+import type {
+    ContestVisibility,
+    ScoringMode,
+} from "~/server/db/schema/contest";
 
-export type { ScoringMode };
+export type { ContestVisibility, ScoringMode };
+
+export type InvitedSchool = { id: string; name: string };
 
 /** Form state for a contest's settings. Dates are datetime-local strings. */
 export type ContestSettings = {
@@ -11,6 +16,9 @@ export type ContestSettings = {
     endsAt: string;
     scoringMode: ScoringMode;
     penaltyPoints: number;
+    visibility: ContestVisibility;
+    /** Only used when visibility is "invite". */
+    invitedSchools: InvitedSchool[];
 };
 
 export const EMPTY_CONTEST_SETTINGS: ContestSettings = {
@@ -20,6 +28,8 @@ export const EMPTY_CONTEST_SETTINGS: ContestSettings = {
     endsAt: "",
     scoringMode: "simple",
     penaltyPoints: 20,
+    visibility: "school",
+    invitedSchools: [],
 };
 
 export const DEFAULT_MAX_POINTS = 60;
@@ -32,6 +42,8 @@ export function settingsFromContest(contest: {
     endsAt: Date | string;
     scoringMode: ScoringMode;
     penaltyPoints: number;
+    visibility: ContestVisibility;
+    invitedSchools: InvitedSchool[];
 }): ContestSettings {
     return {
         name: contest.name,
@@ -40,6 +52,8 @@ export function settingsFromContest(contest: {
         endsAt: toDatetimeLocal(contest.endsAt),
         scoringMode: contest.scoringMode,
         penaltyPoints: contest.penaltyPoints,
+        visibility: contest.visibility,
+        invitedSchools: contest.invitedSchools,
     };
 }
 
@@ -51,6 +65,12 @@ export function validateSettings(settings: ContestSettings): string | null {
     }
     if (new Date(settings.startsAt) >= new Date(settings.endsAt)) {
         return "End time must be after start time";
+    }
+    if (
+        settings.visibility === "invite" &&
+        settings.invitedSchools.length === 0
+    ) {
+        return 'Invite at least one school, or choose "Your school only"';
     }
     return null;
 }
@@ -67,6 +87,11 @@ export function settingsToMutationInput(settings: ContestSettings) {
             settings.scoringMode === "penalty"
                 ? settings.penaltyPoints
                 : undefined,
+        visibility: settings.visibility,
+        invitedSchoolIds:
+            settings.visibility === "invite"
+                ? settings.invitedSchools.map((s) => s.id)
+                : [],
     };
 }
 

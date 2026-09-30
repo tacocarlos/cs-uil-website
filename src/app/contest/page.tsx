@@ -10,7 +10,9 @@ import {
     Users,
     BookOpen,
     ChevronRight,
+    School,
 } from "lucide-react";
+import { VISIBILITY_LABELS } from "~/lib/contest/visibility";
 import { api } from "~/trpc/server";
 import type { RouterOutputs } from "~/trpc/react";
 import { db } from "~/server/db";
@@ -84,6 +86,12 @@ function ContestCard({
             <CardContent className="flex-1 pb-2">
                 {/* Metadata */}
                 <div className="text-muted-foreground space-y-1.5 text-xs">
+                    <span className="flex items-center gap-1.5">
+                        <School className="h-3.5 w-3.5" />
+                        {contest.hostSchool}
+                        {contest.visibility !== "school" &&
+                            ` · ${VISIBILITY_LABELS[contest.visibility].label}`}
+                    </span>
                     <span className="flex items-center gap-1.5">
                         <BookOpen className="h-3.5 w-3.5" />
                         {contest.problemCount} problem
@@ -178,6 +186,7 @@ function Section({
                         >
                             <span className="font-medium">{c.name}</span>
                             <span className="text-muted-foreground flex items-center gap-3">
+                                <span>{c.hostSchool}</span>
                                 <span>{c.problemCount} problems</span>
                                 <span>{format(c.endsAt, "MMM d, yyyy")}</span>
                                 <ChevronRight className="h-4 w-4" />

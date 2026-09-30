@@ -4,7 +4,11 @@ import { districtLabel, parseSchoolFilter, regionLabel } from "./schools";
 describe("parseSchoolFilter", () => {
     test("reads conference, region, and district", () => {
         expect(
-            parseSchoolFilter({ conference: "2A", region: "3", district: "23" }),
+            parseSchoolFilter({
+                conference: "2A",
+                region: "3",
+                district: "23",
+            }),
         ).toEqual({ conference: "2A", region: 3, district: 23 });
     });
 

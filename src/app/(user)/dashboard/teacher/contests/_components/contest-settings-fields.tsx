@@ -9,9 +9,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from "~/components/ui/select";
-import type { ContestSettings, ScoringMode } from "./contest-settings";
+import {
+    CONTEST_VISIBILITIES,
+    VISIBILITY_LABELS,
+} from "~/lib/contest/visibility";
+import type {
+    ContestSettings,
+    ContestVisibility,
+    ScoringMode,
+} from "./contest-settings";
+import { SchoolInvitePicker } from "./school-invite-picker";
 
-/** Name, description, schedule, and scoring inputs for a contest. */
+/**
+ * Name, description, schedule, scoring, and who-can-join inputs for a
+ * contest.
+ */
 export function ContestSettingsFields({
     value,
     onChange,
@@ -83,6 +95,36 @@ export function ContestSettingsFields({
                         <SelectItem value="penalty">ICPC Penalty</SelectItem>
                     </SelectContent>
                 </Select>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor={`${id}-visibility`}>Who can join</Label>
+                <Select
+                    value={value.visibility}
+                    onValueChange={(v) =>
+                        set("visibility", v as ContestVisibility)
+                    }
+                >
+                    <SelectTrigger id={`${id}-visibility`}>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {CONTEST_VISIBILITIES.map((v) => (
+                            <SelectItem key={v} value={v}>
+                                {VISIBILITY_LABELS[v].label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-sm">
+                    {VISIBILITY_LABELS[value.visibility].description}
+                </p>
+                {value.visibility === "invite" && (
+                    <SchoolInvitePicker
+                        value={value.invitedSchools}
+                        onChange={(schools) => set("invitedSchools", schools)}
+                    />
+                )}
             </div>
 
             {value.scoringMode === "penalty" && (

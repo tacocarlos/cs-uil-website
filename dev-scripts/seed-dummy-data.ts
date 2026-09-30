@@ -91,6 +91,8 @@ type Person = {
     /** Defaults: shown on the school leaderboard, not the global one. */
     showScores?: boolean;
     global?: boolean;
+    /** A former student (graduated) at all their schools. */
+    former?: boolean;
 };
 
 const GROVETON = DEFAULT_ORGANIZATION.id;
@@ -100,7 +102,9 @@ const PEOPLE: Person[] = [
     { name: "Ada Lovelace", schools: [GROVETON], global: true },
     // Hidden from every leaderboard.
     { name: "Alan Turing", schools: [GROVETON], showScores: false },
-    { name: "Grace Hopper", schools: [GROVETON], global: true },
+    // Graduated: off the leaderboards, but in the teacher's written views
+    // with "Include former students".
+    { name: "Grace Hopper", schools: [GROVETON], global: true, former: true },
     { name: "Hasan Piker", schools: [GROVETON], global: true },
 
     // Bletchley Park (4A)
@@ -243,6 +247,7 @@ async function insertDummyData() {
                 userId: p.id,
                 role: p.role ?? "member",
                 createdAt: now,
+                formerAt: p.former ? now : null,
             })),
         ),
     );

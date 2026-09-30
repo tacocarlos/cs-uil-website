@@ -1,121 +1,91 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-    createTRPCRouter,
-    publicProcedure,
-    teacherProcedure,
-    type createTRPCContext,
-} from "../trpc";
+import { createTRPCRouter, teacherProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { writtenTests } from "~/server/db/schema/written";
 import { user } from "~/server/db/schema/auth";
-import { eq, and, desc, isNotNull, asc } from "drizzle-orm";
-import {
-    inSchool,
-    leaderboardVisibility,
-    type LeaderboardScope,
-} from "~/server/organizations";
-import {
-    CONFERENCES,
-    MAX_DISTRICT,
-    REGIONS,
-    type SchoolFilter,
-} from "~/lib/schools";
+import { eq, and, desc, isNotNull, isNull, asc } from "drizzle-orm";
+import { inSchool } from "~/server/organizations";
+import { member } from "~/server/db/schema/organization";
+import { computeWrittenStatistics } from "~/lib/written/statistics";
 
-/** School (the viewer's active school) or global (opted-in users). */
-const scopeInput = z.enum(["school", "global"]).default("school");
+const competitionInput = z.enum(writtenTests.competition.enumValues);
 
-/** Global leaderboards only: limit to schools with this classification. */
-const filterInput = z
-    .object({
-        conference: z.enum(CONFERENCES).optional(),
-        region: z.number().int().min(1).max(REGIONS.length).optional(),
-        district: z.number().int().min(1).max(MAX_DISTRICT).optional(),
-    })
-    .default({});
+/** Former students are left out unless asked for (e.g. to see trends). */
+const includeFormerInput = z.boolean().default(false);
 
-/** Condition selecting the users whose scores a leaderboard may show. */
-async function visibleUsers(
-    ctx: Awaited<ReturnType<typeof createTRPCContext>>,
-    scope: LeaderboardScope,
-    filter: SchoolFilter,
+/**
+ * Written scores of a school's students with their names and whether
+ * they're former students, for ranking and statistics.
+ */
+function schoolScores(
+    organizationId: string,
+    includeFormer: boolean,
+    ...conditions: Parameters<typeof and>
 ) {
-    const membership =
-        scope === "school" ? await ctx.getActiveMembership() : null;
-    return leaderboardVisibility(
-        scope,
-        membership?.organizationId ?? null,
-        filter,
-    );
+    return db
+        .select({
+            userId: user.id,
+            name: user.name,
+            score: writtenTests.score,
+            formerAt: member.formerAt,
+        })
+        .from(writtenTests)
+        .innerJoin(user, eq(writtenTests.userId, user.id))
+        .innerJoin(
+            member,
+            and(
+                eq(member.userId, user.id),
+                eq(member.organizationId, organizationId),
+            ),
+        )
+        .where(
+            and(
+                includeFormer ? undefined : isNull(member.formerAt),
+                ...conditions,
+            ),
+        );
 }
 
+// Written test scores are for teachers only: they record their own
+// school's students' scores and see them ranked. Students don't see a
+// written leaderboard; the site's public focus is the programming section.
+// Teachers see all their students, whatever the students' leaderboard
+// privacy setting (which is about what other students see).
 export const writtenRouter = createTRPCRouter({
-    getLeaderboard: publicProcedure
+    /** The teacher's students ranked by total written score. */
+    getLeaderboard: teacherProcedure
         .input(
             z.object({
-                competition: z
-                    .enum([
-                        "VCM-1",
-                        "VCM-2",
-                        "VCM-3",
-                        "VCM-4",
-                        "invA",
-                        "invB",
-                        "district",
-                        "region",
-                        "state",
-                    ])
-                    .optional(),
+                competition: competitionInput.optional(),
                 year: z.number().int().optional(),
-                scope: scopeInput,
-                filter: filterInput,
+                includeFormer: includeFormerInput,
             }),
         )
         .query(async ({ ctx, input }) => {
-            const { competition, year, scope, filter } = input;
-            // Build where conditions
-            const conditions = [await visibleUsers(ctx, scope, filter)];
-            if (competition) {
-                conditions.push(eq(writtenTests.competition, competition));
-            }
-            if (year) {
-                conditions.push(eq(writtenTests.seasonYear, year));
-            }
-
-            // Get written test scores for users who want to show their scores
-            const tests = await db
-                .select({
-                    userId: user.id,
-                    userName: user.name,
-                    score: writtenTests.score,
-                    competition: writtenTests.competition,
-                    takenAt: writtenTests.takenAt,
-                    accuracy: writtenTests.accuracy,
-                })
-                .from(writtenTests)
-                .innerJoin(user, eq(writtenTests.userId, user.id))
-                .where(and(...conditions));
+            const { competition, year } = input;
+            const tests = await schoolScores(
+                ctx.organizationId,
+                input.includeFormer,
+                competition
+                    ? eq(writtenTests.competition, competition)
+                    : undefined,
+                year ? eq(writtenTests.seasonYear, year) : undefined,
+            );
 
             // Aggregate scores by user
             const scoreMap = new Map<
                 string,
-                { name: string; totalScore: number }
+                { name: string; totalScore: number; former: boolean }
             >();
-
-            tests.forEach((test) => {
+            for (const test of tests) {
                 const current = scoreMap.get(test.userId);
-                if (current) {
-                    scoreMap.set(test.userId, {
-                        name: current.name,
-                        totalScore: current.totalScore + test.score,
-                    });
-                } else {
-                    scoreMap.set(test.userId, {
-                        name: test.userName,
-                        totalScore: test.score,
-                    });
-                }
-            });
+                scoreMap.set(test.userId, {
+                    name: test.name,
+                    totalScore: (current?.totalScore ?? 0) + test.score,
+                    former: test.formerAt !== null,
+                });
+            }
 
             // Convert to array and sort by score descending
             return Array.from(scoreMap.entries())
@@ -123,34 +93,33 @@ export const writtenRouter = createTRPCRouter({
                     id,
                     name: data.name,
                     score: data.totalScore,
+                    former: data.former,
                 }))
                 .sort((a, b) => b.score - a.score);
         }),
 
-    getAvailableCompetitions: publicProcedure
+    /** Competitions the teacher's students have scores for. */
+    getAvailableCompetitions: teacherProcedure
         .input(
             z.object({
                 year: z.number().int().optional(),
-                scope: scopeInput,
-                filter: filterInput,
+                includeFormer: includeFormerInput,
             }),
         )
         .query(async ({ ctx, input }) => {
-            const { year, scope, filter } = input;
-            // Get distinct competitions that have at least one score,
-            // optionally filtered to a specific season year.
             const conditions = [
-                await visibleUsers(ctx, scope, filter),
+                inSchool(writtenTests.userId, ctx.organizationId, {
+                    currentOnly: !input.includeFormer,
+                }),
                 isNotNull(writtenTests.competition),
             ];
-            if (year !== undefined) {
-                conditions.push(eq(writtenTests.seasonYear, year));
+            if (input.year !== undefined) {
+                conditions.push(eq(writtenTests.seasonYear, input.year));
             }
 
             const competitions = await db
                 .selectDistinct({ competition: writtenTests.competition })
                 .from(writtenTests)
-                .innerJoin(user, eq(writtenTests.userId, user.id))
                 .where(and(...conditions));
 
             return competitions
@@ -159,73 +128,73 @@ export const writtenRouter = createTRPCRouter({
                 .sort();
         }),
 
-    getMostRecentCompetition: publicProcedure
+    /** The competition with the teacher's students' most recent score. */
+    getMostRecentCompetition: teacherProcedure
         .input(
             z.object({
                 year: z.number().int().optional(),
-                scope: scopeInput,
-                filter: filterInput,
+                includeFormer: includeFormerInput,
             }),
         )
         .query(async ({ ctx, input }) => {
-            const { year, scope, filter } = input;
-            // Get the competition with the most recent score,
-            // optionally filtered to a specific season year.
             const conditions = [
-                await visibleUsers(ctx, scope, filter),
+                inSchool(writtenTests.userId, ctx.organizationId, {
+                    currentOnly: !input.includeFormer,
+                }),
                 isNotNull(writtenTests.competition),
             ];
-            if (year !== undefined) {
-                conditions.push(eq(writtenTests.seasonYear, year));
+            if (input.year !== undefined) {
+                conditions.push(eq(writtenTests.seasonYear, input.year));
             }
 
-            const mostRecent = await db
-                .select({
-                    competition: writtenTests.competition,
-                    takenAt: writtenTests.takenAt,
-                })
+            const [mostRecent] = await db
+                .select({ competition: writtenTests.competition })
                 .from(writtenTests)
-                .innerJoin(user, eq(writtenTests.userId, user.id))
                 .where(and(...conditions))
                 .orderBy(desc(writtenTests.takenAt))
                 .limit(1);
-
-            return mostRecent[0]?.competition ?? null;
+            return mostRecent?.competition ?? null;
         }),
 
-    getAvailableYears: publicProcedure
-        .input(z.object({ scope: scopeInput, filter: filterInput }))
+    /**
+     * Season years the teacher's students (former ones too) have scores
+     * for, newest first.
+     */
+    getAvailableYears: teacherProcedure.query(async ({ ctx }) => {
+        const years = await db
+            .selectDistinct({ year: writtenTests.seasonYear })
+            .from(writtenTests)
+            .where(inSchool(writtenTests.userId, ctx.organizationId))
+            .orderBy(desc(writtenTests.seasonYear));
+        return years.map((y) => y.year);
+    }),
+
+    /**
+     * Optimal (best) and expected (average) scores per student, and the
+     * school's top-3 totals, over one season year or, without a year, each
+     * student's whole participation (src/lib/written/statistics.ts).
+     */
+    getStatistics: teacherProcedure
+        .input(
+            z.object({
+                year: z.number().int().optional(),
+                includeFormer: includeFormerInput,
+            }),
+        )
         .query(async ({ ctx, input }) => {
-            // Get all distinct years from written tests
-            const years = await db
-                .selectDistinct({
-                    year: writtenTests.seasonYear,
-                })
-                .from(writtenTests)
-                .innerJoin(user, eq(writtenTests.userId, user.id))
-                .where(await visibleUsers(ctx, input.scope, input.filter))
-                .orderBy(desc(writtenTests.seasonYear));
-
-            return years
-                .map((y) => y.year)
-                .filter((y): y is number => y !== null);
-        }),
-
-    getMostRecentYear: publicProcedure
-        .input(z.object({ scope: scopeInput, filter: filterInput }))
-        .query(async ({ ctx, input }) => {
-            // Get the most recent year from written tests
-            const mostRecent = await db
-                .select({
-                    year: writtenTests.seasonYear,
-                })
-                .from(writtenTests)
-                .innerJoin(user, eq(writtenTests.userId, user.id))
-                .where(await visibleUsers(ctx, input.scope, input.filter))
-                .orderBy(desc(writtenTests.takenAt))
-                .limit(1);
-
-            return mostRecent[0]?.year ?? null;
+            const scores = await schoolScores(
+                ctx.organizationId,
+                input.includeFormer,
+                input.year === undefined
+                    ? undefined
+                    : eq(writtenTests.seasonYear, input.year),
+            );
+            return computeWrittenStatistics(
+                scores.map(({ formerAt, ...s }) => ({
+                    ...s,
+                    former: formerAt !== null,
+                })),
+            );
         }),
 
     // Teachers record scores for their own school's students.
@@ -233,17 +202,7 @@ export const writtenRouter = createTRPCRouter({
         .input(
             z.object({
                 userId: z.string(),
-                competition: z.enum([
-                    "VCM-1",
-                    "VCM-2",
-                    "VCM-3",
-                    "VCM-4",
-                    "invA",
-                    "invB",
-                    "district",
-                    "region",
-                    "state",
-                ]),
+                competition: competitionInput,
                 score: z.number().int().min(0).max(100),
                 accuracy: z.number().min(0).max(1).optional(),
                 takenAt: z.string().optional(),
@@ -278,7 +237,8 @@ export const writtenRouter = createTRPCRouter({
             });
         }),
 
-    // Names and emails of the teacher's school's members.
+    // Names and emails of the teacher's school's current members, for
+    // picking whose score to record.
     getAllUsers: teacherProcedure.query(async ({ ctx }) => {
         const users = await db
             .select({
@@ -287,7 +247,7 @@ export const writtenRouter = createTRPCRouter({
                 email: user.email,
             })
             .from(user)
-            .where(inSchool(user.id, ctx.organizationId))
+            .where(inSchool(user.id, ctx.organizationId, { currentOnly: true }))
             .orderBy(asc(user.name));
 
         return users;

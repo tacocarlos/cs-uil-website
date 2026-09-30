@@ -24,7 +24,8 @@ const STATUS_STYLES = {
 } as const;
 
 export default async function ContestsPage() {
-    const contests = await api.contest.getAll();
+    // Contests hosted by the teacher's school.
+    const contests = await api.contest.getMine();
 
     return (
         <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">

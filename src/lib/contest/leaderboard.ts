@@ -1,6 +1,8 @@
 export type LeaderboardSubmission = {
     userId: string;
     userName: string;
+    /** The school the user competes for, if any. */
+    schoolName?: string | null;
     apiProblemId: number;
     accepted: boolean;
     points: number;
@@ -18,6 +20,7 @@ export type LeaderboardProblem = {
 export type LeaderboardRow = {
     userId: string;
     userName: string;
+    schoolName: string | null;
     totalPoints: number;
     solvedCount: number;
     /** When the user's most recent first-accept happened; tiebreaker. */
@@ -49,6 +52,7 @@ export function buildLeaderboard(
             row = {
                 userId: sub.userId,
                 userName: sub.userName,
+                schoolName: sub.schoolName ?? null,
                 totalPoints: 0,
                 solvedCount: 0,
                 lastSolveTime: null,

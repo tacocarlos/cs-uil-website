@@ -392,6 +392,11 @@ export default function TeacherContestPage() {
                                             </TableCell>
                                             <TableCell>
                                                 {entry.userName}
+                                                {entry.schoolName && (
+                                                    <span className="text-muted-foreground block text-xs">
+                                                        {entry.schoolName}
+                                                    </span>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 {entry.totalPoints}

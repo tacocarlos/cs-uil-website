@@ -27,6 +27,8 @@ type LeaderboardEntry = {
     name: string;
     score: number;
     solvedProblemIds: number[];
+    /** The student's schools (only filled in on the shared leaderboard). */
+    schools: string[];
 };
 
 export type ProblemLeaderboardData = {
@@ -150,10 +152,13 @@ export default function Leaderboard({
     scores,
     problems,
     competitions,
+    showSchools,
 }: {
     scores: LeaderboardEntry[];
     problems: ProblemLeaderboardData[];
     competitions: Map<number, CompetitionLeaderboardData>;
+    /** Adds a School column (and school search), for the shared view. */
+    showSchools: boolean;
 }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedEntry, setSelectedEntry] = useState<LeaderboardEntry | null>(
@@ -164,19 +169,25 @@ export default function Leaderboard({
         const sorted = [...scores].sort((a, b) => b.score - a.score);
         // Assign global rank before filtering so medal colours stay correct
         // when the search term hides some entries.
+        const term = searchTerm.toLowerCase();
         return sorted
             .map((entry, idx) => ({ ...entry, globalRank: idx + 1 }))
-            .filter((entry) =>
-                entry.name.toLowerCase().includes(searchTerm.toLowerCase()),
+            .filter(
+                (entry) =>
+                    entry.name.toLowerCase().includes(term) ||
+                    entry.schools.some((s) => s.toLowerCase().includes(term)),
             );
     }, [scores, searchTerm]);
+    const columns = showSchools ? 4 : 3;
     const pagination = usePagination(filteredAndSortedData);
 
     function rowClassName(rank: number) {
+        // Medals for the top 3; a faint shared tint marks the rest of the
+        // top 6 without looking like an award.
         if (rank === 1) return "bg-yellow-400 hover:bg-yellow-200";
         if (rank === 2) return "bg-slate-400 hover:bg-slate-200";
         if (rank === 3) return "bg-orange-400 hover:bg-orange-200";
-        if (rank === 4) return "bg-sky-400 hover:bg-sky-200";
+        if (rank <= 6) return "bg-sky-100 hover:bg-sky-50";
         return "";
     }
 
@@ -187,7 +198,11 @@ export default function Leaderboard({
             <div className="mb-4">
                 <Input
                     type="text"
-                    placeholder="Search by name"
+                    placeholder={
+                        showSchools
+                            ? "Search by name or school"
+                            : "Search by name"
+                    }
                     value={searchTerm}
                     onChange={(e) => {
                         setSearchTerm(e.target.value);
@@ -202,13 +217,17 @@ export default function Leaderboard({
                     <TableRow>
                         <TableHead className="w-12.5">Rank</TableHead>
                         <TableHead>Username</TableHead>
+                        {showSchools && <TableHead>School</TableHead>}
                         <TableHead className="text-right">Score</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredAndSortedData.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center">
+                            <TableCell
+                                colSpan={columns}
+                                className="h-24 text-center"
+                            >
                                 No results found.
                             </TableCell>
                         </TableRow>
@@ -229,6 +248,11 @@ export default function Leaderboard({
                                         {entry.name}
                                     </button>
                                 </TableCell>
+                                {showSchools && (
+                                    <TableCell className="text-sm">
+                                        {entry.schools.join(", ") || "—"}
+                                    </TableCell>
+                                )}
                                 <TableCell className="text-right">
                                     {entry.score}
                                 </TableCell>

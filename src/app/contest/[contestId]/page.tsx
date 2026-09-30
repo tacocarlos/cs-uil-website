@@ -12,6 +12,7 @@ import { getAllMinimalProblems } from "~/lib/api/lunaghs";
 import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
 import { Button } from "~/components/ui/button";
 import { EnrollButton } from "./_enroll-button";
+import { VISIBILITY_LABELS } from "~/lib/contest/visibility";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
     Table,
@@ -88,6 +89,15 @@ export default async function ContestLobbyPage({
                                         {contest.description}
                                     </p>
                                 )}
+                                <p className="text-muted-foreground mt-2 text-sm">
+                                    Hosted by {contest.hostSchool}
+                                    {" · "}
+                                    {contest.visibility === "invite" &&
+                                    contest.invitedSchools.length > 0
+                                        ? `with ${contest.invitedSchools.map((s) => s.name).join(", ")}`
+                                        : VISIBILITY_LABELS[contest.visibility]
+                                              .label}
+                                </p>
                             </div>
                             <ContestStatusBadge status={status} />
                         </div>

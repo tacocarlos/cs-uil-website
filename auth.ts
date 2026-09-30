@@ -1,11 +1,9 @@
-import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
 import { env } from "~/env";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
-import { DEFAULT_ORGANIZATION } from "~/lib/auth/organizations";
 import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
 import * as orgSchema from "~/server/db/schema/organization";
@@ -63,24 +61,6 @@ export const auth = betterAuth({
         }),
     ],
     databaseHooks: {
-        user: {
-            create: {
-                // Until students can join a school with a code, everyone
-                // joins the default school.
-                after: async (user) => {
-                    await db
-                        .insert(orgSchema.member)
-                        .values({
-                            id: randomUUID(),
-                            organizationId: DEFAULT_ORGANIZATION.id,
-                            userId: user.id,
-                            role: "member",
-                            createdAt: new Date(),
-                        })
-                        .onConflictDoNothing();
-                },
-            },
-        },
         session: {
             create: {
                 // Start each session in the user's earliest school, so

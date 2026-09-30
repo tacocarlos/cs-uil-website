@@ -160,9 +160,14 @@ export default function LeaderboardPage() {
                                                 {i + 1}
                                             </TableCell>
 
-                                            {/* Student name */}
+                                            {/* Student name and school */}
                                             <TableCell>
                                                 {entry.userName}
+                                                {entry.schoolName && (
+                                                    <span className="text-muted-foreground block text-xs">
+                                                        {entry.schoolName}
+                                                    </span>
+                                                )}
                                             </TableCell>
 
                                             {/* Per-problem cells */}

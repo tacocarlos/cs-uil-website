@@ -8,8 +8,9 @@ import {
 import { db } from "~/server/db";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { inSchool } from "~/server/organizations";
+import { member as memberTable } from "~/server/db/schema/organization";
 
 // Student procedures return the signed-in user's own submissions only;
 // teacher procedures see and change only their school's students'.
@@ -29,6 +30,59 @@ export const submissionRouter = createTRPCRouter({
                         eq(submission.problemId, problemId),
                     ),
                 );
+        }),
+
+    getRecentOrgSubmission: teacherProcedure
+        .input(z.object({includeFormer: z.boolean().default(false)}))
+        .query(async ({ctx, input}) => {
+            const organizationId = ctx.organizationId;
+
+            if(input.includeFormer) {
+                return await db.select({
+                        id: submission.id,
+                        problemId: submission.problemId,
+                        userId: submission.userId,
+                        timeSubmitted: submission.timeSubmitted,
+                        points: submission.points,
+                        maxPoints: submission.maxPoints,
+                        accepted: submission.accepted,
+                        userName: userTable.name,
+                        userEmail: userTable.email,
+                        attemptNum: submission.attemptNumber,                    
+                })
+                    .from(submission)
+                    .leftJoin(userTable, eq(submission.userId, userTable.id))
+                    .where(and(
+                        inSchool(submission.userId, organizationId),
+                    ))
+                    .orderBy(desc(submission.timeSubmitted))
+                    .limit(10);
+                
+
+            } else {
+                return await db
+                    .select({
+                        id: submission.id,
+                        problemId: submission.problemId,
+                        userId: submission.userId,
+                        timeSubmitted: submission.timeSubmitted,
+                        points: submission.points,
+                        maxPoints: submission.maxPoints,
+                        accepted: submission.accepted,
+                        userName: userTable.name,
+                        userEmail: userTable.email,
+                        attemptNum: submission.attemptNumber,
+                    })
+                    .from(submission)
+                    .leftJoin(userTable, eq(submission.userId, userTable.id))
+                    .leftJoin(memberTable, and(eq(userTable.id, memberTable.userId), inSchool(submission.userId, organizationId)))
+                    .where(and(
+                        inSchool(submission.userId, organizationId),
+                        isNull(memberTable.formerAt)
+                    ))
+                    .orderBy(desc(submission.timeSubmitted))
+                    .limit(10);                
+            }
         }),
 
     getAcceptedSubmissions: protectedProcedure.query(async ({ ctx }) => {

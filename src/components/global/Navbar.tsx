@@ -7,6 +7,7 @@ import { Button } from "../ui/button";
 import { usePathname } from "next/navigation";
 import { signInUrl } from "~/lib/auth/redirect-utils";
 import { isTeacherRole } from "~/lib/auth/organizations";
+import { SchoolSwitcher } from "./school-switcher";
 import { NavigationMenu } from "~/components/ui/navigation-menu";
 import {
     NavigationMenuContent,
@@ -110,6 +111,15 @@ function DesktopNavbar() {
                                         <Link href="/admin">Site Admin</Link>
                                     </NavigationMenuLink>
                                 )}
+                                {session && (
+                                    <NavigationMenuLink asChild>
+                                        <Link href="/join">Join a School</Link>
+                                    </NavigationMenuLink>
+                                )}
+                                <SchoolSwitcher
+                                    labelClassName="px-2 pt-2 pb-1 text-xs font-semibold tracking-wider text-gray-400 uppercase"
+                                    itemClassName="hover:bg-accent rounded-sm px-2 py-1.5 text-sm disabled:opacity-50"
+                                />
                                 <NavigationMenuLink asChild>
                                     <Link
                                         href="/dashboard"
@@ -171,21 +181,12 @@ function DesktopNavbar() {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                    <NavigationMenuTrigger>Leaderboard</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                        <ul className="grid w-[200px] gap-4">
-                            <li>
-                                <NavigationMenuLink asChild>
-                                    <Link href="/leaderboard">Problems</Link>
-                                </NavigationMenuLink>
-                                <NavigationMenuLink asChild>
-                                    <Link href="/leaderboard/written">
-                                        Written
-                                    </Link>
-                                </NavigationMenuLink>
-                            </li>
-                        </ul>
-                    </NavigationMenuContent>
+                    <NavigationMenuLink
+                        asChild
+                        className={navigationMenuTriggerStyle()}
+                    >
+                        <Link href="/leaderboard">Leaderboard</Link>
+                    </NavigationMenuLink>
                 </NavigationMenuItem>
 
                 {session ? (
@@ -254,17 +255,8 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                     Sandbox
                 </Link>
 
-                {/* Leaderboard */}
-                <p className={sectionLabel}>Leaderboard</p>
                 <Link href="/leaderboard" className={link} onClick={onClose}>
-                    Problems
-                </Link>
-                <Link
-                    href="/leaderboard/written"
-                    className={link}
-                    onClick={onClose}
-                >
-                    Written
+                    Leaderboard
                 </Link>
 
                 {/* Account */}
@@ -306,6 +298,14 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                 Site Admin
                             </Link>
                         )}
+                        <Link href="/join" className={link} onClick={onClose}>
+                            Join a School
+                        </Link>
+                        <SchoolSwitcher
+                            labelClassName={sectionLabel}
+                            itemClassName={link}
+                            onSwitched={onClose}
+                        />
                         <Link
                             href="/dashboard"
                             className={link}

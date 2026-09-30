@@ -18,6 +18,7 @@ const ACCESS: Record<string, Access> = {
     // Contests
     "contest.getAll": "public",
     "contest.getById": "public",
+    "contest.getMine": "teacher",
     "contest.getEnrollments": "teacher",
     "contest.getAllSubmissions": "teacher",
     "contest.getLeaderboard": "signed-in",
@@ -54,23 +55,30 @@ const ACCESS: Record<string, Access> = {
     "submission.overrideSubmission": "teacher",
     // School classification: teachers edit their own school, site admins
     // any school
+    "school.lookup": "teacher",
     "school.getMine": "teacher",
     "school.setMyClassification": "teacher",
+    "school.regenerateJoinCode": "teacher",
+    "school.listMembers": "teacher",
+    "school.removeMember": "teacher",
+    "school.setFormer": "teacher",
+    "school.join": "signed-in",
     "school.search": "site-admin",
     "school.setClassification": "site-admin",
+    "school.create": "site-admin",
+    "school.addTeacher": "site-admin",
     // Own account
     "user.getMe": "signed-in",
     "user.getUserLeaderboardVisibility": "signed-in",
     "user.toggleLeaderboardVisibility": "signed-in",
     "user.setGlobalLeaderboardVisibility": "signed-in",
     "user.getProblemSubmissions": "signed-in",
-    // Written tests (leaderboards only include users who opted in; the
-    // school leaderboard is empty without a school)
-    "written.getLeaderboard": "public",
-    "written.getAvailableCompetitions": "public",
-    "written.getMostRecentCompetition": "public",
-    "written.getAvailableYears": "public",
-    "written.getMostRecentYear": "public",
+    // Written tests: teachers only, for their own school's students
+    "written.getLeaderboard": "teacher",
+    "written.getAvailableCompetitions": "teacher",
+    "written.getMostRecentCompetition": "teacher",
+    "written.getAvailableYears": "teacher",
+    "written.getStatistics": "teacher",
     "written.addScore": "teacher",
     "written.getAllUsers": "teacher",
 };

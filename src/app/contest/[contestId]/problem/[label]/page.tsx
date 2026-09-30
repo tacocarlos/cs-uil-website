@@ -3,7 +3,8 @@ import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { auth } from "auth";
 import { db } from "~/server/db";
-import { contest, contestProblem } from "~/server/db/schema/contest";
+import { contestProblem } from "~/server/db/schema/contest";
+import { findVisibleContest } from "~/server/contests";
 import {
     getProblemById,
     getAllCompetitions,
@@ -31,9 +32,9 @@ export default async function ContestProblemPage({
         redirect(signInUrl(`/contest/${contestIdStr}/problem/${label}`));
     }
 
-    // ── Fetch contest + contest problem from DB ──────────────────────────────
-    const [contestRows, contestProblemRows] = await Promise.all([
-        db.select().from(contest).where(eq(contest.id, contestId)).limit(1),
+    // ── Fetch contest (if visible to this user) + contest problem ───────────
+    const [contestRow, contestProblemRows] = await Promise.all([
+        findVisibleContest(contestId, session.user.id),
         db
             .select()
             .from(contestProblem)
@@ -46,7 +47,6 @@ export default async function ContestProblemPage({
             .limit(1),
     ]);
 
-    const contestRow = contestRows[0];
     const cp = contestProblemRows[0];
 
     if (!contestRow || !cp) {

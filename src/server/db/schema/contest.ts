@@ -1,7 +1,14 @@
-import { index } from "drizzle-orm/pg-core";
+import { foreignKey, index, primaryKey } from "drizzle-orm/pg-core";
 import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
+import { organization } from "./organization";
 import { randomUUID } from "crypto";
+import {
+    CONTEST_VISIBILITIES,
+    type ContestVisibility,
+} from "~/lib/contest/visibility";
+
+export { CONTEST_VISIBILITIES, type ContestVisibility };
 
 // ── contest ───────────────────────────────────────────────────────────────────
 
@@ -29,8 +36,26 @@ export const contest = createTable(
         /** Points deducted per wrong attempt in penalty mode */
         penaltyPoints: d.integer().notNull().default(20),
         createdAt: d.timestamp().defaultNow().notNull(),
+        /** The hosting school; its teachers manage the contest. */
+        organizationId: d.text().notNull(),
+        /**
+         * school = the host school's members; invite = also members of
+         * invited schools (contest_invite); open = everyone.
+         */
+        visibility: d
+            .text({ enum: CONTEST_VISIBILITIES })
+            .notNull()
+            .default("school"),
     }),
-    (t) => [cascadeFk("contest_created_by_fk", t.createdBy, user.id)],
+    (t) => [
+        index("contest_organization_idx").on(t.organizationId),
+        cascadeFk("contest_created_by_fk", t.createdBy, user.id),
+        cascadeFk(
+            "contest_organization_id_fk",
+            t.organizationId,
+            organization.id,
+        ),
+    ],
 );
 
 export type Contest = typeof contest.$inferSelect;
@@ -68,16 +93,48 @@ export const contestEnrollment = createTable(
         contestId: d.integer().notNull(),
         userId: d.text().notNull(),
         enrolledAt: d.timestamp().defaultNow().notNull(),
+        /**
+         * The school the student competes for, shown on the leaderboard.
+         * Null in open contests for students without a school.
+         */
+        organizationId: d.text(),
     }),
     (t) => [
         index("ce_contest_idx").on(t.contestId),
         index("ce_user_idx").on(t.userId),
         cascadeFk("contest_enrollment_contest_id_fk", t.contestId, contest.id),
         cascadeFk("contest_enrollment_user_id_fk", t.userId, user.id),
+        // Deleting a school keeps its students' results, without a school.
+        foreignKey({
+            name: "contest_enrollment_organization_id_fk",
+            columns: [t.organizationId],
+            foreignColumns: [organization.id],
+        }).onDelete("set null"),
     ],
 );
 
 export type ContestEnrollment = typeof contestEnrollment.$inferSelect;
+
+// ── contest_invite ────────────────────────────────────────────────────────────
+
+/** Schools invited to an invite-only contest, besides the host. */
+export const contestInvite = createTable(
+    "contest_invite",
+    (d) => ({
+        contestId: d.integer().notNull(),
+        organizationId: d.text().notNull(),
+    }),
+    (t) => [
+        primaryKey({ columns: [t.contestId, t.organizationId] }),
+        index("contest_invite_organization_idx").on(t.organizationId),
+        cascadeFk("contest_invite_contest_id_fk", t.contestId, contest.id),
+        cascadeFk(
+            "contest_invite_organization_id_fk",
+            t.organizationId,
+            organization.id,
+        ),
+    ],
+);
 
 // ── contest_submission ────────────────────────────────────────────────────────
 
