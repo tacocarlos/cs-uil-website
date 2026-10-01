@@ -5,6 +5,7 @@ import { signInUrl } from "~/lib/auth/redirect-utils";
 import { getCurrentMembership } from "~/server/current-membership";
 import { Button } from "~/components/ui/button";
 import SettingsSection from "./settings";
+import { MySchools } from "./my-schools";
 import { api } from "~/trpc/server";
 import InProgressProblems from "./in-progress";
 import SubmittedProblems from "./submitted-problems";
@@ -60,6 +61,7 @@ export default async function DashboardPage() {
                             </Button>
                         </div>
                     )}
+                    <MySchools />
                     <section>
                         <h2 className="mt-6 mb-4 text-lg font-semibold">
                             Settings

@@ -1,5 +1,30 @@
 import { describe, expect, test } from "bun:test";
-import { pickCompetingSchool } from "./contests";
+import { canSeeProblems, pickCompetingSchool } from "./contests";
+
+describe("canSeeProblems", () => {
+    const at = (
+        status: "draft" | "scheduled" | "active" | "frozen" | "ended",
+    ) => ({ status, organizationId: "host" }) as const;
+    const hostTeacher = { organizationId: "host", role: "admin" } as const;
+    const hostStudent = { organizationId: "host", role: "member" } as const;
+    const otherTeacher = { organizationId: "other", role: "owner" } as const;
+
+    test("everyone once the contest has started", () => {
+        for (const status of ["active", "frozen", "ended"] as const) {
+            expect(canSeeProblems(at(status), null)).toBe(true);
+            expect(canSeeProblems(at(status), hostStudent)).toBe(true);
+        }
+    });
+
+    test("before the start, only the host school's teachers", () => {
+        for (const status of ["draft", "scheduled"] as const) {
+            expect(canSeeProblems(at(status), hostTeacher)).toBe(true);
+            expect(canSeeProblems(at(status), hostStudent)).toBe(false);
+            expect(canSeeProblems(at(status), otherTeacher)).toBe(false);
+            expect(canSeeProblems(at(status), null)).toBe(false);
+        }
+    });
+});
 
 const hosted = (
     visibility: "school" | "invite" | "open",

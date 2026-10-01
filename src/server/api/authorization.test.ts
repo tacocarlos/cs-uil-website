@@ -19,7 +19,6 @@ const ACCESS: Record<string, Access> = {
     "contest.getAll": "public",
     "contest.getById": "public",
     "contest.getMine": "teacher",
-    "contest.getEnrollments": "teacher",
     "contest.getAllSubmissions": "teacher",
     "contest.getLeaderboard": "signed-in",
     "contest.isEnrolled": "signed-in",
@@ -41,7 +40,6 @@ const ACCESS: Record<string, Access> = {
     // Returns null (no LSP) when signed out rather than rejecting.
     "lsp.getSession": "public",
     // Problem content
-    "problem.getProblems": "public",
     "problem.getMinimalProblems": "public",
     "problem.getProblemById": "public",
     "problem.getProblemPreview": "public",
@@ -49,9 +47,7 @@ const ACCESS: Record<string, Access> = {
     "submission.getProblemSubmissions": "signed-in",
     "submission.getAcceptedSubmissions": "signed-in",
     "submission.getDeniedSubmissions": "signed-in",
-    "submission.getMostRecentSubmission": "signed-in",
-    "submission.getAllSubmissions": "teacher",
-    "submission.getSubmissionById": "teacher",
+    "submission.getRecentOrgSubmission": "teacher",
     "submission.overrideSubmission": "teacher",
     // School classification: teachers edit their own school, site admins
     // any school
@@ -63,16 +59,21 @@ const ACCESS: Record<string, Access> = {
     "school.removeMember": "teacher",
     "school.setFormer": "teacher",
     "school.join": "signed-in",
+    "school.listMine": "signed-in",
+    "school.leave": "signed-in",
+    "school.listTeachers": "site-admin",
+    "school.setMemberRole": "site-admin",
+    "school.removeFromSchool": "site-admin",
+    "school.rename": "site-admin",
+    "school.delete": "site-admin",
     "school.search": "site-admin",
     "school.setClassification": "site-admin",
     "school.create": "site-admin",
     "school.addTeacher": "site-admin",
     // Own account
     "user.getMe": "signed-in",
-    "user.getUserLeaderboardVisibility": "signed-in",
     "user.toggleLeaderboardVisibility": "signed-in",
     "user.setGlobalLeaderboardVisibility": "signed-in",
-    "user.getProblemSubmissions": "signed-in",
     // Written tests: teachers only, for their own school's students
     "written.getLeaderboard": "teacher",
     "written.getAvailableCompetitions": "teacher",

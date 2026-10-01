@@ -1,22 +1,57 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, eq, exists, inArray, or, sql, type SQL } from "drizzle-orm";
+import {
+    and,
+    asc,
+    eq,
+    exists,
+    inArray,
+    isNull,
+    or,
+    sql,
+    type SQL,
+} from "drizzle-orm";
 import { db } from "~/server/db";
 import {
     contest,
+    contestEnrollment,
     contestInvite,
+    type ContestStatus,
     type ContestVisibility,
 } from "~/server/db/schema/contest";
 import { member } from "~/server/db/schema/organization";
+import { isSchoolTeacher, type ActiveMembership } from "~/server/organizations";
 
-// Who can see a contest: everyone if it's open; otherwise members of the
-// host school, plus (invite-only) members of invited schools. Seeing a
-// contest is what allows enrolling in it and viewing its leaderboard.
+// Who can see a contest: everyone if it's open; otherwise current members of
+// the host school, plus (invite-only) current members of invited schools,
+// plus anyone already enrolled (so former students keep their results).
+// Seeing a contest is what allows enrolling in it and viewing its
+// leaderboard.
 
+/** Statuses in which a contest's problems are shown to participants. */
+const PROBLEMS_REVEALED = new Set<ContestStatus>(["active", "frozen", "ended"]);
+
+/**
+ * Whether the viewer may see which problems a contest has: once it has
+ * started, or before that only as a teacher of the host school (who sets
+ * them up).
+ */
+export function canSeeProblems(
+    contestRow: { status: ContestStatus; organizationId: string },
+    membership: ActiveMembership | null,
+): boolean {
+    return (
+        PROBLEMS_REVEALED.has(contestRow.status) ||
+        (isSchoolTeacher(membership) &&
+            membership?.organizationId === contestRow.organizationId)
+    );
+}
+
+/** The user's current (not former) schools. */
 function schoolsOf(userId: string) {
     return db
         .select({ id: member.organizationId })
         .from(member)
-        .where(eq(member.userId, userId));
+        .where(and(eq(member.userId, userId), isNull(member.formerAt)));
 }
 
 /** Condition selecting the contests `userId` (null: signed out) may see. */
@@ -25,6 +60,17 @@ export function visibleContests(userId: string | null): SQL {
     if (!userId) return open;
     return or(
         open,
+        exists(
+            db
+                .select({ one: sql`1` })
+                .from(contestEnrollment)
+                .where(
+                    and(
+                        eq(contestEnrollment.contestId, contest.id),
+                        eq(contestEnrollment.userId, userId),
+                    ),
+                ),
+        ),
         inArray(contest.organizationId, schoolsOf(userId)),
         and(
             eq(contest.visibility, "invite"),
@@ -120,12 +166,15 @@ export function pickCompetingSchool(
     return contestRow.visibility === "open" ? null : undefined;
 }
 
-/** The student's schools, earliest joined first. */
+/**
+ * The student's current schools (not ones they're a former student of),
+ * earliest joined first: the schools they can compete for.
+ */
 export async function schoolIdsOf(userId: string) {
     const rows = await db
         .select({ id: member.organizationId })
         .from(member)
-        .where(eq(member.userId, userId))
+        .where(and(eq(member.userId, userId), isNull(member.formerAt)))
         .orderBy(asc(member.createdAt));
     return rows.map((r) => r.id);
 }

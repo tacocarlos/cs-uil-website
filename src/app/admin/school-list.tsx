@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/table";
 import { api } from "~/trpc/react";
 import { AddTeacherDialog } from "./add-teacher";
+import { ManageSchoolDialog } from "./manage-school";
 
 /**
  * Schools matching a name search, a page at a time (there could be one per
@@ -116,8 +117,11 @@ export function SchoolList() {
                                                 }
                                             />
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="space-x-1 text-right whitespace-nowrap">
                                             <AddTeacherDialog school={school} />
+                                            <ManageSchoolDialog
+                                                school={school}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))}

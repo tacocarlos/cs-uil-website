@@ -1,7 +1,6 @@
 import z from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
-    getAllAppProblems,
     getAllMinimalProblems,
     getProblemById as API_getProblemById,
     getProblemMarkdown,
@@ -10,10 +9,6 @@ import {
 } from "~/lib/api/lunaghs";
 
 export const problemRouter = createTRPCRouter({
-    getProblems: publicProcedure.query(async () => {
-        return getAllAppProblems();
-    }),
-
     /** Lightweight list — only id, name, number, competition_id. Use this in
      *  client components instead of calling getAllMinimalProblems() directly,
      *  which would fire from the browser and hit CORS. */

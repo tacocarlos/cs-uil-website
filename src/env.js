@@ -33,7 +33,6 @@ export const env = createEnv({
      */
     client: {
         // NEXT_PUBLIC_CLIENTVAR: z.string(),
-        NEXT_PUBLIC_JUDGE_URL: z.url(),
         NEXT_PUBLIC_BASE_URL: z.url(),
     },
 
@@ -55,7 +54,6 @@ export const env = createEnv({
         LSP_GATEWAY_SECRET: process.env.LSP_GATEWAY_SECRET,
         DEV_LOGIN_DATABASE_HOSTS: process.env.DEV_LOGIN_DATABASE_HOSTS,
         // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
-        NEXT_PUBLIC_JUDGE_URL: process.env.JUDGE_URL,
     },
     /**
      * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

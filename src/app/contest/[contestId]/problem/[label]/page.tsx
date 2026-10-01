@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "auth";
 import { db } from "~/server/db";
 import { contestProblem } from "~/server/db/schema/contest";
-import { findVisibleContest } from "~/server/contests";
+import { canSeeProblems, findVisibleContest } from "~/server/contests";
+import { getActiveMembership } from "~/server/organizations";
 import {
     getProblemById,
     getAllCompetitions,
@@ -51,6 +52,12 @@ export default async function ContestProblemPage({
 
     if (!contestRow || !cp) {
         notFound();
+    }
+
+    // Problems stay hidden until the contest starts, except from the host
+    // school's teachers (who set them up).
+    if (!canSeeProblems(contestRow, await getActiveMembership(session))) {
+        redirect(`/contest/${contestIdStr}`);
     }
 
     // ── Fetch full problem from external API ─────────────────────────────────

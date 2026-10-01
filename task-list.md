@@ -1,103 +1,120 @@
 # Task list
 
+Status as of 2026-09-30.
+
+## Where things stand
+
+| State | What | Migrations |
+| ----- | ---- | ---------- |
+| Pushed to `main` (`52493d8`) | Phases 1–3b: authorization, schools (organizations), school-scoped data and leaderboards, UIL classification, dummy-data script | `0001`–`0004` |
+| Committed, **not pushed** (`0faa276`) | Phase 4 (cross-school contests), Phase 5 minimal (join codes, `/admin`, school switcher), written leaderboard → teacher-only, written statistics, former students | `0005`–`0007` |
+| **Uncommitted** | Contest access fixes (problems hidden until start; former students out of contests), Phase 5 gaps (manage/rename/delete schools, change teacher roles, students leave schools), recent-submissions fix, cleanups (below), organization endpoint lockdown | none |
+
+Production Vercel builds apply pending migrations before building
+(`vercel.json` → `scripts/vercel-build.sh`; previews never migrate).
+
+**Before the next deploy:**
+
+1. Check the Vercel build log of the `52493d8` deploy for "Applying
+   database migrations" to confirm `0001`–`0004` ran on prod. (Before the
+   first migrating deploy, prod's `drizzle.__drizzle_migrations` needed the
+   baseline row; if that deploy failed, that's the likely cause.)
+2. Back up prod. `0006` rewrites data: existing contests become Groveton's
+   (school-only) and existing enrollments get the student's earliest school.
+3. Commit the uncommitted work, push, and smoke-test: sign-in, the
+   leaderboards, a contest lobby, the teacher dashboard, `/admin`.
+4. After deploying: set Groveton's classification and create its join code
+   from the teacher dashboard (existing schools have no code until then).
+
 ## Multi-school support (organizations)
 
 Goal: let teachers and students from other schools compete in contests and
-practice on the site.
+practice on the site. All phases are done in code.
 
-### Starting point (as of 2026-09-27)
-
-- All tRPC procedures were `publicProcedure`, and many trusted a `userId`
-  sent by the browser. Teacher-only access was enforced only by
-  `dashboard/teacher/layout.tsx`. → Addressed by Phase 1.
-- 7 pages query the database directly (dashboards, contests, leaderboard);
-  they need school scoping too.
-- "Teacher" is one global `role` string on the user. `schema/role.ts`
-  (roles / permissions / userRoles / rolePermissions) is a mostly unused
-  permission system, only touched by `dashboard/page.tsx` via
-  `lib/user/permission-utils.ts`; replace or remove it.
-- better-auth 1.4.7 ships an **organization plugin** (orgs, members with
-  owner/admin/member roles, invitations, active organization on the
-  session, access control). `@better-auth/cli` is installed and can
-  generate its tables.
-
-### Phases
-
-| # | Phase | Size | Notes |
-| - | ----- | ---- | ----- |
-| 1 | ✅ **Server-side authorization** | M–L | Done. `protectedProcedure` / `teacherProcedure` read the user from the session; no procedure accepts a client `userId`. `src/server/api/authorization.test.ts` classifies every procedure and fails on unclassified ones. |
-| 2 | **Organizations** | S–M | Code done 2026-09-29; **not deployed yet**. Production Vercel builds now apply pending migrations (`scripts/vercel-build.sh`), so deploying applies `drizzle/0001`–`0002`; first confirm prod's `drizzle.__drizzle_migrations` has the baseline row and take a backup. Organization plugin enabled (site admins create schools); tables `uil_organization` / `uil_member` / `uil_invitation` plus `uil_session.active_organization_id`. Every user is in Groveton High School (`groveton-hs`): site admins → owner, teachers → admin, others → member. New users join it automatically (hook in `auth.ts`) until join codes exist; sessions start in the user's earliest school. |
-| 3 | **Scoped data** | M | Code done 2026-09-29, deploys with Phase 2 (`drizzle/0003` adds `showInGlobalLeaderboard` and **drops the old role tables**: they're empty on dev; check prod first). Teacher access is now owner/admin of the active school (`teacherProcedure`, teacher layout, navbar, dashboard redirect); the global `role` only matters for `site-admin`. Teacher views, score overrides, and written-score entry only cover the teacher's school (`inSchool()` in `src/server/organizations.ts`). Leaderboards show the viewer's school by default; "All schools" (`?view=global`) shows only students who opted in (student settings). Not done: contests (Phase 4). |
-| 3b | **School classification** | S | Code done 2026-09-29 (`drizzle/0004`). Schools have a UIL conference (1A–6A), academic district, and region (`src/lib/schools.ts`), editable by the school's teachers (teacher dashboard card) and by site admins for any school (`/admin`, the start of the Phase 5 admin panel; searchable by name, 25 per page), through validated `school.*` procedures; the auth API can't set them (`input: false`). The "All schools" leaderboards filter by them (`?conference=&region=&district=`). Groveton's values: set them from the dashboard after deploying. |
-| 4 | **Cross-school contests** | M | Code done 2026-09-30 (`drizzle/0006`: existing contests → Groveton, school-only; enrollments → the student's earliest school). Contests belong to the creating teacher's active school, whose teachers alone manage them and see submissions/enrollments. Visibility: school only (default) / invited schools (`contest_invite`, picked by name search) / open to everyone. Rules in `src/server/contests.ts`; hidden contests are hidden from lists, lobby, problem pages, and leaderboards. Enrollment records the school a student competes for (active school if eligible); contest leaderboards show it. The practice/written "All schools" leaderboards also show each student's school(s) and search by school (2026-09-30). |
-| 5 | **Management UI** | M–L | Minimal version code done 2026-09-29 (`drizzle/0005` adds `join_code`). Site admins (`/admin`): create schools, add an existing account as a school's teacher by email. Teachers (dashboard): join code + link (`/join?code=`), regenerate it, member list, remove students. Students: `/join`; dashboard prompts those without a school. Navbar: "Join a School" and a school switcher for multi-school users. New sign-ups no longer auto-join Groveton. Existing schools have no code until a teacher clicks "Create code". Not done: removing/demoting teachers (SQL for now), deleting or renaming schools, leaving a school, rate-limiting join attempts. |
-
-Phases 1–3 make the site safely multi-school; 4–5 make it feel like a
-platform.
+| # | Phase | Status | Notes |
+| - | ----- | ------ | ----- |
+| 1 | **Server-side authorization** | ✅ Deployed | `protectedProcedure` / `teacherProcedure` / `siteAdminProcedure` take the user from the session; no procedure accepts a client `userId`. `src/server/api/authorization.test.ts` classifies every procedure and fails on unclassified ones. |
+| 2 | **Organizations** | ✅ Pushed | better-auth organization plugin; a school is an organization. Tables `uil_organization` / `uil_member` / `uil_invitation` (unused: no email) plus `uil_session.active_organization_id`. Existing users were moved into Groveton High School (`groveton-hs`): site admins → owner, teachers → admin, others → member. Sessions start in the user's earliest school. |
+| 3 | **Scoped data** | ✅ Pushed | Teacher access = owner/admin of the active school; the global `role` only matters for `site-admin`. Teacher views, overrides, and written scores only cover the teacher's school (`inSchool()` in `src/server/organizations.ts`). Old role tables dropped (`0003`). |
+| 3b | **School classification** | ✅ Pushed | UIL conference (1A–6A), academic district, region per school (`src/lib/schools.ts`), set by the school's teachers (dashboard) or site admins (`/admin`). The "All schools" leaderboard filters by them. |
+| 4 | **Cross-school contests** | ✅ Committed | Contests belong to the creating teacher's school; only its teachers manage them. Visibility: school only / invited schools / open. Enrollment records the school a student competes for; contest leaderboards show it. Rules in `src/server/contests.ts`. |
+| 5 | **Management UI** | ✅ Committed (gaps uncommitted) | Site admins (`/admin`, searchable): create schools, add teachers by email, rename/delete schools (not Groveton), change teachers' roles or remove them. Teachers: join code + link (`/join?code=`), member list, remove students, mark former. Students: `/join`, "Your schools" with Leave. Navbar: "Join a School", school switcher. New sign-ups have no school until they use a code. |
 
 ### Decisions (2026-09-29)
 
-1. **Membership:** users can belong to multiple schools (e.g. a site admin
-   who also teaches). Needs an active school on the session and a school
-   switcher.
-2. **Joining:** join code/link from a teacher only. Students can't be
-   assumed to receive email, and there is no email server, so no email
-   invitations or domain matching.
-3. **Creating schools:** site admins only; no request/approval flow.
-4. **Visibility:** the leaderboard defaults to the user's school. A global
-   leaderboard (separate view or page) is opt-in per student: only students
-   who explicitly allow it appear there. Anyone can view it.
-5. **Roles:** "site admin" stays global; "teacher" becomes a per-school
-   role (owner/admin) instead of the global flag.
+1. **Membership:** users can belong to several schools; the session has an
+   active school, with a switcher.
+2. **Joining:** join code/link from a teacher only. No email invitations
+   (no email server; students may not get email).
+3. **Creating schools:** site admins only.
+4. **Leaderboard visibility:** defaults to the user's school. The "All
+   schools" view is opt-in per student and viewable by anyone; it shows
+   each student's school and filters by classification.
+5. **Roles:** "site admin" is global; "teacher" is a per-school role
+   (owner/admin).
 
-## Other follow-ups
+## Other features (2026-09-29 – 2026-09-30)
 
-- **Problem API data (api.lunaghs.dev's domain; owner aware, fix planned
-  there as of 2026-09-29): 37 of 48 problems can't be solved here.** Their `test_output_url` file contains the problem
-  statement Markdown instead of the expected output, so every submission is
-  rejected. Found 2026-09-27; broken IDs: 4–12, 15–17, 19–25, 29, 31–37,
-  40–49. This site only compares against the stored test output; producing
-  and validating it (including running reference solutions) belongs to
-  api.lunaghs.dev.
-- ~~Student code written UIL-style may not match the judge~~ (`public class
-  <ProblemName>`, reading `<name>.dat`). Won't fix (2026-09-29): the starter
-  code's `Main` + stdin doesn't change how students solve problems.
-- F# on this Judge0 takes ~3–5 s of the 5 s CPU limit just to start, so even
-  `printfn "hello"` can time out. Consider a higher per-submission limit for
-  F#, or hiding it.
+- **Leaderboard:** programming only (the written leaderboard is now
+  teacher-only); 10–50 rows per page; gold/silver/bronze for the top 3 and
+  a faint tint for 4th–6th; school names and school search on "All
+  schools".
+- **Written tests (teachers only):** record scores, ranked view at
+  `/dashboard/teacher/written/leaderboard`, statistics at
+  `/dashboard/teacher/written/statistics` for a season or lifetime.
+  Student optimal = best score, expected = average; school figures = top 3
+  added together, like a UIL team score (`src/lib/written/statistics.ts`).
+  "Expected" as the average was an assumption (only optimal was defined).
+- **Former students** (`0007`, `uil_member.former_at`): teachers mark
+  students who graduate or leave. They keep their account and scores but
+  drop out of leaderboards, pickers, recent submissions, and their old
+  school's contests (except contests they entered). Teacher written views
+  have "Include former students" for trends. Rejoining with a code makes
+  them current again.
+- **Organization plugin endpoints locked down** (2026-09-30, uncommitted):
+  better-auth's own `/api/auth/organization/*` API (delete school, change
+  roles, remove members, invitations, …) would bypass the site's rules, so
+  a `hooks.before` in `auth.ts` refuses all of it (404) except `set-active`,
+  `list`, and `get-active-member` (18 of 21 endpoints blocked;
+  `src/lib/auth/organization-endpoints.ts`, tested against the plugin's
+  real endpoint list and request handler). Plugin deletion is also off.
+  Sessions now start in a current school before a former one.
+- **Contest problems hidden until the start:** problem pages and the
+  problem list are withheld before `active`, except from the host school's
+  teachers (`canSeeProblems`).
+- **Dev tooling:** `bun run db:seed` fills a dev database with dummy
+  schools, students, and scores (refuses non-dev databases); dev "Admin
+  Test" account alongside the dev student and teacher.
 
-- Contest problem pages (`contest/[contestId]/problem/[label]`) don't check
-  the contest's status, so problems are viewable before a contest starts.
-  (Submitting is blocked server-side.) This is task 5.3 in
-  `websocket-assignment.md`, left for that assignment.
-- Unused procedures, secured in Phase 1 but called by nothing: consider
-  removing `submission.getMostRecentSubmission`, `getAllSubmissions`,
-  `getSubmissionById`, `user.getUserLeaderboardVisibility`,
-  `getProblemSubmissions`, `contest.getEnrollments`, and
-  `problem.getProblems`. (`written.getMostRecentYear` was removed.)
-- ✅ Written test leaderboard removed for students (2026-09-30), to focus the
-  site on the programming section. Teachers still record written scores and
-  see their own students ranked at `/dashboard/teacher/written/leaderboard`
-  (all their students, whatever the leaderboard privacy setting). The
-  `written.*` procedures are teacher-only now.
-- ✅ Written statistics for teachers (2026-09-30) at
-  `/dashboard/teacher/written/statistics`, for a season year or lifetime:
-  student optimal = best score, student expected = average score; school
-  optimal/expected = the top 3 of those added together, like a UIL team
-  score (`src/lib/written/statistics.ts`). "Expected" as the average was
-  my assumption; the definition only covered optimal.
-- ✅ Former students (2026-09-30, `drizzle/0007` adds `uil_member.former_at`).
-  Teachers mark a student former (graduated/left) or restore them from the
-  roster. Former students keep their account, membership, and scores, but
-  are left out of the "My school" leaderboard, the "All schools" one (if
-  former at every school; school filters and names only use current
-  schools), and the written score picker. The teacher's written leaderboard
-  and statistics have "Include former students" for trends. Not applied to
-  contests (eligibility/enrollment) or the teacher's recent-submissions
-  list.
+## Open items
 
-- ✅ Rebuilt the Judge0 VM; real submissions run (2026-09-29).
-- Pin pyright and clangd in `lsp-gateway/Dockerfile` (jdtls is pinned).
-- `NEXT_PUBLIC_JUDGE_URL` in `src/env.js` is declared but unused; remove it.
-- ✅ Deployed the LSP gateway for production (2026-09-29) with
-  `lsp-gateway/deploy.sh`, behind Caddy.
+None in this repo; see "Before the next deploy" above.
+
+## Cleanups (done 2026-09-30, uncommitted)
+
+- Removed unused procedures: `submission.getMostRecentSubmission`,
+  `getAllSubmissions`, `getSubmissionById`,
+  `user.getUserLeaderboardVisibility`, `user.getProblemSubmissions`,
+  `contest.getEnrollments`, `problem.getProblems`.
+- Removed `NEXT_PUBLIC_JUDGE_URL` from `src/env.js` (it only mirrored
+  `JUDGE_URL`, which stays).
+- Pinned the LSP gateway's language servers: pyright `1.1.414` and clangd
+  from LLVM 19 (`clangd-19`), as Dockerfile `ARG`s. Not built yet; rebuild
+  with `lsp-gateway/deploy.sh` to pick it up.
+- Deleted `dev-scripts/seed-db.ts` (all commented out); `seed-dummy-data.ts`
+  replaces it.
+- Removed unused imports from the teacher dashboard page.
+
+## Won't do
+
+- Accepting UIL-style student code (`public class <ProblemName>`, reading
+  `<name>.dat`): the starter code's `Main` + stdin doesn't change how
+  students solve problems (2026-09-29).
+- Rate-limiting join-code attempts: ~10¹² possible codes make guessing
+  impractical (2026-09-30).
+
+## Infrastructure (done)
+
+- Judge0 VM rebuilt; real submissions run (2026-09-29).
+- LSP gateway deployed for production with `lsp-gateway/deploy.sh`, behind
+  Caddy, using Bun's baseline build for the host's CPU (2026-09-29).

@@ -8,9 +8,8 @@ import {
 import { db } from "~/server/db";
 import { submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { inSchool } from "~/server/organizations";
-import { member as memberTable } from "~/server/db/schema/organization";
 
 // Student procedures return the signed-in user's own submissions only;
 // teacher procedures see and change only their school's students'.
@@ -32,58 +31,38 @@ export const submissionRouter = createTRPCRouter({
                 );
         }),
 
+    /**
+     * The 10 latest submissions by the teacher's students, for the
+     * dashboard. Former students are left out unless `includeFormer`.
+     */
     getRecentOrgSubmission: teacherProcedure
-        .input(z.object({includeFormer: z.boolean().default(false)}))
-        .query(async ({ctx, input}) => {
-            const organizationId = ctx.organizationId;
-
-            if(input.includeFormer) {
-                return await db.select({
-                        id: submission.id,
-                        problemId: submission.problemId,
-                        userId: submission.userId,
-                        timeSubmitted: submission.timeSubmitted,
-                        points: submission.points,
-                        maxPoints: submission.maxPoints,
-                        accepted: submission.accepted,
-                        userName: userTable.name,
-                        userEmail: userTable.email,
-                        attemptNum: submission.attemptNumber,                    
+        .input(z.object({ includeFormer: z.boolean().default(false) }))
+        .query(({ ctx, input }) =>
+            db
+                .select({
+                    id: submission.id,
+                    problemId: submission.problemId,
+                    userId: submission.userId,
+                    timeSubmitted: submission.timeSubmitted,
+                    points: submission.points,
+                    maxPoints: submission.maxPoints,
+                    accepted: submission.accepted,
+                    userName: userTable.name,
+                    userEmail: userTable.email,
+                    attemptNum: submission.attemptNumber,
                 })
-                    .from(submission)
-                    .leftJoin(userTable, eq(submission.userId, userTable.id))
-                    .where(and(
-                        inSchool(submission.userId, organizationId),
-                    ))
-                    .orderBy(desc(submission.timeSubmitted))
-                    .limit(10);
-                
-
-            } else {
-                return await db
-                    .select({
-                        id: submission.id,
-                        problemId: submission.problemId,
-                        userId: submission.userId,
-                        timeSubmitted: submission.timeSubmitted,
-                        points: submission.points,
-                        maxPoints: submission.maxPoints,
-                        accepted: submission.accepted,
-                        userName: userTable.name,
-                        userEmail: userTable.email,
-                        attemptNum: submission.attemptNumber,
-                    })
-                    .from(submission)
-                    .leftJoin(userTable, eq(submission.userId, userTable.id))
-                    .leftJoin(memberTable, and(eq(userTable.id, memberTable.userId), inSchool(submission.userId, organizationId)))
-                    .where(and(
-                        inSchool(submission.userId, organizationId),
-                        isNull(memberTable.formerAt)
-                    ))
-                    .orderBy(desc(submission.timeSubmitted))
-                    .limit(10);                
-            }
-        }),
+                .from(submission)
+                .leftJoin(userTable, eq(submission.userId, userTable.id))
+                // Checks membership in this school only, so students in
+                // several schools aren't duplicated or misjudged.
+                .where(
+                    inSchool(submission.userId, ctx.organizationId, {
+                        currentOnly: !input.includeFormer,
+                    }),
+                )
+                .orderBy(desc(submission.timeSubmitted))
+                .limit(10),
+        ),
 
     getAcceptedSubmissions: protectedProcedure.query(async ({ ctx }) => {
         const userId = ctx.user.id;
@@ -133,97 +112,6 @@ export const submissionRouter = createTRPCRouter({
             )
             .where(eq(submission.accepted, false));
     }),
-
-    getMostRecentSubmission: protectedProcedure
-        .input(z.object({ problemId: z.number().int() }))
-        .query(async ({ ctx, input }) => {
-            const { problemId } = input;
-            const userId = ctx.user.id;
-            const mostRecent = (
-                await db
-                    .select()
-                    .from(submission)
-                    .orderBy(
-                        desc(submission.accepted),
-                        desc(submission.timeSubmitted),
-                    )
-                    .where(
-                        and(
-                            eq(submission.userId, userId),
-                            eq(submission.problemId, problemId),
-                        ),
-                    )
-                    .limit(1)
-            ).at(0);
-
-            if (mostRecent !== undefined) {
-                return { state: "success" as const, mostRecent };
-            } else {
-                return { state: "failed" as const };
-            }
-        }),
-
-    getAllSubmissions: teacherProcedure
-        .input(
-            z.object({
-                limit: z.number().int().min(1).max(100).default(50),
-                offset: z.number().int().min(0).default(0),
-            }),
-        )
-        .query(async ({ ctx, input }) => {
-            const { limit, offset } = input;
-            return await db
-                .select({
-                    id: submission.id,
-                    problemId: submission.problemId,
-                    userId: submission.userId,
-                    timeSubmitted: submission.timeSubmitted,
-                    points: submission.points,
-                    maxPoints: submission.maxPoints,
-                    accepted: submission.accepted,
-                    isStudentVisible: submission.isStudentVisible,
-                    userName: userTable.name,
-                    userEmail: userTable.email,
-                    userImage: userTable.image,
-                })
-                .from(submission)
-                .leftJoin(userTable, eq(submission.userId, userTable.id))
-                .where(inSchool(submission.userId, ctx.organizationId))
-                .orderBy(desc(submission.timeSubmitted))
-                .limit(limit)
-                .offset(offset);
-        }),
-
-    getSubmissionById: teacherProcedure
-        .input(z.object({ submissionId: z.string() }))
-        .query(async ({ ctx, input }) => {
-            const { submissionId } = input;
-            const rows = await db
-                .select({
-                    id: submission.id,
-                    problemId: submission.problemId,
-                    userId: submission.userId,
-                    timeSubmitted: submission.timeSubmitted,
-                    points: submission.points,
-                    maxPoints: submission.maxPoints,
-                    accepted: submission.accepted,
-                    isStudentVisible: submission.isStudentVisible,
-                    submittedCode: submission.submittedCode,
-                    userName: userTable.name,
-                    userEmail: userTable.email,
-                    userImage: userTable.image,
-                })
-                .from(submission)
-                .leftJoin(userTable, eq(submission.userId, userTable.id))
-                .where(
-                    and(
-                        eq(submission.id, submissionId),
-                        inSchool(submission.userId, ctx.organizationId),
-                    ),
-                )
-                .limit(1);
-            return rows.at(0) ?? null;
-        }),
 
     overrideSubmission: teacherProcedure
         .input(

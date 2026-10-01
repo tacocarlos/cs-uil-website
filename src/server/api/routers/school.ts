@@ -1,7 +1,18 @@
 import { randomUUID } from "node:crypto";
 import z from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, eq, ilike, ne, sql } from "drizzle-orm";
+import {
+    and,
+    asc,
+    count,
+    eq,
+    ilike,
+    inArray,
+    isNull,
+    ne,
+    sql,
+} from "drizzle-orm";
+import { DEFAULT_ORGANIZATION } from "~/lib/auth/organizations";
 import { auth } from "auth";
 import {
     createTRPCRouter,
@@ -207,7 +218,8 @@ export const schoolRouter = createTRPCRouter({
                 });
             }
 
-            const inserted = await db
+            // Rejoining as a former student makes them current again.
+            const [row] = await db
                 .insert(member)
                 .values({
                     id: randomUUID(),
@@ -216,14 +228,81 @@ export const schoolRouter = createTRPCRouter({
                     role: "member",
                     createdAt: new Date(),
                 })
-                .onConflictDoNothing()
-                .returning({ id: member.id });
+                .onConflictDoUpdate({
+                    target: [member.organizationId, member.userId],
+                    set: { formerAt: null },
+                })
+                // xmax is 0 for a freshly inserted row, not an updated one.
+                .returning({ inserted: sql<boolean>`xmax = 0` });
 
             await auth.api.setActiveOrganization({
                 headers: ctx.headers,
                 body: { organizationId: school.id },
             });
-            return { name: school.name, alreadyMember: inserted.length === 0 };
+            return { name: school.name, alreadyMember: !row?.inserted };
+        }),
+
+    /** The signed-in user's schools and their role in each, by name. */
+    listMine: protectedProcedure.query(({ ctx }) =>
+        db
+            .select({
+                id: organization.id,
+                name: organization.name,
+                role: member.role,
+                formerAt: member.formerAt,
+            })
+            .from(member)
+            .innerJoin(organization, eq(member.organizationId, organization.id))
+            .where(eq(member.userId, ctx.user.id))
+            .orderBy(asc(organization.name)),
+    ),
+
+    /**
+     * Leaves a school as a student (teachers are removed by site admins).
+     * If it was the active school, switches to the user's earliest other
+     * current school, or none.
+     */
+    leave: protectedProcedure
+        .input(z.object({ organizationId: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const left = await db
+                .delete(member)
+                .where(
+                    and(
+                        eq(member.organizationId, input.organizationId),
+                        eq(member.userId, ctx.user.id),
+                        eq(member.role, "member"),
+                    ),
+                )
+                .returning({ id: member.id });
+            if (left.length === 0) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message:
+                        "You can only leave schools you're a student at. Teachers: ask a site admin.",
+                });
+            }
+
+            if (
+                ctx.session.session.activeOrganizationId ===
+                input.organizationId
+            ) {
+                const [next] = await db
+                    .select({ id: member.organizationId })
+                    .from(member)
+                    .where(
+                        and(
+                            eq(member.userId, ctx.user.id),
+                            isNull(member.formerAt),
+                        ),
+                    )
+                    .orderBy(asc(member.createdAt))
+                    .limit(1);
+                await auth.api.setActiveOrganization({
+                    headers: ctx.headers,
+                    body: { organizationId: next?.id ?? null },
+                });
+            }
         }),
 
     /** Schools whose name contains `query`, a page at a time, by name. */
@@ -338,5 +417,122 @@ export const schoolRouter = createTRPCRouter({
                     setWhere: ne(member.role, "owner"),
                 });
             return { teacher: teacher.name, school: school.name };
+        }),
+
+    /** A school's teachers (owners and admins), for site admins. */
+    listTeachers: siteAdminProcedure
+        .input(z.object({ organizationId: z.string() }))
+        .query(({ input }) =>
+            db
+                .select({
+                    userId: member.userId,
+                    role: member.role,
+                    name: user.name,
+                    email: user.email,
+                })
+                .from(member)
+                .innerJoin(user, eq(member.userId, user.id))
+                .where(
+                    and(
+                        eq(member.organizationId, input.organizationId),
+                        inArray(member.role, ["owner", "admin"]),
+                    ),
+                )
+                .orderBy(asc(user.name)),
+        ),
+
+    /**
+     * Changes someone's role in a school, e.g. demoting a teacher to a
+     * student (member) or promoting an admin to owner.
+     */
+    setMemberRole: siteAdminProcedure
+        .input(
+            z.object({
+                organizationId: z.string(),
+                userId: z.string(),
+                role: z.enum(["owner", "admin", "member"]),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            const updated = await db
+                .update(member)
+                .set({ role: input.role })
+                .where(
+                    and(
+                        eq(member.organizationId, input.organizationId),
+                        eq(member.userId, input.userId),
+                    ),
+                )
+                .returning({ id: member.id });
+            if (updated.length === 0) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "They aren't in that school.",
+                });
+            }
+        }),
+
+    /** Removes anyone, teachers included, from a school. */
+    removeFromSchool: siteAdminProcedure
+        .input(z.object({ organizationId: z.string(), userId: z.string() }))
+        .mutation(async ({ input }) => {
+            await db
+                .delete(member)
+                .where(
+                    and(
+                        eq(member.organizationId, input.organizationId),
+                        eq(member.userId, input.userId),
+                    ),
+                );
+        }),
+
+    rename: siteAdminProcedure
+        .input(
+            z.object({
+                organizationId: z.string(),
+                name: z.string().trim().min(2).max(100),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            const [school] = await db
+                .update(organization)
+                .set({ name: input.name })
+                .where(eq(organization.id, input.organizationId))
+                .returning(schoolColumns);
+            if (!school) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "No such school",
+                });
+            }
+            return school;
+        }),
+
+    /**
+     * Deletes a school with its memberships and contests. Students' own
+     * practice submissions and written scores stay (they belong to the
+     * students); contest results elsewhere keep the students, without a
+     * school. The default school can't be deleted.
+     */
+    delete: siteAdminProcedure
+        .input(z.object({ organizationId: z.string() }))
+        .mutation(async ({ input }) => {
+            if (input.organizationId === DEFAULT_ORGANIZATION.id) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: `${DEFAULT_ORGANIZATION.name} can't be deleted.`,
+                });
+            }
+            const deleted = await db
+                .delete(organization)
+                .where(eq(organization.id, input.organizationId))
+                .returning({ name: organization.name });
+            if (deleted.length === 0) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "No such school",
+                });
+            }
+            return deleted[0]!;
         }),
 });

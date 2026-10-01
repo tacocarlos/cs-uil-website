@@ -1,9 +1,11 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, isNotNull, sql } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { organization } from "better-auth/plugins";
 import { env } from "~/env";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
+import { isBlockedAuthPath } from "~/lib/auth/organization-endpoints";
 import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
 import * as orgSchema from "~/server/db/schema/organization";
@@ -29,8 +31,11 @@ export const auth = betterAuth({
         // Organizations are schools. Users can belong to several; the
         // session's activeOrganizationId says which one they're acting in.
         organization({
-            // Schools are set up by site admins, not self-serve.
+            // Schools are set up by site admins, not self-serve. (Creating,
+            // deleting, and most other plugin endpoints are also refused by
+            // the `hooks.before` below; this is a second line of defense.)
             allowUserToCreateOrganization: (user) => user.role === "site-admin",
+            disableOrganizationDeletion: true,
             schema: {
                 organization: {
                     modelName: "uil_organization",
@@ -60,17 +65,31 @@ export const auth = betterAuth({
             },
         }),
     ],
+    // Refuse the organization plugin's endpoints the site doesn't use (see
+    // src/lib/auth/organization-endpoints.ts). Runs for browser requests and
+    // server-side `auth.api` calls alike.
+    hooks: {
+        before: createAuthMiddleware(async (ctx) => {
+            if (isBlockedAuthPath(ctx.path)) {
+                throw new APIError("NOT_FOUND");
+            }
+        }),
+    },
     databaseHooks: {
         session: {
             create: {
-                // Start each session in the user's earliest school, so
-                // school-scoped pages work without picking one first.
+                // Start each session in the user's earliest current school
+                // (former-student memberships last), so school-scoped pages
+                // work without picking one first.
                 before: async (session) => {
                     const [first] = await db
                         .select({ id: orgSchema.member.organizationId })
                         .from(orgSchema.member)
                         .where(eq(orgSchema.member.userId, session.userId))
-                        .orderBy(asc(orgSchema.member.createdAt))
+                        .orderBy(
+                            isNotNull(orgSchema.member.formerAt),
+                            asc(orgSchema.member.createdAt),
+                        )
                         .limit(1);
                     return {
                         data: {

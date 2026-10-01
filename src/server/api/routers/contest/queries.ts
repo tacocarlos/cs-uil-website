@@ -18,6 +18,7 @@ import { user } from "~/server/db/schema/auth";
 import { organization } from "~/server/db/schema/organization";
 import { buildLeaderboard } from "~/lib/contest/leaderboard";
 import {
+    canSeeProblems,
     findVisibleContest,
     requireHostedContest,
     visibleContests,
@@ -77,13 +78,22 @@ export const contestQueries = {
         );
         if (!row) return null;
 
+        // Before the start, only the host school's teachers see which
+        // problems the contest has.
+        const problemsRevealed = canSeeProblems(
+            row,
+            await ctx.getActiveMembership(),
+        );
+
         const [problems, [enrollments], [host], invitedSchools] =
             await Promise.all([
-                db
-                    .select()
-                    .from(contestProblem)
-                    .where(eq(contestProblem.contestId, row.id))
-                    .orderBy(asc(contestProblem.displayOrder)),
+                problemsRevealed
+                    ? db
+                          .select()
+                          .from(contestProblem)
+                          .where(eq(contestProblem.contestId, row.id))
+                          .orderBy(asc(contestProblem.displayOrder))
+                    : [],
                 db
                     .select({ count: sql<number>`count(*)::int` })
                     .from(contestEnrollment)
@@ -108,28 +118,10 @@ export const contestQueries = {
             hostSchool: host?.name ?? null,
             invitedSchools,
             problems,
+            problemsRevealed,
             participantCount: enrollments?.count ?? 0,
         };
     }),
-
-    // Names and emails: the host school's teachers only.
-    getEnrollments: teacherProcedure
-        .input(byContest)
-        .query(async ({ ctx, input }) => {
-            await requireHostedContest(input.contestId, ctx.organizationId);
-            return db
-                .select({
-                    id: contestEnrollment.id,
-                    userId: contestEnrollment.userId,
-                    userName: user.name,
-                    userEmail: user.email,
-                    enrolledAt: contestEnrollment.enrolledAt,
-                })
-                .from(contestEnrollment)
-                .innerJoin(user, eq(contestEnrollment.userId, user.id))
-                .where(eq(contestEnrollment.contestId, input.contestId))
-                .orderBy(asc(contestEnrollment.enrolledAt));
-        }),
 
     // Every participant's submissions: the host school's teachers only.
     getAllSubmissions: teacherProcedure

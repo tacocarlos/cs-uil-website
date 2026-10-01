@@ -22,12 +22,21 @@ ARG JDTLS_VERSION=1.61.0
 ARG JDTLS_BUILD=202609031315
 ARG JDTLS_SHA256=338e7e73d61836651ba2453919a0d34fa763eb4e7c03342092309bffb8934c64
 
+# pyright, pinned (versions: `npm view pyright versions`).
+ARG PYRIGHT_VERSION=1.1.414
+# clangd's LLVM major version, from Debian's versioned clangd-NN package
+# (19 is Debian trixie's default, the base image's release). Debian keeps
+# patch updates flowing; a newer major means picking another clangd-NN.
+ARG CLANGD_MAJOR=19
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates curl python3 nodejs npm \
         # clangd needs the C and C++ standard library headers.
-        clangd libc6-dev libstdc++-14-dev \
-    && npm install -g pyright \
+        "clangd-${CLANGD_MAJOR}" libc6-dev libstdc++-14-dev \
+    # The gateway runs plain `clangd`.
+    && ln -s "/usr/lib/llvm-${CLANGD_MAJOR}/bin/clangd" /usr/local/bin/clangd \
+    && npm install -g "pyright@${PYRIGHT_VERSION}" \
     && JDTLS_TAR="jdt-language-server-${JDTLS_VERSION}-${JDTLS_BUILD}.tar.gz" \
     && curl -fsSL -o "/tmp/${JDTLS_TAR}" \
         "https://download.eclipse.org/jdtls/milestones/${JDTLS_VERSION}/${JDTLS_TAR}" \

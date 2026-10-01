@@ -241,7 +241,9 @@ export default async function ContestLobbyPage({
                                             colSpan={5}
                                             className="text-muted-foreground py-8 text-center text-sm"
                                         >
-                                            No problems available yet.
+                                            {contest.problemsRevealed
+                                                ? "No problems available yet."
+                                                : "Problems are revealed when the contest starts."}
                                         </TableCell>
                                     </TableRow>
                                 )}
