@@ -4,7 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "auth";
 import { db } from "~/server/db";
 import { contestProblem } from "~/server/db/schema/contest";
-import { canSeeProblems, findVisibleContest } from "~/server/contests";
+import {
+    canSeeProblems,
+    contestManagerFor,
+    findAccessibleContest,
+} from "~/server/contests";
 import { getActiveMembership } from "~/server/organizations";
 import {
     getProblemById,
@@ -33,9 +37,13 @@ export default async function ContestProblemPage({
         redirect(signInUrl(`/contest/${contestIdStr}/problem/${label}`));
     }
 
-    // ── Fetch contest (if visible to this user) + contest problem ───────────
+    // ── Fetch contest (if visible to, or managed by, this user) + problem ──
+    const manager = contestManagerFor(
+        session.user,
+        await getActiveMembership(session),
+    );
     const [contestRow, contestProblemRows] = await Promise.all([
-        findVisibleContest(contestId, session.user.id),
+        findAccessibleContest(contestId, session.user.id, manager),
         db
             .select()
             .from(contestProblem)
@@ -54,9 +62,9 @@ export default async function ContestProblemPage({
         notFound();
     }
 
-    // Problems stay hidden until the contest starts, except from the host
-    // school's teachers (who set them up).
-    if (!canSeeProblems(contestRow, await getActiveMembership(session))) {
+    // Problems stay hidden until the contest starts, except from those who
+    // manage the contest (and set them up).
+    if (!canSeeProblems(contestRow, manager)) {
         redirect(`/contest/${contestIdStr}`);
     }
 

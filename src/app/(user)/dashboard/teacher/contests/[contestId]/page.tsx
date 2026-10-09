@@ -178,9 +178,25 @@ export default function TeacherContestPage() {
                         </Button>
                         <h1 className="text-2xl font-bold">{contest.name}</h1>
                         <ContestStatusBadge status={status} />
+                        <span className="text-muted-foreground text-sm">
+                            {contest.hostSchool ?? "Global contest"}
+                        </span>
                     </div>
 
-                    <ContestControls contestId={contestId} status={status} />
+                    {/* Status changes and editing are for those who manage
+                        the contest; other teachers follow their own
+                        students here. */}
+                    {contest.canManage ? (
+                        <ContestControls
+                            contestId={contestId}
+                            status={status}
+                        />
+                    ) : (
+                        <p className="text-muted-foreground text-sm">
+                            Showing your school&apos;s students&apos;
+                            submissions.
+                        </p>
+                    )}
                 </div>
 
                 {/* ── Stats row ───────────────────────────────────────────── */}

@@ -16,9 +16,16 @@ export type ContestSettings = {
     endsAt: string;
     scoringMode: ScoringMode;
     penaltyPoints: number;
+    /** "open" exactly when `host` is null (a global contest). */
     visibility: ContestVisibility;
     /** Only used when visibility is "invite". */
     invitedSchools: InvitedSchool[];
+    /**
+     * Chosen by site admins: the host school, or null for a global
+     * contest. Undefined for teachers, whose contests are hosted by their
+     * school.
+     */
+    host?: InvitedSchool | null;
 };
 
 export const EMPTY_CONTEST_SETTINGS: ContestSettings = {
@@ -34,17 +41,25 @@ export const EMPTY_CONTEST_SETTINGS: ContestSettings = {
 
 export const DEFAULT_MAX_POINTS = 60;
 
-/** Build form state from a contest loaded from the server. */
-export function settingsFromContest(contest: {
-    name: string;
-    description: string;
-    startsAt: Date | string;
-    endsAt: Date | string;
-    scoringMode: ScoringMode;
-    penaltyPoints: number;
-    visibility: ContestVisibility;
-    invitedSchools: InvitedSchool[];
-}): ContestSettings {
+/**
+ * Build form state from a contest loaded from the server. `canChooseHost`
+ * (site admins) includes the host so it can be changed.
+ */
+export function settingsFromContest(
+    contest: {
+        name: string;
+        description: string;
+        startsAt: Date | string;
+        endsAt: Date | string;
+        scoringMode: ScoringMode;
+        penaltyPoints: number;
+        visibility: ContestVisibility;
+        invitedSchools: InvitedSchool[];
+        organizationId: string | null;
+        hostSchool: string | null;
+    },
+    canChooseHost: boolean,
+): ContestSettings {
     return {
         name: contest.name,
         description: contest.description,
@@ -53,7 +68,18 @@ export function settingsFromContest(contest: {
         scoringMode: contest.scoringMode,
         penaltyPoints: contest.penaltyPoints,
         visibility: contest.visibility,
-        invitedSchools: contest.invitedSchools,
+        invitedSchools: contest.invitedSchools.map(({ id, name }) => ({
+            id,
+            name,
+        })),
+        host: !canChooseHost
+            ? undefined
+            : contest.organizationId
+              ? {
+                    id: contest.organizationId,
+                    name: contest.hostSchool ?? "",
+                }
+              : null,
     };
 }
 
@@ -70,7 +96,10 @@ export function validateSettings(settings: ContestSettings): string | null {
         settings.visibility === "invite" &&
         settings.invitedSchools.length === 0
     ) {
-        return 'Invite at least one school, or choose "Your school only"';
+        return 'Invite at least one school, or choose "Host school only"';
+    }
+    if (settings.host === null && settings.visibility !== "open") {
+        return "Choose a host school, or make it a global contest";
     }
     return null;
 }
@@ -92,6 +121,8 @@ export function settingsToMutationInput(settings: ContestSettings) {
             settings.visibility === "invite"
                 ? settings.invitedSchools.map((s) => s.id)
                 : [],
+        // Site admins choose the host; teachers' contests use their school.
+        organizationId: settings.host?.id,
     };
 }
 

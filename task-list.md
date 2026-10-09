@@ -8,7 +8,7 @@ Status as of 2026-09-30.
 | ----- | ---- | ---------- |
 | Pushed to `main` (`52493d8`) | Phases 1–3b: authorization, schools (organizations), school-scoped data and leaderboards, UIL classification, dummy-data script | `0001`–`0004` |
 | Committed, **not pushed** (`0faa276`) | Phase 4 (cross-school contests), Phase 5 minimal (join codes, `/admin`, school switcher), written leaderboard → teacher-only, written statistics, former students | `0005`–`0007` |
-| **Uncommitted** | Contest access fixes (problems hidden until start; former students out of contests), Phase 5 gaps (manage/rename/delete schools, change teacher roles, students leave schools), recent-submissions fix, cleanups (below), organization endpoint lockdown | none |
+| **Uncommitted** | Contest access fixes (problems hidden until start; former students out of contests), Phase 5 gaps (manage/rename/delete schools, change teacher roles, students leave schools), recent-submissions fix, cleanups (below), organization endpoint lockdown, contest management model (school vs. global contests, declining invitations) | `0008` |
 
 Production Vercel builds apply pending migrations before building
 (`vercel.json` → `scripts/vercel-build.sh`; previews never migrate).
@@ -37,7 +37,7 @@ practice on the site. All phases are done in code.
 | 2 | **Organizations** | ✅ Pushed | better-auth organization plugin; a school is an organization. Tables `uil_organization` / `uil_member` / `uil_invitation` (unused: no email) plus `uil_session.active_organization_id`. Existing users were moved into Groveton High School (`groveton-hs`): site admins → owner, teachers → admin, others → member. Sessions start in the user's earliest school. |
 | 3 | **Scoped data** | ✅ Pushed | Teacher access = owner/admin of the active school; the global `role` only matters for `site-admin`. Teacher views, overrides, and written scores only cover the teacher's school (`inSchool()` in `src/server/organizations.ts`). Old role tables dropped (`0003`). |
 | 3b | **School classification** | ✅ Pushed | UIL conference (1A–6A), academic district, region per school (`src/lib/schools.ts`), set by the school's teachers (dashboard) or site admins (`/admin`). The "All schools" leaderboard filters by them. |
-| 4 | **Cross-school contests** | ✅ Committed | Contests belong to the creating teacher's school; only its teachers manage them. Visibility: school only / invited schools / open. Enrollment records the school a student competes for; contest leaderboards show it. Rules in `src/server/contests.ts`. |
+| 4 | **Cross-school contests** | ✅ Committed (management model uncommitted) | Two kinds of contest (`src/server/contests.ts`). **School contests** are hosted by a school; its teachers create and manage them (host school only, or host + invited schools). Invited schools' teachers can decline (and accept again); declining hides the contest from their students, but enrolled students keep their results. **Global contests** have no host (`0008` makes the host optional, with a check that only global contests lack one) and are created by site admins only. **Site admins** manage every contest: create global ones or host one at any school, edit, change status, delete, move between hosts. Teachers follow their own students' submissions in contests they don't manage. Enrollment records the school a student competes for; contest leaderboards show it. Management UI: `/dashboard/teacher/contests` (also linked from `/admin`). |
 | 5 | **Management UI** | ✅ Committed (gaps uncommitted) | Site admins (`/admin`, searchable): create schools, add teachers by email, rename/delete schools (not Groveton), change teachers' roles or remove them. Teachers: join code + link (`/join?code=`), member list, remove students, mark former. Students: `/join`, "Your schools" with Leave. Navbar: "Join a School", school switcher. New sign-ups have no school until they use a code. |
 
 ### Decisions (2026-09-29)
@@ -52,6 +52,11 @@ practice on the site. All phases are done in code.
    each student's school and filters by classification.
 5. **Roles:** "site admin" is global; "teacher" is a per-school role
    (owner/admin).
+6. **Contests (2026-10-01):** teachers create contests for their own school
+   and may invite other schools, whose teachers can decline. Global
+   contests are site-admin only. Site admins can create contests for any
+   school or globally, and manage and delete every contest. Teachers see
+   their own students' submissions in any contest.
 
 ## Other features (2026-09-29 – 2026-09-30)
 

@@ -11,17 +11,22 @@ export const VISIBILITY_LABELS: Record<
     { label: string; description: string }
 > = {
     school: {
-        label: "Your school only",
-        description: "Only your school's students can see and join it.",
+        label: "Host school only",
+        description: "Only the host school's students can see and join it.",
     },
     invite: {
-        label: "Invited schools",
+        label: "Host and invited schools",
         description:
-            "Your school and the schools you invite can see and join it.",
+            "The host school and the schools it invites can see and join it. Invited schools' teachers can decline.",
     },
     open: {
-        label: "Open to everyone",
+        label: "Global (every school)",
         description:
-            "Anyone can see it, and any signed-in student can join. The leaderboard shows each student's school.",
+            "A site-wide contest with no host school: anyone can see it, and any signed-in student can join. Only site admins create these.",
     },
 };
+
+/** Visibilities for contests hosted by a school (everything but global). */
+export const SCHOOL_CONTEST_VISIBILITIES = CONTEST_VISIBILITIES.filter(
+    (v) => v !== "open",
+);

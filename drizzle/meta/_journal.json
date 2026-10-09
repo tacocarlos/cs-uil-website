@@ -57,6 +57,13 @@
       "when": 1790783853001,
       "tag": "0007_former_students",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790876444373,
+      "tag": "0008_contest_management",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,5 @@
-import { foreignKey, index, primaryKey } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, foreignKey, index, primaryKey } from "drizzle-orm/pg-core";
 import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
 import { organization } from "./organization";
@@ -36,11 +37,15 @@ export const contest = createTable(
         /** Points deducted per wrong attempt in penalty mode */
         penaltyPoints: d.integer().notNull().default(20),
         createdAt: d.timestamp().defaultNow().notNull(),
-        /** The hosting school; its teachers manage the contest. */
-        organizationId: d.text().notNull(),
+        /**
+         * The hosting school, whose teachers manage the contest (site admins
+         * manage every contest). Null exactly for global contests.
+         */
+        organizationId: d.text(),
         /**
          * school = the host school's members; invite = also members of
-         * invited schools (contest_invite); open = everyone.
+         * invited schools that haven't declined (contest_invite); open =
+         * a global contest for everyone, created by site admins.
          */
         visibility: d
             .text({ enum: CONTEST_VISIBILITIES })
@@ -49,6 +54,11 @@ export const contest = createTable(
     }),
     (t) => [
         index("contest_organization_idx").on(t.organizationId),
+        // Global (open) contests have no host; every other contest has one.
+        check(
+            "contest_host_check",
+            sql`(${t.visibility} = 'open') = (${t.organizationId} IS NULL)`,
+        ),
         cascadeFk("contest_created_by_fk", t.createdBy, user.id),
         cascadeFk(
             "contest_organization_id_fk",
@@ -123,6 +133,12 @@ export const contestInvite = createTable(
     (d) => ({
         contestId: d.integer().notNull(),
         organizationId: d.text().notNull(),
+        /**
+         * When the invited school's teachers declined; null while the
+         * invitation stands. Declined schools can't see or join the
+         * contest (students already enrolled keep their results).
+         */
+        declinedAt: d.timestamp(),
     }),
     (t) => [
         primaryKey({ columns: [t.contestId, t.organizationId] }),

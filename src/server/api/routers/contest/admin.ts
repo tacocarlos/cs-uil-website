@@ -1,7 +1,7 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, eq, inArray } from "drizzle-orm";
-import { teacherProcedure } from "../../trpc";
+import { and, eq, notInArray } from "drizzle-orm";
+import { contestManagerProcedure, teacherProcedure } from "../../trpc";
 import { db } from "~/server/db";
 import {
     CONTEST_VISIBILITIES,
@@ -9,49 +9,128 @@ import {
     contestInvite,
     contestProblem,
 } from "~/server/db/schema/contest";
-import { requireHostedContest } from "~/server/contests";
+import { organization } from "~/server/db/schema/organization";
+import { requireManagedContest, type ContestManager } from "~/server/contests";
 
 const scoringMode = z.enum(contest.scoringMode.enumValues);
 const visibility = z.enum(CONTEST_VISIBILITIES);
 /** Schools invited to an invite-only contest (replaces the previous list). */
 const invitedSchoolIds = z.array(z.string()).max(500);
 
-/** Contests hosted by a school, for limiting changes to them. */
-function hostedBy(organizationId: string) {
-    return db
-        .select({ id: contest.id })
-        .from(contest)
-        .where(eq(contest.organizationId, organizationId));
+/**
+ * The host school a contest should have, given who is asking. Global
+ * ("open") contests have none and are site-admin only. Teachers always
+ * host at their active school; site admins may pick any school
+ * (`requestedHost`), defaulting to the contest's current host.
+ */
+async function resolveHost(
+    manager: ContestManager,
+    newVisibility: (typeof CONTEST_VISIBILITIES)[number],
+    requestedHost: string | undefined,
+    currentHost: string | null,
+): Promise<string | null> {
+    if (newVisibility === "open") {
+        if (!manager.siteAdmin) {
+            throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Only site admins can create global contests.",
+            });
+        }
+        return null;
+    }
+
+    if (!manager.siteAdmin) {
+        if (
+            requestedHost !== undefined &&
+            requestedHost !== manager.organizationId
+        ) {
+            throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Teachers can only host contests at their school.",
+            });
+        }
+        return currentHost ?? manager.organizationId;
+    }
+
+    const host = requestedHost ?? currentHost ?? manager.organizationId;
+    if (!host) {
+        throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Choose a host school, or make it a global contest.",
+        });
+    }
+    const [school] = await db
+        .select({ id: organization.id })
+        .from(organization)
+        .where(eq(organization.id, host))
+        .limit(1);
+    if (!school) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No such school" });
+    }
+    return host;
 }
 
-/** Replaces a contest's invited schools (never including the host). */
+/**
+ * Sets a contest's invited schools (never the host). Schools that stay
+ * invited keep their decline status; new ones start undeclined.
+ */
 async function setInvites(
     contestId: number,
-    hostId: string,
+    hostId: string | null,
     schoolIds: string[],
 ) {
     const guests = [...new Set(schoolIds)].filter((id) => id !== hostId);
     await db.transaction(async (tx) => {
         await tx
             .delete(contestInvite)
-            .where(eq(contestInvite.contestId, contestId));
-        if (guests.length > 0) {
-            await tx.insert(contestInvite).values(
-                guests.map((organizationId) => ({
-                    contestId,
-                    organizationId,
-                })),
+            .where(
+                and(
+                    eq(contestInvite.contestId, contestId),
+                    guests.length > 0
+                        ? notInArray(contestInvite.organizationId, guests)
+                        : undefined,
+                ),
             );
+        if (guests.length > 0) {
+            await tx
+                .insert(contestInvite)
+                .values(
+                    guests.map((organizationId) => ({
+                        contestId,
+                        organizationId,
+                    })),
+                )
+                .onConflictDoNothing();
         }
     });
 }
 
+/** The contest a contest problem belongs to, if the manager manages it. */
+async function requireManagedProblem(
+    contestProblemId: number,
+    manager: ContestManager,
+) {
+    const [row] = await db
+        .select({ contestId: contestProblem.contestId })
+        .from(contestProblem)
+        .where(eq(contestProblem.id, contestProblemId))
+        .limit(1);
+    if (!row) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No such contest problem",
+        });
+    }
+    await requireManagedContest(row.contestId, manager);
+}
+
 /**
- * Creating and editing contests and their problem lists (teacher tools).
- * Teachers only manage contests hosted by their active school.
+ * Creating, editing, and deleting contests and their problem lists. Teachers
+ * manage their school's contests (and may invite other schools); site
+ * admins manage every contest and alone create global ones.
  */
 export const contestAdmin = {
-    create: teacherProcedure
+    create: contestManagerProcedure
         .input(
             z.object({
                 name: z.string().min(1),
@@ -62,10 +141,18 @@ export const contestAdmin = {
                 penaltyPoints: z.number().int().min(0).optional(),
                 visibility: visibility.default("school"),
                 invitedSchoolIds: invitedSchoolIds.default([]),
+                /** Site admins only: the host school (any school). */
+                organizationId: z.string().optional(),
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            const { invitedSchoolIds, ...fields } = input;
+            const { invitedSchoolIds, organizationId, ...fields } = input;
+            const host = await resolveHost(
+                ctx.manager,
+                input.visibility,
+                organizationId,
+                null,
+            );
             const [row] = await db
                 .insert(contest)
                 .values({
@@ -73,14 +160,16 @@ export const contestAdmin = {
                     startsAt: new Date(input.startsAt),
                     endsAt: new Date(input.endsAt),
                     createdBy: ctx.user.id,
-                    organizationId: ctx.organizationId,
+                    organizationId: host,
                 })
                 .returning();
-            await setInvites(row!.id, ctx.organizationId, invitedSchoolIds);
+            if (input.visibility === "invite") {
+                await setInvites(row!.id, host, invitedSchoolIds);
+            }
             return row!;
         }),
 
-    update: teacherProcedure
+    update: contestManagerProcedure
         .input(
             z.object({
                 contestId: z.number().int(),
@@ -92,40 +181,54 @@ export const contestAdmin = {
                 penaltyPoints: z.number().int().min(0).optional(),
                 visibility: visibility.optional(),
                 invitedSchoolIds: invitedSchoolIds.optional(),
+                /** Site admins only: move the contest to another host. */
+                organizationId: z.string().optional(),
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            const { contestId, startsAt, endsAt, invitedSchoolIds, ...rest } =
-                input;
-            await requireHostedContest(contestId, ctx.organizationId);
-            if (invitedSchoolIds) {
-                await setInvites(
-                    contestId,
-                    ctx.organizationId,
-                    invitedSchoolIds,
-                );
+            const {
+                contestId,
+                startsAt,
+                endsAt,
+                invitedSchoolIds,
+                organizationId,
+                ...rest
+            } = input;
+            const existing = await requireManagedContest(
+                contestId,
+                ctx.manager,
+            );
+
+            const newVisibility = input.visibility ?? existing.visibility;
+            const host = await resolveHost(
+                ctx.manager,
+                newVisibility,
+                organizationId,
+                existing.organizationId,
+            );
+            // Only invite-only contests have invited schools.
+            if (newVisibility !== "invite") {
+                await setInvites(contestId, host, []);
+            } else if (invitedSchoolIds) {
+                await setInvites(contestId, host, invitedSchoolIds);
             }
 
             // Drizzle skips undefined values in `.set()`, so omitted fields
             // are left unchanged.
-            const changes = {
-                ...rest,
-                startsAt: startsAt ? new Date(startsAt) : undefined,
-                endsAt: endsAt ? new Date(endsAt) : undefined,
-            };
-            if (Object.values(changes).every((v) => v === undefined)) {
-                return null;
-            }
-
             const [row] = await db
                 .update(contest)
-                .set(changes)
+                .set({
+                    ...rest,
+                    organizationId: host,
+                    startsAt: startsAt ? new Date(startsAt) : undefined,
+                    endsAt: endsAt ? new Date(endsAt) : undefined,
+                })
                 .where(eq(contest.id, contestId))
                 .returning();
             return row ?? null;
         }),
 
-    setStatus: teacherProcedure
+    setStatus: contestManagerProcedure
         .input(
             z.object({
                 contestId: z.number().int(),
@@ -133,33 +236,24 @@ export const contestAdmin = {
             }),
         )
         .mutation(async ({ ctx, input }) => {
+            await requireManagedContest(input.contestId, ctx.manager);
             const [row] = await db
                 .update(contest)
                 .set({ status: input.status })
-                .where(
-                    and(
-                        eq(contest.id, input.contestId),
-                        eq(contest.organizationId, ctx.organizationId),
-                    ),
-                )
+                .where(eq(contest.id, input.contestId))
                 .returning();
             return row ?? null;
         }),
 
-    delete: teacherProcedure
+    /** Deletes a contest with its problems, enrollments, and results. */
+    delete: contestManagerProcedure
         .input(z.object({ contestId: z.number().int() }))
         .mutation(async ({ ctx, input }) => {
-            await db
-                .delete(contest)
-                .where(
-                    and(
-                        eq(contest.id, input.contestId),
-                        eq(contest.organizationId, ctx.organizationId),
-                    ),
-                );
+            await requireManagedContest(input.contestId, ctx.manager);
+            await db.delete(contest).where(eq(contest.id, input.contestId));
         }),
 
-    addProblem: teacherProcedure
+    addProblem: contestManagerProcedure
         .input(
             z.object({
                 contestId: z.number().int(),
@@ -170,7 +264,7 @@ export const contestAdmin = {
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            await requireHostedContest(input.contestId, ctx.organizationId);
+            await requireManagedContest(input.contestId, ctx.manager);
             const [row] = await db
                 .insert(contestProblem)
                 .values(input)
@@ -178,23 +272,42 @@ export const contestAdmin = {
             return row!;
         }),
 
-    removeProblem: teacherProcedure
+    removeProblem: contestManagerProcedure
         .input(z.object({ contestProblemId: z.number().int() }))
         .mutation(async ({ ctx, input }) => {
+            await requireManagedProblem(input.contestProblemId, ctx.manager);
             await db
                 .delete(contestProblem)
-                .where(
-                    and(
-                        eq(contestProblem.id, input.contestProblemId),
-                        inArray(
-                            contestProblem.contestId,
-                            hostedBy(ctx.organizationId),
-                        ),
-                    ),
-                );
+                .where(eq(contestProblem.id, input.contestProblemId));
         }),
 
-    updateProblem: teacherProcedure
+    /**
+     * An invited school's teachers decline (or accept again) another
+     * school's invitation. Declining hides the contest from the school's
+     * students; those already enrolled keep their results.
+     */
+    respondToInvitation: teacherProcedure
+        .input(z.object({ contestId: z.number().int(), decline: z.boolean() }))
+        .mutation(async ({ ctx, input }) => {
+            const updated = await db
+                .update(contestInvite)
+                .set({ declinedAt: input.decline ? new Date() : null })
+                .where(
+                    and(
+                        eq(contestInvite.contestId, input.contestId),
+                        eq(contestInvite.organizationId, ctx.organizationId),
+                    ),
+                )
+                .returning({ contestId: contestInvite.contestId });
+            if (updated.length === 0) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Your school isn't invited to that contest.",
+                });
+            }
+        }),
+
+    updateProblem: contestManagerProcedure
         .input(
             z.object({
                 contestProblemId: z.number().int(),
@@ -204,29 +317,15 @@ export const contestAdmin = {
         )
         .mutation(async ({ ctx, input }) => {
             const { contestProblemId, ...changes } = input;
+            await requireManagedProblem(contestProblemId, ctx.manager);
             if (Object.values(changes).every((v) => v === undefined)) {
                 return null;
             }
-
             const [row] = await db
                 .update(contestProblem)
                 .set(changes)
-                .where(
-                    and(
-                        eq(contestProblem.id, contestProblemId),
-                        inArray(
-                            contestProblem.contestId,
-                            hostedBy(ctx.organizationId),
-                        ),
-                    ),
-                )
+                .where(eq(contestProblem.id, contestProblemId))
                 .returning();
-            if (!row) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "No such contest problem at your school",
-                });
-            }
-            return row;
+            return row ?? null;
         }),
 };

@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "auth-client";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import { api } from "~/trpc/react";
@@ -25,6 +26,10 @@ export default function EditContestPage({
         { enabled: !isNaN(contestId) },
     );
     const deleteContest = api.contest.delete.useMutation();
+    // Site admins can change the host or make the contest global. Wait for
+    // the session, since the settings form is seeded once.
+    const { data: session, isPending: sessionPending } = useSession();
+    const isSiteAdmin = session?.user.role === "site-admin";
 
     if (isNaN(contestId)) {
         return (
@@ -34,7 +39,7 @@ export default function EditContestPage({
         );
     }
 
-    if (isLoading) {
+    if (isLoading || sessionPending) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50 pt-20">
                 <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -46,6 +51,24 @@ export default function EditContestPage({
         return (
             <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
                 <p className="text-sm text-red-500">Contest not found.</p>
+                <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => router.push(CONTESTS_PATH)}
+                >
+                    Back to contests
+                </Button>
+            </div>
+        );
+    }
+
+    if (!data.canManage) {
+        return (
+            <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+                <p className="text-sm text-gray-600">
+                    Only the host school&apos;s teachers and site admins can
+                    edit this contest.
+                </p>
                 <Button
                     variant="outline"
                     className="mt-4"
@@ -85,7 +108,7 @@ export default function EditContestPage({
             </div>
 
             <div className="max-w-3xl space-y-6">
-                <SettingsCard contest={data} />
+                <SettingsCard contest={data} canChooseHost={isSiteAdmin} />
                 <ProblemsCard
                     contestId={contestId}
                     initialProblems={data.problems}

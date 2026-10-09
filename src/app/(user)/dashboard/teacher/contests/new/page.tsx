@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "auth-client";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import type { ApiMinimalProblem } from "~/lib/api/lunaghs";
@@ -35,6 +36,20 @@ export default function NewContestPage() {
     const [settings, setSettings] = useState<ContestSettings>(
         EMPTY_CONTEST_SETTINGS,
     );
+
+    // Site admins choose the host (or a global contest), starting global;
+    // teachers' contests are hosted by their school.
+    const { data: session } = useSession();
+    const isSiteAdmin = session?.user.role === "site-admin";
+    useEffect(() => {
+        if (isSiteAdmin) {
+            setSettings((s) =>
+                s.host === undefined
+                    ? { ...s, host: null, visibility: "open" }
+                    : s,
+            );
+        }
+    }, [isSiteAdmin]);
 
     const { data: allProblems = [], isLoading: loadingProblems } =
         api.problem.getMinimalProblems.useQuery();
@@ -90,7 +105,7 @@ export default function NewContestPage() {
         }
         setSubmitting(true);
         try {
-            // The server records the signed-in teacher as the creator.
+            // The server records the signed-in user as the creator.
             const created = await createContest.mutateAsync(
                 settingsToMutationInput(settings),
             );

@@ -21,28 +21,88 @@ import {
 import { member } from "~/server/db/schema/organization";
 import { isSchoolTeacher, type ActiveMembership } from "~/server/organizations";
 
-// Who can see a contest: everyone if it's open; otherwise current members of
-// the host school, plus (invite-only) current members of invited schools,
-// plus anyone already enrolled (so former students keep their results).
-// Seeing a contest is what allows enrolling in it and viewing its
-// leaderboard.
+// Two kinds of contest:
+// - School contests (visibility "school" or "invite") are hosted by a
+//   school. Its teachers manage them and may invite other schools, whose
+//   teachers can decline.
+// - Global contests ("open") have no host and are for everyone. Only site
+//   admins create them.
+// Site admins manage every contest.
+//
+// Who can see a contest: everyone if it's global; otherwise current members
+// of the host school, plus (invite-only) current members of invited schools
+// that haven't declined, plus anyone already enrolled (so former students,
+// and students of schools that declined later, keep their results). Seeing
+// a contest is what allows enrolling in it and viewing its leaderboard.
+
+/**
+ * Who is managing contests: a site admin, and/or a teacher acting for
+ * their active school (`organizationId`; null if not a teacher).
+ */
+export type ContestManager = {
+    siteAdmin: boolean;
+    organizationId: string | null;
+};
+
+export function contestManagerFor(
+    user: { role?: string | null },
+    membership: ActiveMembership | null,
+): ContestManager {
+    return {
+        siteAdmin: user.role === "site-admin",
+        organizationId: isSchoolTeacher(membership)
+            ? membership!.organizationId
+            : null,
+    };
+}
+
+/** Site admins manage every contest; teachers, their school's contests. */
+export function canManageContest(
+    contestRow: { organizationId: string | null },
+    manager: ContestManager | null,
+): boolean {
+    if (!manager) return false;
+    return (
+        manager.siteAdmin ||
+        (contestRow.organizationId !== null &&
+            contestRow.organizationId === manager.organizationId)
+    );
+}
+
+/** The contest, or NOT_FOUND unless `manager` may manage it. */
+export async function requireManagedContest(
+    contestId: number,
+    manager: ContestManager,
+) {
+    const [row] = await db
+        .select()
+        .from(contest)
+        .where(eq(contest.id, contestId))
+        .limit(1);
+    if (!row || !canManageContest(row, manager)) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No such contest that you manage",
+        });
+    }
+    return row;
+}
 
 /** Statuses in which a contest's problems are shown to participants. */
 const PROBLEMS_REVEALED = new Set<ContestStatus>(["active", "frozen", "ended"]);
 
 /**
  * Whether the viewer may see which problems a contest has: once it has
- * started, or before that only as a teacher of the host school (who sets
- * them up).
+ * started, or before that only as someone who manages it (and sets them
+ * up).
  */
 export function canSeeProblems(
-    contestRow: { status: ContestStatus; organizationId: string },
-    membership: ActiveMembership | null,
+    contestRow: { status: ContestStatus; organizationId: string | null },
+    manager: ContestManager | null,
 ): boolean {
     return (
         PROBLEMS_REVEALED.has(contestRow.status) ||
-        (isSchoolTeacher(membership) &&
-            membership?.organizationId === contestRow.organizationId)
+        canManageContest(contestRow, manager)
     );
 }
 
@@ -81,6 +141,7 @@ export function visibleContests(userId: string | null): SQL {
                     .where(
                         and(
                             eq(contestInvite.contestId, contest.id),
+                            isNull(contestInvite.declinedAt),
                             inArray(
                                 contestInvite.organizationId,
                                 schoolsOf(userId),
@@ -105,47 +166,51 @@ export async function findVisibleContest(
     return row ?? null;
 }
 
-/** Throws NOT_FOUND unless the contest is hosted by this school. */
-export async function requireHostedContest(
+/**
+ * The contest, if `userId` may see it or `manager` may manage it (site
+ * admins open every contest, including school contests they aren't part
+ * of).
+ */
+export async function findAccessibleContest(
     contestId: number,
-    organizationId: string,
+    userId: string | null,
+    manager: ContestManager | null,
 ) {
+    const visible = await findVisibleContest(contestId, userId);
+    if (visible || !manager) return visible;
     const [row] = await db
-        .select({ id: contest.id })
+        .select()
         .from(contest)
-        .where(
-            and(
-                eq(contest.id, contestId),
-                eq(contest.organizationId, organizationId),
-            ),
-        )
+        .where(eq(contest.id, contestId))
         .limit(1);
-    if (!row) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "No such contest at your school",
-        });
-    }
+    return row && canManageContest(row, manager) ? row : null;
 }
 
+/** Schools invited to the contest that haven't declined. */
 export async function invitedSchoolIds(contestId: number) {
     const rows = await db
         .select({ id: contestInvite.organizationId })
         .from(contestInvite)
-        .where(eq(contestInvite.contestId, contestId));
+        .where(
+            and(
+                eq(contestInvite.contestId, contestId),
+                isNull(contestInvite.declinedAt),
+            ),
+        );
     return rows.map((r) => r.id);
 }
 
 /**
  * Which school a student competes for: their active school if it may take
- * part, otherwise their earliest school that may. Open contests accept
+ * part, otherwise their earliest school that may. Global contests accept
  * any school, or none (null). Returns undefined if the student can't take
  * part at all.
  */
 export function pickCompetingSchool(
     contestRow: {
         visibility: ContestVisibility;
-        organizationId: string;
+        organizationId: string | null;
+        /** Invited schools that haven't declined. */
         invited: string[];
     },
     /** The student's schools, earliest joined first. */

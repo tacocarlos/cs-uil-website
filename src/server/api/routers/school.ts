@@ -15,6 +15,7 @@ import {
 import { DEFAULT_ORGANIZATION } from "~/lib/auth/organizations";
 import { auth } from "auth";
 import {
+    contestManagerProcedure,
     createTRPCRouter,
     protectedProcedure,
     siteAdminProcedure,
@@ -79,10 +80,11 @@ function nameContains(query: string) {
 // anyone signed in can join a school with its code.
 export const schoolRouter = createTRPCRouter({
     /**
-     * Other schools by name, e.g. to invite to a contest. Returns only
-     * public details (no join codes).
+     * Schools by name, e.g. to invite to a contest or (site admins) to host
+     * one. Teachers don't see their own school. Returns only public
+     * details (no join codes).
      */
-    lookup: teacherProcedure
+    lookup: contestManagerProcedure
         .input(z.object({ query: z.string().trim().min(1).max(100) }))
         .query(({ ctx, input }) =>
             db
@@ -91,7 +93,9 @@ export const schoolRouter = createTRPCRouter({
                 .where(
                     and(
                         nameContains(input.query),
-                        ne(organization.id, ctx.organizationId),
+                        ctx.manager.siteAdmin || !ctx.manager.organizationId
+                            ? undefined
+                            : ne(organization.id, ctx.manager.organizationId),
                     ),
                 )
                 .orderBy(asc(organization.name))

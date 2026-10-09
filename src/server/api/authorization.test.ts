@@ -12,26 +12,37 @@ import { TRPCError } from "@trpc/server";
 import { type MemberRole } from "~/lib/auth/organizations";
 import { appRouter, createCaller } from "./root";
 
-type Access = "public" | "signed-in" | "teacher" | "site-admin";
+/**
+ * contest-manager: teachers of the active school or site admins (each
+ * procedure then checks the specific contest).
+ */
+type Access =
+    | "public"
+    | "signed-in"
+    | "teacher"
+    | "contest-manager"
+    | "site-admin";
 
 const ACCESS: Record<string, Access> = {
     // Contests
     "contest.getAll": "public",
     "contest.getById": "public",
-    "contest.getMine": "teacher",
-    "contest.getAllSubmissions": "teacher",
+    "contest.getManaged": "contest-manager",
+    "contest.getInvitations": "teacher",
+    "contest.respondToInvitation": "teacher",
+    "contest.getAllSubmissions": "contest-manager",
     "contest.getLeaderboard": "signed-in",
     "contest.isEnrolled": "signed-in",
     "contest.enroll": "signed-in",
     "contest.getMyBestPerProblem": "signed-in",
     "contest.submitCode": "signed-in",
-    "contest.create": "teacher",
-    "contest.update": "teacher",
-    "contest.setStatus": "teacher",
-    "contest.delete": "teacher",
-    "contest.addProblem": "teacher",
-    "contest.removeProblem": "teacher",
-    "contest.updateProblem": "teacher",
+    "contest.create": "contest-manager",
+    "contest.update": "contest-manager",
+    "contest.setStatus": "contest-manager",
+    "contest.delete": "contest-manager",
+    "contest.addProblem": "contest-manager",
+    "contest.removeProblem": "contest-manager",
+    "contest.updateProblem": "contest-manager",
     // Running code
     "execute.getJudge0Status": "teacher",
     "execute.getLanguages": "public",
@@ -51,7 +62,7 @@ const ACCESS: Record<string, Access> = {
     "submission.overrideSubmission": "teacher",
     // School classification: teachers edit their own school, site admins
     // any school
-    "school.lookup": "teacher",
+    "school.lookup": "contest-manager",
     "school.getMine": "teacher",
     "school.setMyClassification": "teacher",
     "school.regenerateJoinCode": "teacher",
@@ -142,6 +153,7 @@ describe("authorization", () => {
     test.each([
         ...pathsWith("signed-in"),
         ...pathsWith("teacher"),
+        ...pathsWith("contest-manager"),
         ...pathsWith("site-admin"),
     ])("%s rejects signed-out callers", async (path) => {
         expect(await errorCode(callerAs(null), path)).toBe("UNAUTHORIZED");
@@ -167,6 +179,28 @@ describe("authorization", () => {
                 // Passes auth, then fails on the missing input (or DB);
                 // either way, not an auth error.
                 const code = await errorCode(callerAs(role), path).catch(
+                    () => "OTHER",
+                );
+                expect(["UNAUTHORIZED", "FORBIDDEN"]).not.toContain(code);
+            }
+        },
+    );
+
+    test.each(pathsWith("contest-manager"))(
+        "%s rejects students and users without an active school",
+        async (path) => {
+            for (const who of ["member", "no-school"] as const) {
+                expect(await errorCode(callerAs(who), path)).toBe("FORBIDDEN");
+            }
+        },
+    );
+
+    test.each(pathsWith("contest-manager"))(
+        "%s lets teachers and site admins past the role check",
+        async (path) => {
+            // "site-admin" here has no school, so it passes as a site admin.
+            for (const who of ["owner", "admin", "site-admin"] as const) {
+                const code = await errorCode(callerAs(who), path).catch(
                     () => "OTHER",
                 );
                 expect(["UNAUTHORIZED", "FORBIDDEN"]).not.toContain(code);

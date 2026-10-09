@@ -12,6 +12,9 @@ import {
     TableRow,
 } from "~/components/ui/table";
 import { Monitor, Pencil, PlusCircle } from "lucide-react";
+import { getCurrentMembership } from "~/server/current-membership";
+import { isSchoolTeacher } from "~/server/organizations";
+import { ContestInvitations } from "./invitations";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +26,41 @@ const STATUS_STYLES = {
     ended: "bg-slate-100 text-slate-700",
 } as const;
 
+type ContestSummary = Awaited<ReturnType<typeof api.contest.getAll>>[number];
+
+function StatusBadge({ status }: { status: ContestSummary["status"] }) {
+    return (
+        <Badge className={STATUS_STYLES[status]}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+        </Badge>
+    );
+}
+
+/** Contests the user manages, invitations, and other contests to follow. */
 export default async function ContestsPage() {
-    // Contests hosted by the teacher's school.
-    const contests = await api.contest.getMine();
+    const { session, membership } = await getCurrentMembership();
+    const isSiteAdmin = session?.user.role === "site-admin";
+    const isTeacher = isSchoolTeacher(membership);
+
+    const [managed, visible] = await Promise.all([
+        api.contest.getManaged(),
+        // Teachers can follow their students in contests they don't manage.
+        isTeacher ? api.contest.getAll() : [],
+    ]);
+    const managedIds = new Set(managed.map((c) => c.id));
+    const others = visible.filter((c) => !managedIds.has(c.id));
 
     return (
         <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
             <div className="mb-8 flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Contests</h1>
+                <div>
+                    <h1 className="text-2xl font-bold">Contests</h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        {isSiteAdmin
+                            ? "As a site admin you manage every contest, and can create global contests or host one at any school."
+                            : "Contests your school hosts. You can invite other schools to them."}
+                    </p>
+                </div>
                 <Button asChild>
                     <Link href="/dashboard/teacher/contests/new">
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -39,59 +69,146 @@ export default async function ContestsPage() {
                 </Button>
             </div>
 
-            {contests.length === 0 ? (
-                <div className="rounded-lg border bg-white py-16 text-center">
-                    <p className="text-sm text-gray-500">
-                        No contests yet. Create your first one to get started.
+            {isTeacher && <ContestInvitations />}
+
+            <section className="mb-8">
+                <h2 className="mb-3 text-lg font-semibold">
+                    {isSiteAdmin ? "All contests" : "Your school's contests"}
+                </h2>
+                {managed.length === 0 ? (
+                    <div className="rounded-lg border bg-white py-12 text-center">
+                        <p className="text-sm text-gray-500">
+                            No contests yet. Create your first one to get
+                            started.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="rounded-lg border bg-white">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Host</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Start</TableHead>
+                                    <TableHead>End</TableHead>
+                                    <TableHead>Problems</TableHead>
+                                    <TableHead>Participants</TableHead>
+                                    <TableHead />
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {managed.map((c) => (
+                                    <TableRow key={c.id}>
+                                        <TableCell className="font-medium">
+                                            {c.name}
+                                        </TableCell>
+                                        <TableCell>
+                                            {c.hostSchool ?? (
+                                                <Badge variant="outline">
+                                                    Global
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <StatusBadge status={c.status} />
+                                        </TableCell>
+                                        <TableCell>
+                                            {format(
+                                                c.startsAt,
+                                                "MMM d, yyyy HH:mm",
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {format(
+                                                c.endsAt,
+                                                "MMM d, yyyy HH:mm",
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{c.problemCount}</TableCell>
+                                        <TableCell>
+                                            {c.participantCount}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    <Link
+                                                        href={`/dashboard/teacher/contests/${c.id}`}
+                                                    >
+                                                        <Monitor className="mr-1 h-3.5 w-3.5" />
+                                                        Monitor
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    <Link
+                                                        href={`/dashboard/teacher/contests/${c.id}/edit`}
+                                                    >
+                                                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                                                        Edit
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </section>
+
+            {others.length > 0 && (
+                <section>
+                    <h2 className="mb-1 text-lg font-semibold">
+                        Other contests
+                    </h2>
+                    <p className="text-muted-foreground mb-3 text-sm">
+                        Global contests and other schools&apos; contests your
+                        students can join. Follow your own students&apos;
+                        submissions in each.
                     </p>
-                    <Button asChild className="mt-4">
-                        <Link href="/dashboard/teacher/contests/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            New Contest
-                        </Link>
-                    </Button>
-                </div>
-            ) : (
-                <div className="rounded-lg border bg-white">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Start</TableHead>
-                                <TableHead>End</TableHead>
-                                <TableHead>Problems</TableHead>
-                                <TableHead>Participants</TableHead>
-                                <TableHead />
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {contests.map((c) => (
-                                <TableRow key={c.id}>
-                                    <TableCell className="font-medium">
-                                        {c.name}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge
-                                            className={STATUS_STYLES[c.status]}
-                                        >
-                                            {c.status.charAt(0).toUpperCase() +
-                                                c.status.slice(1)}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        {format(
-                                            c.startsAt,
-                                            "MMM d, yyyy HH:mm",
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {format(c.endsAt, "MMM d, yyyy HH:mm")}
-                                    </TableCell>
-                                    <TableCell>{c.problemCount}</TableCell>
-                                    <TableCell>{c.participantCount}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
+                    <div className="rounded-lg border bg-white">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Host</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Start</TableHead>
+                                    <TableHead />
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {others.map((c) => (
+                                    <TableRow key={c.id}>
+                                        <TableCell className="font-medium">
+                                            {c.name}
+                                        </TableCell>
+                                        <TableCell>
+                                            {c.hostSchool ?? (
+                                                <Badge variant="outline">
+                                                    Global
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <StatusBadge status={c.status} />
+                                        </TableCell>
+                                        <TableCell>
+                                            {format(
+                                                c.startsAt,
+                                                "MMM d, yyyy HH:mm",
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
                                             <Button
                                                 asChild
                                                 variant="outline"
@@ -101,28 +218,16 @@ export default async function ContestsPage() {
                                                     href={`/dashboard/teacher/contests/${c.id}`}
                                                 >
                                                     <Monitor className="mr-1 h-3.5 w-3.5" />
-                                                    Monitor
+                                                    Your students
                                                 </Link>
                                             </Button>
-                                            <Button
-                                                asChild
-                                                variant="outline"
-                                                size="sm"
-                                            >
-                                                <Link
-                                                    href={`/dashboard/teacher/contests/${c.id}/edit`}
-                                                >
-                                                    <Pencil className="mr-1 h-3.5 w-3.5" />
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </section>
             )}
         </div>
     );

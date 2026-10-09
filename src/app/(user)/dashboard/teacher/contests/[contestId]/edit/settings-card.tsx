@@ -13,13 +13,20 @@ import { ContestSettingsFields } from "../../_components/contest-settings-fields
 
 type Contest = NonNullable<RouterOutputs["contest"]["getById"]>;
 
-export function SettingsCard({ contest }: { contest: Contest }) {
+export function SettingsCard({
+    contest,
+    canChooseHost,
+}: {
+    contest: Contest;
+    /** Site admins can change the host or make the contest global. */
+    canChooseHost: boolean;
+}) {
     const utils = api.useUtils();
     const updateContest = api.contest.update.useMutation();
 
     // Seeded once; later refetches don't overwrite in-progress edits.
     const [settings, setSettings] = useState(() =>
-        settingsFromContest(contest),
+        settingsFromContest(contest, canChooseHost),
     );
 
     const handleSave = async () => {

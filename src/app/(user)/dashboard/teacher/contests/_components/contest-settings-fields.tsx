@@ -10,7 +10,7 @@ import {
     SelectValue,
 } from "~/components/ui/select";
 import {
-    CONTEST_VISIBILITIES,
+    SCHOOL_CONTEST_VISIBILITIES,
     VISIBILITY_LABELS,
 } from "~/lib/contest/visibility";
 import type {
@@ -19,6 +19,7 @@ import type {
     ScoringMode,
 } from "./contest-settings";
 import { SchoolInvitePicker } from "./school-invite-picker";
+import { HostPicker } from "./host-picker";
 
 /**
  * Name, description, schedule, scoring, and who-can-join inputs for a
@@ -97,32 +98,82 @@ export function ContestSettingsFields({
                 </Select>
             </div>
 
+            {/* Site admins choose global vs. a host school; teachers' contests
+                are always hosted by their school. */}
+            {value.host !== undefined && (
+                <div className="space-y-2">
+                    <Label>Contest type</Label>
+                    <HostPicker
+                        value={value.host}
+                        onKindChange={(kind) =>
+                            onChange(
+                                kind === "global"
+                                    ? {
+                                          ...value,
+                                          host: null,
+                                          visibility: "open",
+                                          invitedSchools: [],
+                                      }
+                                    : // No host yet: validation asks for one.
+                                      {
+                                          ...value,
+                                          host: null,
+                                          visibility: "school",
+                                      },
+                            )
+                        }
+                        onChange={(host) =>
+                            onChange({
+                                ...value,
+                                host,
+                                visibility:
+                                    value.visibility === "open"
+                                        ? "school"
+                                        : value.visibility,
+                                invitedSchools: value.invitedSchools.filter(
+                                    (s) => s.id !== host?.id,
+                                ),
+                            })
+                        }
+                    />
+                </div>
+            )}
+
             <div className="space-y-2">
                 <Label htmlFor={`${id}-visibility`}>Who can join</Label>
-                <Select
-                    value={value.visibility}
-                    onValueChange={(v) =>
-                        set("visibility", v as ContestVisibility)
-                    }
-                >
-                    <SelectTrigger id={`${id}-visibility`}>
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {CONTEST_VISIBILITIES.map((v) => (
-                            <SelectItem key={v} value={v}>
-                                {VISIBILITY_LABELS[v].label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <p className="text-muted-foreground text-sm">
-                    {VISIBILITY_LABELS[value.visibility].description}
-                </p>
+                {value.visibility === "open" ? (
+                    <p className="text-muted-foreground text-sm">
+                        {VISIBILITY_LABELS.open.description}
+                    </p>
+                ) : (
+                    <>
+                        <Select
+                            value={value.visibility}
+                            onValueChange={(v) =>
+                                set("visibility", v as ContestVisibility)
+                            }
+                        >
+                            <SelectTrigger id={`${id}-visibility`}>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {SCHOOL_CONTEST_VISIBILITIES.map((v) => (
+                                    <SelectItem key={v} value={v}>
+                                        {VISIBILITY_LABELS[v].label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-muted-foreground text-sm">
+                            {VISIBILITY_LABELS[value.visibility].description}
+                        </p>
+                    </>
+                )}
                 {value.visibility === "invite" && (
                     <SchoolInvitePicker
                         value={value.invitedSchools}
                         onChange={(schools) => set("invitedSchools", schools)}
+                        excludeId={value.host?.id}
                     />
                 )}
             </div>

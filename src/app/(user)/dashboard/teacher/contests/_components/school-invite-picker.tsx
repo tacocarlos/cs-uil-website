@@ -12,9 +12,12 @@ import type { InvitedSchool } from "./contest-settings";
 export function SchoolInvitePicker({
     value,
     onChange,
+    excludeId,
 }: {
     value: InvitedSchool[];
     onChange: (schools: InvitedSchool[]) => void;
+    /** The host school, which can't invite itself. */
+    excludeId?: string;
 }) {
     const [search, setSearch] = useState("");
     const query = useDebouncedValue(search.trim());
@@ -24,6 +27,7 @@ export function SchoolInvitePicker({
     );
 
     const invited = new Set(value.map((s) => s.id));
+    if (excludeId) invited.add(excludeId);
     const matches = (results ?? []).filter((s) => !invited.has(s.id));
 
     return (

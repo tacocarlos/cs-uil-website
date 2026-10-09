@@ -15,6 +15,7 @@ import {
     isSchoolTeacher,
     type ActiveMembership,
 } from "~/server/organizations";
+import { contestManagerFor } from "~/server/contests";
 
 /**
  * 1. CONTEXT
@@ -150,6 +151,27 @@ export const teacherProcedure = protectedProcedure.use(
             });
         }
         return next({ ctx: { organizationId: membership.organizationId } });
+    },
+);
+
+/**
+ * Requires a teacher of the active school or a site admin, available as
+ * `ctx.manager`. Procedures then check the specific contest with
+ * `requireManagedContest` (src/server/contests.ts).
+ */
+export const contestManagerProcedure = protectedProcedure.use(
+    async ({ ctx, next }) => {
+        const manager = contestManagerFor(
+            ctx.user,
+            await ctx.getActiveMembership(),
+        );
+        if (!manager.siteAdmin && !manager.organizationId) {
+            throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Only teachers and site admins can do that.",
+            });
+        }
+        return next({ ctx: { manager } });
     },
 );
 
