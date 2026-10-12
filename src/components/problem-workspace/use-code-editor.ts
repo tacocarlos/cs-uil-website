@@ -6,6 +6,7 @@ import { DEFAULT_LANGUAGE_ID, findLanguage } from "./languages";
 import { useLsp } from "./lsp/use-lsp";
 import { useLanguages, type LanguageOptions } from "./use-languages";
 import { usePersistedState } from "./use-persisted-state";
+import { useEditorOptions } from "./editor-options";
 
 /**
  * Owns the Monaco instance and the selected language. Code is saved to
@@ -38,6 +39,9 @@ export function useCodeEditor(
         mounted?.monaco ?? null,
         language,
     );
+
+    const [options, setOptions] = useEditorOptions();
+    
 
     // The change listener is registered once on mount, so it reads the active
     // language through a ref rather than the (stale) closure value.
@@ -92,6 +96,8 @@ export function useCodeEditor(
         onMount,
         getCode,
         resetCode,
+        options,
+        setOptions,
     };
 }
 

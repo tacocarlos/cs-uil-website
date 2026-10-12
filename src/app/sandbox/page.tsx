@@ -2,6 +2,8 @@
 
 import { CodeEditor } from "~/components/problem-workspace/code-editor";
 import {
+    ChangeFontSizeButton,
+    ChangeFontSizeSelector,
     LanguageSelect,
     ResetCodeButton,
     RunButton,
@@ -36,6 +38,7 @@ export default function SandboxPage() {
                             <span className="text-slate-600">|</span>
                             <LanguageSelect editor={codeEditor} />
                         </div>
+                        <ChangeFontSizeSelector editor={codeEditor} />
                         <ResetCodeButton editor={codeEditor} />
                     </>
                 }
