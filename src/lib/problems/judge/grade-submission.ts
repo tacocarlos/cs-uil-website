@@ -19,11 +19,10 @@ export async function gradeSubmission(
     code: string,
     languageId: string,
 ) {
-    const apiResult = await getProblemById(apiProblemId);
-    if (!apiResult.success || !apiResult.problem) {
+    const problem = await getProblemById(apiProblemId);
+    if (!problem) {
         throw new Error(`Failed to fetch problem ${apiProblemId} from API`);
     }
-    const problem = apiResult.problem;
 
     const [testInput, testOutput] = await Promise.all([
         fetchUrlContent(problem.test_data_url),

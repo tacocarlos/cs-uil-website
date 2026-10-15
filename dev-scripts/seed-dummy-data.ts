@@ -25,6 +25,7 @@ import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
 import { submission } from "~/server/db/schema/submission";
+import { ensureDefaultOrganization } from "~/server/organizations";
 import { writtenTests } from "~/server/db/schema/written";
 
 const EMAIL_DOMAIN = "seed.local";
@@ -220,6 +221,7 @@ async function insertDummyData() {
     const rand = random(2027);
     const pick = (max: number) => Math.floor(rand() * max);
 
+    await ensureDefaultOrganization();
     await db
         .insert(organization)
         .values(SCHOOLS.map((s) => ({ ...s, slug: s.id, createdAt: now })));

@@ -9,6 +9,7 @@ import { member } from "~/server/db/schema/organization";
 import { DEV_ACCOUNTS, type DevAccountKind } from "~/lib/auth/dev-accounts";
 import { DEV_PASSWORD, devLoginEnabled } from "~/lib/auth/dev-login";
 import { DEFAULT_ORGANIZATION, memberRoleFor } from "~/lib/auth/organizations";
+import { ensureDefaultOrganization } from "~/server/organizations";
 
 /**
  * Creates the dev account on first use and makes sure it has the right
@@ -50,6 +51,7 @@ export async function prepareDevAccount(
     if (!updated) throw new Error(`Dev account ${account.email} is missing`);
 
     const role = memberRoleFor(account.role);
+    await ensureDefaultOrganization();
     await db
         .insert(member)
         .values({

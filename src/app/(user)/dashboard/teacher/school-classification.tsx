@@ -2,6 +2,7 @@
 
 import { toast } from "sonner";
 import { ClassificationForm } from "~/components/school/classification-form";
+import { SchoolId } from "~/components/school/school-id";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
@@ -30,6 +31,7 @@ export function SchoolClassificationCard() {
                         </span>
                     )}
                 </CardTitle>
+                {school && <SchoolId id={school.id} />}
             </CardHeader>
             <CardContent className="space-y-3">
                 <p className="text-muted-foreground text-sm">

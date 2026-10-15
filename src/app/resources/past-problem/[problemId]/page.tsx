@@ -19,16 +19,14 @@ export default async function Page({
         redirect("/resources/past-problem/");
     }
 
-    const [apiResult, competitions] = await Promise.all([
+    const [apiProblem, competitions] = await Promise.all([
         getProblemById(id),
         getAllCompetitions(),
     ]);
 
-    if (!apiResult.success || !apiResult.problem) {
+    if (!apiProblem) {
         redirect("/resources/past-problem/");
     }
-
-    const apiProblem = apiResult.problem;
     const competition = competitions.find(
         (c) => c.id === apiProblem.competition,
     );

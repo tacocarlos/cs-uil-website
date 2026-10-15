@@ -9,7 +9,11 @@ import {
     type SQL,
 } from "drizzle-orm";
 import { type AnyPgColumn } from "drizzle-orm/pg-core";
-import { isTeacherRole, type MemberRole } from "~/lib/auth/organizations";
+import {
+    DEFAULT_ORGANIZATION,
+    isTeacherRole,
+    type MemberRole,
+} from "~/lib/auth/organizations";
 import { type SchoolFilter } from "~/lib/schools";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
@@ -66,6 +70,18 @@ export async function schoolNamesByUser(
         names.set(userId, [...(names.get(userId) ?? []), name]);
     }
     return names;
+}
+
+/**
+ * Creates the default school if it's missing. The backfill migration makes
+ * it, but a database built with `db:push` never runs that, and dev accounts
+ * and seed data are added to it.
+ */
+export async function ensureDefaultOrganization(): Promise<void> {
+    await db
+        .insert(organization)
+        .values({ ...DEFAULT_ORGANIZATION, createdAt: new Date() })
+        .onConflictDoNothing();
 }
 
 /** Whether the user teaches (owns or administers) their active school. */

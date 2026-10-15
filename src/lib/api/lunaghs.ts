@@ -113,18 +113,14 @@ export async function getAllMinimalProblems(): Promise<ApiMinimalProblem[]> {
     }
 }
 
-export async function getProblemById(
-    id: number,
-): Promise<{ success: boolean; problem: ApiProblem | null }> {
+/** Returns null if the problem doesn't exist (404) or the request fails. */
+export async function getProblemById(id: number): Promise<ApiProblem | null> {
     try {
         const res = await fetch(`${API_BASE}/api/problems/${id}`, CACHE_OPTS);
-        if (!res.ok) return { success: false, problem: null };
-        return (await res.json()) as {
-            success: boolean;
-            problem: ApiProblem | null;
-        };
+        if (!res.ok) return null;
+        return (await res.json()) as ApiProblem;
     } catch {
-        return { success: false, problem: null };
+        return null;
     }
 }
 
@@ -135,8 +131,8 @@ export async function getProblemMarkdown(id: number): Promise<string | null> {
             CACHE_OPTS,
         );
         if (!res.ok) return null;
-        const data = (await res.json()) as { markdown: string | null };
-        return data.markdown ?? null;
+        const data = (await res.json()) as { markdown: string };
+        return data.markdown;
     } catch {
         return null;
     }

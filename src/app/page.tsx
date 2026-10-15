@@ -11,7 +11,7 @@ export default function Home() {
             {/* Competition Timeline */}
             <Timeline
                 events={DefaultTimelineData}
-                timelineTitle="GHS CS UIL Team Events"
+                timelineTitle="CS UIL Team Events"
             />
 
             {/* Resources Preview */}

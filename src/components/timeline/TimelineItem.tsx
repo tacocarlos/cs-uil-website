@@ -17,6 +17,8 @@ export type TimelineItem = Readonly<{
     important?: boolean;
     index?: number | string;
     scrollTo?: boolean;
+    /** Only shown to members whose active organization is this one, e.g. `DEFAULT_ORGANIZATION.id`. */
+    organizationId?: string;
 }>;
 
 export default function TimelineEntry({

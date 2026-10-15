@@ -20,9 +20,9 @@ export const problemRouter = createTRPCRouter({
     getProblemById: publicProcedure
         .input(z.object({ id: z.number().int() }))
         .query(async ({ input }) => {
-            const { success, problem } = await API_getProblemById(input.id);
+            const problem = await API_getProblemById(input.id);
             return {
-                success,
+                success: problem !== null,
                 problem: problem ? toPublicProblem(problem) : null,
             };
         }),
@@ -32,14 +32,14 @@ export const problemRouter = createTRPCRouter({
     getProblemPreview: publicProcedure
         .input(z.object({ id: z.number().int() }))
         .query(async ({ input }) => {
-            const [apiResult, markdown] = await Promise.all([
+            const [problem, markdown] = await Promise.all([
                 API_getProblemById(input.id),
                 getProblemMarkdown(input.id),
             ]);
-            if (!apiResult.success || !apiResult.problem) return null;
+            if (!problem) return null;
             const [sampleInput, sampleOutput] = await Promise.all([
-                fetchUrlContent(apiResult.problem.student_data_url),
-                fetchUrlContent(apiResult.problem.student_output_url),
+                fetchUrlContent(problem.student_data_url),
+                fetchUrlContent(problem.student_output_url),
             ]);
             return {
                 markdown: markdown ?? "",

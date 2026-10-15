@@ -69,16 +69,14 @@ export default async function ContestProblemPage({
     }
 
     // ── Fetch full problem from external API ─────────────────────────────────
-    const [apiResult, competitions] = await Promise.all([
+    const [apiProblem, competitions] = await Promise.all([
         getProblemById(cp.apiProblemId),
         getAllCompetitions(),
     ]);
 
-    if (!apiResult.success || !apiResult.problem) {
+    if (!apiProblem) {
         notFound();
     }
-
-    const apiProblem = apiResult.problem;
     const competition = competitions.find(
         (c) => c.id === apiProblem.competition,
     );

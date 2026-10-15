@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { useDebouncedValue } from "~/hooks/use-debounced-value";
 import { ClassificationForm } from "~/components/school/classification-form";
+import { SchoolId } from "~/components/school/school-id";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -93,8 +94,11 @@ export function SchoolList() {
                             <TableBody>
                                 {schools.map((school) => (
                                     <TableRow key={school.id}>
-                                        <TableCell className="font-medium">
-                                            {school.name}
+                                        <TableCell>
+                                            <div className="font-medium">
+                                                {school.name}
+                                            </div>
+                                            <SchoolId id={school.id} />
                                         </TableCell>
                                         <TableCell>
                                             <ClassificationForm

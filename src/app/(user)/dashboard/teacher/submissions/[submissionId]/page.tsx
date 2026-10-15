@@ -54,8 +54,8 @@ export default async function SubmissionDetailPage({
         notFound();
     }
 
-    const apiResult = await getProblemById(row.problemId);
-    const problemName = apiResult.problem?.name ?? `Problem #${row.problemId}`;
+    const apiProblem = await getProblemById(row.problemId);
+    const problemName = apiProblem?.name ?? `Problem #${row.problemId}`;
 
     return (
         <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">

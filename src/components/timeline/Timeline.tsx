@@ -1,3 +1,4 @@
+import { getCurrentMembership } from "~/server/current-membership";
 import { Accordion } from "../ui/accordion";
 import TimelineEntry, { type TimelineItem } from "./TimelineItem";
 
@@ -7,11 +8,19 @@ export type TimelineProps = {
     scrollToDesignated?: boolean;
 };
 
-export default function Timeline({
+export default async function Timeline({
     events,
     timelineTitle,
     scrollToDesignated,
 }: TimelineProps) {
+    const { membership } = await getCurrentMembership();
+    // Events gated to an organization are only shown to members acting in it.
+    const visibleEvents = events.filter(
+        (event) =>
+            !event.organizationId ||
+            event.organizationId === membership?.organizationId,
+    );
+
     return (
         <section className="bg-secondary-50 px-4 py-16">
             <div className="container mx-auto">
@@ -23,7 +32,7 @@ export default function Timeline({
                     collapsible
                     className="mx-auto max-w-3xl"
                 >
-                    {events.map((event, index) => {
+                    {visibleEvents.map((event, index) => {
                         return (
                             <TimelineEntry
                                 timelineEvent={{ ...event, index: index }}
@@ -39,24 +48,28 @@ export default function Timeline({
 
 export const DefaultTimelineData: TimelineProps["events"] = [
     {
+        organizationId: "groveton-hs",
         date: "October 24th",
         eventName: "TAMU CS Day",
         description:
             "The CS Day schedule is split into a morning session (covering talks on a variety of computing topics) and an afternoon session (covering various hands-on CS activities and demos), with lunch in between. Talks and demos will be happening in parallel sessions.",
     },
     {
+        organizationId: "groveton-hs",
         date: "October 30th",
         eventName: "Virtual Challenge Meet #1",
         description:
             "A mock contest, consisting of a written contest and a programming contest. The written test will be submitted against other students in the state. I will create programming problems and pit you against each other (2 teams, probably).",
     },
     {
+        organizationId: "groveton-hs",
         date: "November 13th",
         eventName: "Bebras Challenge",
         description:
             "Computational thinking contest - no coding required for this one.",
     },
     {
+        organizationId: "groveton-hs",
         date: "November 20th or December 11th",
         eventName: "Virtual Challenge Meet #2",
         description:
@@ -68,6 +81,7 @@ export const DefaultTimelineData: TimelineProps["events"] = [
         description: "The first contest in the USACO gauntlet.",
     },
     {
+        organizationId: "groveton-hs",
         date: "January 29th",
         eventName: "Virtual Challenge Meet #3",
         description:
@@ -79,6 +93,7 @@ export const DefaultTimelineData: TimelineProps["events"] = [
         description: "The second contest in the USACO gauntlet.",
     },
     {
+        organizationId: "groveton-hs",
         date: "February 26th",
         eventName: "Virtual Challenge Meet #4 (District Meet Comparison)",
         description:
@@ -90,6 +105,7 @@ export const DefaultTimelineData: TimelineProps["events"] = [
         description: "The first contest in the USACO gauntlet.",
     },
     {
+        organizationId: "groveton-hs",
         date: "March 29th",
         eventName: "UIL District Meet",
         description: "UIL District Meet (on a Monday).",
@@ -100,6 +116,7 @@ export const DefaultTimelineData: TimelineProps["events"] = [
         description: "The final contest in USACO, proctored.",
     },
     {
+        organizationId: "groveton-hs",
         date: "April 9th",
         eventName: "Virtual Challenge Meet #5 (RQ Meet Comparison)",
         description:
@@ -109,9 +126,10 @@ export const DefaultTimelineData: TimelineProps["events"] = [
         date: "April 28-29",
         eventName: "UIL Regional Meet",
         description:
-            "Region meet. We're in region 4 this year, so new competition!",
+            "UIL Regional Meet",
     },
     {
+        organizationId: "groveton-hs",
         date: "April 30th",
         eventName: "Virtual Challenge Meet #5 (SQ Meet Comparison)",
         description:
@@ -120,7 +138,7 @@ export const DefaultTimelineData: TimelineProps["events"] = [
     {
         date: "May 17-18",
         eventName: "UIL State Meet",
-        description: "State meet. Solve and code, until it is done.",
+        description: "State meet.",
     },
     //     {
     //         date: "October 24th",
