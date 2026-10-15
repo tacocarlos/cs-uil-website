@@ -74,7 +74,7 @@ function ProblemPreviewModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col gap-0 p-0">
+            <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-4xl">
                 {/* Fixed header */}
                 <DialogHeader className="border-b px-6 pt-6 pb-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -158,31 +158,6 @@ function ProblemPreviewModal({
                                     "*No description available.*"}
                             </Markdown>
                         </div>
-                        {(problem.programName || problem.inputFileName) && (
-                            <div className="mt-4 border-t pt-4 text-sm">
-                                <p className="mb-1 font-medium">
-                                    Problem details
-                                </p>
-                                <ul className="text-muted-foreground space-y-0.5">
-                                    {problem.programName && (
-                                        <li>
-                                            Program:{" "}
-                                            <span className="font-mono">
-                                                {problem.programName}
-                                            </span>
-                                        </li>
-                                    )}
-                                    {problem.inputFileName && (
-                                        <li>
-                                            Input file:{" "}
-                                            <span className="font-mono">
-                                                {problem.inputFileName}
-                                            </span>
-                                        </li>
-                                    )}
-                                </ul>
-                            </div>
-                        )}
                     </TabsContent>
 
                     <TabsContent
