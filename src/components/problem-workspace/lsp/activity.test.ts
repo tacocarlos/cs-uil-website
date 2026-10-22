@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { onNextActivity } from "./activity";
 
 /** Fake editor that records listeners and lets the test fire events. */

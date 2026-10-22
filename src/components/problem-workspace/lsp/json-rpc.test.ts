@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { JsonRpcConnection, type SocketLike } from "./json-rpc";
 
 /** Awaits a promise that should reject and returns what it rejected with. */

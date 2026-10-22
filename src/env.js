@@ -17,10 +17,12 @@ export const env = createEnv({
             .default("development"),
         JUDGE_URL: z.url(),
         BASE_URL: z.url(),
+
         // LSP gateway (lsp-gateway/). Both unset = editor runs without code
         // intelligence. URL is the WebSocket base, e.g. wss://lsp.example.com
         LSP_GATEWAY_URL: z.url().optional(),
         LSP_GATEWAY_SECRET: z.string().min(32).optional(),
+
         // Development only: comma-separated host:port of databases where the
         // fake "Dev Student"/"Dev Teacher" logins may be used.
         DEV_LOGIN_DATABASE_HOSTS: z.string().optional(),

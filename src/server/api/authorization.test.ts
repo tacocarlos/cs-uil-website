@@ -7,7 +7,7 @@
  * before input parsing and the procedure body, and the caller's school
  * membership is supplied by the test instead of looked up.
  */
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { type MemberRole } from "~/lib/auth/organizations";
 import { appRouter, createCaller } from "./root";

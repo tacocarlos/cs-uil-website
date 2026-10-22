@@ -118,7 +118,12 @@ export async function getProblemById(id: number): Promise<ApiProblem | null> {
     try {
         const res = await fetch(`${API_BASE}/api/problems/${id}`, CACHE_OPTS);
         if (!res.ok) return null;
-        return (await res.json()) as ApiProblem;
+        // Unlike the other endpoints, this one wraps its payload.
+        const data = (await res.json()) as {
+            success: boolean;
+            problem: ApiProblem | null;
+        };
+        return data.problem;
     } catch {
         return null;
     }

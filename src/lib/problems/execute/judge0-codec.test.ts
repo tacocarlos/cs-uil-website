@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { decodeJudge0Response, encodeSubmission } from "./judge0-codec";
 
 const b64 = (bytes: string | Uint8Array) =>

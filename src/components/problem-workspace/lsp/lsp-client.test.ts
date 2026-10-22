@@ -4,11 +4,13 @@
  * website's own signer. Covers the happy path and the failure path the
  * editor relies on to fall back to syntax highlighting.
  */
+import { type ChildProcess, spawn } from "node:child_process";
+import { once } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import type { Subprocess } from "bun";
+import { setTimeout as sleep } from "node:timers/promises";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { lspTargetFor } from "~/lib/lsp/servers";
 import { signLspToken } from "~/lib/lsp/token";
 import type { LspDiagnostic } from "./protocol";
@@ -27,7 +29,7 @@ async function rejection(promise: Promise<unknown>): Promise<Error> {
 const SECRET = "t".repeat(32);
 const PORT = 32_000 + Math.floor(Math.random() * 1000);
 const GATEWAY_DIR = join(
-    import.meta.dir,
+    import.meta.dirname,
     "..",
     "..",
     "..",
@@ -37,24 +39,22 @@ const GATEWAY_DIR = join(
 const workspaceRoot = mkdtempSync(join(tmpdir(), "lsp-client-test-"));
 const python = lspTargetFor("Python")!;
 
-let gateway: Subprocess;
+let gateway: ChildProcess;
 
 beforeAll(async () => {
     const fakeServer = join(GATEWAY_DIR, "test", "fake-language-server.ts");
-    gateway = Bun.spawn(
-        [process.execPath, join(GATEWAY_DIR, "src", "index.ts")],
-        {
-            env: {
-                ...process.env,
-                PORT: String(PORT),
-                LSP_GATEWAY_SECRET: SECRET,
-                WORKSPACE_ROOT: workspaceRoot,
-                LSP_COMMAND_PYTHON: `${process.execPath} ${fakeServer}`,
-            },
-            stdout: "ignore",
-            stderr: "inherit",
+    // The gateway is a Bun service, so it runs under bun regardless of
+    // which runtime runs this test.
+    gateway = spawn("bun", [join(GATEWAY_DIR, "src", "index.ts")], {
+        env: {
+            ...process.env,
+            PORT: String(PORT),
+            LSP_GATEWAY_SECRET: SECRET,
+            WORKSPACE_ROOT: workspaceRoot,
+            LSP_COMMAND_PYTHON: `bun ${fakeServer}`,
         },
-    );
+        stdio: ["ignore", "ignore", "inherit"],
+    });
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
         try {
@@ -62,14 +62,15 @@ beforeAll(async () => {
         } catch {
             // not up yet
         }
-        await Bun.sleep(20);
+        await sleep(20);
     }
     throw new Error("gateway did not start");
 });
 
 afterAll(async () => {
+    const exited = once(gateway, "exit");
     gateway.kill();
-    await gateway.exited;
+    await exited;
     rmSync(workspaceRoot, { recursive: true, force: true });
 });
 
@@ -163,7 +164,7 @@ describe("connectLsp", () => {
         // The gateway ends the session, as after a real idle timeout.
         const deadline = Date.now() + 5000;
         while ((await health()) > 0 && Date.now() < deadline)
-            await Bun.sleep(20);
+            await sleep(20);
         expect(await health()).toBe(0);
 
         // Resuming is just a fresh connection.

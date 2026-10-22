@@ -22,7 +22,35 @@ export function useEditorOptions() {
   const setters = {
     setFontSize: (newFontSize: number) => {
       setOptions((prev) => ({ ...prev, fontSize: newFontSize }));
-    }
+    },
+
+    toggleMinimap: () => {
+      setOptions((prev) => ({
+        ...prev,
+        minimap: {enabled: !prev.minimap.enabled}
+      }))
+    },
+
+    setTopPadding: (newPadding: number) => {
+      setOptions((prev) => ({
+        ...prev,
+        padding: {
+          top: newPadding,
+          bottom: prev.padding.bottom,
+        }
+      }))
+    },
+
+    setBottom: (newPadding: number) => {
+      setOptions((prev) => ({
+        ...prev,
+        padding: {
+          top: prev.padding.top,
+          bottom: newPadding,
+        }
+      }))
+    },
+
   }
 
   return [options, setters] as const;

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { buildLeaderboard, type LeaderboardSubmission } from "./leaderboard";
 
 const at = (minute: number) => new Date(Date.UTC(2026, 0, 1, 0, minute));

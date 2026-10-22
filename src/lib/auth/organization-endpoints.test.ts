@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { auth } from "auth";
 import { env } from "~/env";
 import {
