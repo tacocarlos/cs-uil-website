@@ -18,6 +18,7 @@ import type { RouterOutputs } from "~/trpc/react";
 import { db } from "~/server/db";
 import { contestEnrollment } from "~/server/db/schema/contest";
 import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
+import { RefreshAt } from "~/components/contest/refresh-at";
 import { Button } from "~/components/ui/button";
 import {
     Card,
@@ -239,8 +240,12 @@ export default async function StudentContestsPage() {
     const myEnrolledActive = active.filter((c) => enrolledIds.has(c.id));
     const notEnrolledActive = active.filter((c) => !enrolledIds.has(c.id));
 
+    // When the next upcoming contest starts, move it to "Active Now".
+    const nextStart = Math.min(...upcoming.map((c) => c.startsAt.getTime()));
+
     return (
         <div className="bg-primary min-h-screen pt-20">
+            {upcoming.length > 0 && <RefreshAt inMs={nextStart - Date.now()} />}
             <div className="text-primary-foreground mx-auto max-w-5xl px-6 pb-16">
                 {/* ── Header ─────────────────────────────────────────────── */}
                 <div className="mb-10">

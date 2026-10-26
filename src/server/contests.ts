@@ -20,6 +20,7 @@ import {
 } from "~/server/db/schema/contest";
 import { member } from "~/server/db/schema/organization";
 import { isSchoolTeacher, type ActiveMembership } from "~/server/organizations";
+import { withEffectiveStatus } from "~/lib/contest/status";
 
 // Two kinds of contest:
 // - School contests (visibility "school" or "invite") are hosted by a
@@ -34,6 +35,9 @@ import { isSchoolTeacher, type ActiveMembership } from "~/server/organizations";
 // that haven't declined, plus anyone already enrolled (so former students,
 // and students of schools that declined later, keep their results). Seeing
 // a contest is what allows enrolling in it and viewing its leaderboard.
+//
+// Contests start and end on their own (src/lib/contest/status.ts), so the
+// functions here return each contest with its status as of now.
 
 /**
  * Who is managing contests: a site admin, and/or a teacher acting for
@@ -85,7 +89,7 @@ export async function requireManagedContest(
             message: "No such contest that you manage",
         });
     }
-    return row;
+    return withEffectiveStatus(row);
 }
 
 /** Statuses in which a contest's problems are shown to participants. */
@@ -163,7 +167,7 @@ export async function findVisibleContest(
         .from(contest)
         .where(and(eq(contest.id, contestId), visibleContests(userId)))
         .limit(1);
-    return row ?? null;
+    return row ? withEffectiveStatus(row) : null;
 }
 
 /**
@@ -183,7 +187,9 @@ export async function findAccessibleContest(
         .from(contest)
         .where(eq(contest.id, contestId))
         .limit(1);
-    return row && canManageContest(row, manager) ? row : null;
+    return row && canManageContest(row, manager)
+        ? withEffectiveStatus(row)
+        : null;
 }
 
 /** Schools invited to the contest that haven't declined. */

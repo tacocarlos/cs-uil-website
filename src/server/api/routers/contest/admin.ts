@@ -236,10 +236,26 @@ export const contestAdmin = {
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            await requireManagedContest(input.contestId, ctx.manager);
+            const existing = await requireManagedContest(
+                input.contestId,
+                ctx.manager,
+            );
+            // Starting or ending by hand moves the schedule to now, so the
+            // times shown stay true.
+            const now = new Date();
             const [row] = await db
                 .update(contest)
-                .set({ status: input.status })
+                .set({
+                    status: input.status,
+                    startsAt:
+                        input.status === "active" && existing.startsAt > now
+                            ? now
+                            : undefined,
+                    endsAt:
+                        input.status === "ended" && existing.endsAt > now
+                            ? now
+                            : undefined,
+                })
                 .where(eq(contest.id, input.contestId))
                 .returning();
             return row ?? null;

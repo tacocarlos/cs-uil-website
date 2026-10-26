@@ -17,6 +17,7 @@ import {
 } from "~/server/contests";
 import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
 import { contestPoints, pickBestPerProblem } from "~/lib/contest/scoring";
+import { effectiveStatus } from "~/lib/contest/status";
 
 const byContest = z.object({ contestId: z.number().int() });
 
@@ -138,6 +139,10 @@ export const contestParticipation = {
             }),
         )
         .mutation(async ({ ctx, input }) => {
+            // A submission counts from when it arrives: one sent in the
+            // last second is accepted even if grading finishes after the
+            // end.
+            const receivedAt = new Date();
             const { contestId, apiProblemId, code, languageId } = input;
             const userId = ctx.user.id;
 
@@ -181,8 +186,15 @@ export const contestParticipation = {
                 ]);
 
             if (!contestRow) throw new Error(`Contest ${contestId} not found`);
-            if (contestRow.status !== "active") {
-                throw new Error("Contest is not active");
+            const status = effectiveStatus(contestRow, receivedAt);
+            if (status !== "active") {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message:
+                        status === "ended"
+                            ? "This contest has ended"
+                            : "This contest isn't accepting submissions",
+                });
             }
             if (!problem) {
                 throw new Error(
@@ -219,6 +231,7 @@ export const contestParticipation = {
                     accepted,
                     points,
                     attemptNumber,
+                    submittedAt: receivedAt,
                 });
             }
 

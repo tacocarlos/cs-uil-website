@@ -5,11 +5,13 @@ export const dynamic = "force-dynamic";
 import { auth } from "auth";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { format, formatDistanceToNow, isPast } from "date-fns";
+import { format } from "date-fns";
 import { CheckCircle, Lock, XCircle } from "lucide-react";
 import { api } from "~/trpc/server";
 import { getAllMinimalProblems } from "~/lib/api/lunaghs";
 import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
+import { Countdown } from "~/components/contest/countdown";
+import { RefreshAt } from "~/components/contest/refresh-at";
 import { Button } from "~/components/ui/button";
 import { EnrollButton } from "./_enroll-button";
 import { VISIBILITY_LABELS } from "~/lib/contest/visibility";
@@ -69,12 +71,23 @@ export default async function ContestLobbyPage({
         (status === "active" || status === "scheduled") &&
         signedIn;
 
+    // Measured here, so countdowns don't depend on the viewer's clock.
+    const now = Date.now();
+    const msUntilStart = contest.startsAt.getTime() - now;
+    const msUntilEnd = contest.endsAt.getTime() - now;
+
     const sortedProblems = [...contest.problems].sort(
         (a, b) => a.displayOrder - b.displayOrder,
     );
 
     return (
         <div className="bg-primary min-h-screen pt-20">
+            {/* Shows the problems as soon as the contest starts, and the
+                final status when it ends. */}
+            {status === "scheduled" && <RefreshAt inMs={msUntilStart} />}
+            {(status === "active" || status === "frozen") && (
+                <RefreshAt inMs={msUntilEnd} />
+            )}
             <div className="text-primary-foreground mx-auto max-w-4xl px-6 pb-12">
                 {/* ── Contest header card ──────────────────────────────────── */}
                 <Card className="mb-6">
@@ -121,14 +134,26 @@ export default async function ContestLobbyPage({
                         </div>
                         <div>
                             <p className="text-muted-foreground font-medium">
-                                Time Remaining
+                                {status === "scheduled"
+                                    ? "Starts"
+                                    : "Time Remaining"}
                             </p>
                             <p>
-                                {isPast(contest.endsAt)
-                                    ? "Ended"
-                                    : formatDistanceToNow(contest.endsAt, {
-                                          addSuffix: true,
-                                      })}
+                                {status === "scheduled" ? (
+                                    <Countdown
+                                        inMs={msUntilStart}
+                                        prefix="in "
+                                        doneText="Starting…"
+                                    />
+                                ) : status === "ended" ? (
+                                    "Ended"
+                                ) : (
+                                    <Countdown
+                                        inMs={msUntilEnd}
+                                        doneText="Ended"
+                                        exact
+                                    />
+                                )}
                             </p>
                         </div>
                     </CardContent>

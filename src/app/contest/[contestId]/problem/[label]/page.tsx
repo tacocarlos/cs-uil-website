@@ -99,6 +99,9 @@ export default async function ContestProblemPage({
                     maxPoints: cp.maxPoints,
                 }}
                 contestStatus={contestRow.status}
+                // Measured here, so the countdown doesn't depend on the
+                // viewer's clock.
+                msUntilEnd={contestRow.endsAt.getTime() - Date.now()}
             />
         </div>
     );

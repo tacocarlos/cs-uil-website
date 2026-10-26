@@ -19,6 +19,7 @@ import {
 import { user } from "~/server/db/schema/auth";
 import { organization } from "~/server/db/schema/organization";
 import { buildLeaderboard } from "~/lib/contest/leaderboard";
+import { withEffectiveStatus } from "~/lib/contest/status";
 import {
     canManageContest,
     canSeeProblems,
@@ -30,8 +31,8 @@ import {
 const byContest = z.object({ contestId: z.number().int() });
 
 /** Contest summaries (with host school and counts), newest first. */
-function listContests(where: SQL | undefined) {
-    return db
+async function listContests(where: SQL | undefined) {
+    const rows = await db
         .select({
             id: contest.id,
             name: contest.name,
@@ -59,6 +60,8 @@ function listContests(where: SQL | undefined) {
         .where(where)
         .groupBy(contest.id, organization.name)
         .orderBy(desc(contest.createdAt));
+    const now = new Date();
+    return rows.map((row) => withEffectiveStatus(row, now));
 }
 
 /** The caller as a contest manager, or null (signed out, or a student). */
@@ -92,8 +95,8 @@ export const contestQueries = {
      * Contests other schools invited the teacher's school to, with the
      * school's response (`declinedAt`).
      */
-    getInvitations: teacherProcedure.query(({ ctx }) =>
-        db
+    getInvitations: teacherProcedure.query(async ({ ctx }) => {
+        const rows = await db
             .select({
                 contestId: contest.id,
                 name: contest.name,
@@ -112,8 +115,10 @@ export const contestQueries = {
                     eq(contest.visibility, "invite"),
                 ),
             )
-            .orderBy(desc(contest.startsAt)),
-    ),
+            .orderBy(desc(contest.startsAt));
+        const now = new Date();
+        return rows.map((row) => withEffectiveStatus(row, now));
+    }),
 
     getById: publicProcedure.input(byContest).query(async ({ ctx, input }) => {
         const manager = await managerOf(ctx);

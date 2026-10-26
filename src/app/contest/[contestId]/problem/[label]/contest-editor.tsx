@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Countdown } from "~/components/contest/countdown";
+import { RefreshAt } from "~/components/contest/refresh-at";
 import type { Problem } from "~/server/db/schema/types";
 import type { ContestStatus } from "~/server/db/schema/contest";
 import { CodeEditor } from "~/components/problem-workspace/code-editor";
@@ -41,12 +43,14 @@ interface ContestEditorProps {
         maxPoints: number;
     };
     contestStatus: ContestStatus;
+    msUntilEnd: number;
 }
 
 export default function ContestEditor({
     problem,
     contestProblem,
     contestStatus,
+    msUntilEnd,
 }: ContestEditorProps) {
     const { contestId, apiProblemId, maxPoints } = contestProblem;
 
@@ -94,6 +98,7 @@ export default function ContestEditor({
     }
 
     const isActive = contestStatus === "active";
+    const inProgress = contestStatus === "active" || contestStatus === "frozen";
 
     return (
         <ProblemWorkspace
@@ -135,6 +140,21 @@ export default function ContestEditor({
                             <LanguageSelect editor={codeEditor} />
                         </div>
                         <div className="flex items-center gap-3">
+                            {inProgress && (
+                                <>
+                                    {/* Disables Submit once time is up. */}
+                                    <RefreshAt inMs={msUntilEnd} />
+                                    <span className="text-sm text-slate-400">
+                                        Ends{" "}
+                                        <Countdown
+                                            inMs={msUntilEnd}
+                                            prefix="in "
+                                            doneText="now"
+                                            exact
+                                        />
+                                    </span>
+                                </>
+                            )}
                             {myBest?.accepted && (
                                 <Badge className="bg-green-600 text-white hover:bg-green-600">
                                     Accepted — {myBest.points} / {maxPoints} pts
