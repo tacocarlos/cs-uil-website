@@ -8,6 +8,7 @@ import { eq, and, desc, isNotNull, isNull, asc } from "drizzle-orm";
 import { inSchool } from "~/server/organizations";
 import { member } from "~/server/db/schema/organization";
 import { computeWrittenStatistics } from "~/lib/written/statistics";
+import { seasonYearOf } from "~/lib/written/season";
 
 const competitionInput = z.enum(writtenTests.competition.enumValues);
 
@@ -228,12 +229,16 @@ export const writtenRouter = createTRPCRouter({
                 });
             }
 
+            const date = takenAt ?? new Date().toISOString();
             return await db.insert(writtenTests).values({
                 userId,
                 competition,
                 score,
                 accuracy: accuracy ?? 1,
-                takenAt: takenAt ?? new Date().toISOString(),
+                takenAt: date,
+                // The season the test was taken in, not the one it's
+                // recorded in.
+                seasonYear: seasonYearOf(date),
             });
         }),
 

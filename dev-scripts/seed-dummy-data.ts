@@ -1,7 +1,7 @@
 /**
  * Fills a dev database with dummy schools, students, teachers, practice
- * submissions, and written test scores, for trying out leaderboards and the
- * school filters.
+ * submissions, written test scores, and feature requests, for trying out
+ * leaderboards, the school filters, and the request queue.
  *
  *   bun run db:seed            # replace any previous dummy data
  *   bun run db:seed --remove   # just delete it
@@ -25,6 +25,7 @@ import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
 import { submission } from "~/server/db/schema/submission";
+import { featureRequest } from "~/server/db/schema/feature-request";
 import { ensureDefaultOrganization } from "~/server/organizations";
 import { writtenTests } from "~/server/db/schema/written";
 
@@ -182,6 +183,70 @@ const WRITTEN_SEASONS: { year: number; dates: Record<string, string> }[] = [
 
 type Competition = (typeof writtenTests.$inferInsert)["competition"];
 
+// ── Feature requests ──────────────────────────────────────────────────────────
+// Every status and category, with and without a response, plus a withdrawn
+// one that shouldn't show up anywhere.
+
+type FeatureRequest = typeof featureRequest.$inferInsert;
+
+const FEATURE_REQUESTS: (Omit<FeatureRequest, "userId"> & {
+    from: string;
+    daysAgo: number;
+})[] = [
+    {
+        from: "Ada Lovelace",
+        daysAgo: 1,
+        category: "problem",
+        message:
+            "Could past problems be filterable by topic? I want to practice just recursion.",
+    },
+    {
+        from: "Claude Shannon",
+        daysAgo: 3,
+        category: "bug",
+        message:
+            "The editor loses my code when I switch languages mid-problem.\n\nSteps: open a problem, type some Java, switch to Python, switch back.",
+    },
+    {
+        from: "Tony Hoare",
+        daysAgo: 5,
+        category: "contest",
+        message: "Let teachers extend a contest's end time while it's running.",
+        featureStatus: "accepted",
+        adminResponse: "Good idea, we'll add this to contest management.",
+    },
+    {
+        from: "Ken Thompson",
+        daysAgo: 12,
+        category: "problem",
+        message: "Show sample input and output side by side.",
+        featureStatus: "implemented",
+        adminResponse: "Done! The problem page now shows them side by side.",
+    },
+    {
+        from: "Leslie Lamport",
+        daysAgo: 20,
+        category: "other",
+        message: "Dark mode please.",
+        featureStatus: "denied",
+        adminResponse: "Not planned for this season, sorry.",
+    },
+    {
+        from: "Ludwig Ahgren",
+        daysAgo: 8,
+        category: "contest",
+        message: "A countdown timer on the contest page would help.",
+        featureStatus: "accepted",
+    },
+    {
+        from: "Linus Torvalds",
+        daysAgo: 2,
+        category: "bug",
+        message: "Leaderboard shows me twice since I'm in two schools.",
+        deletedAt: new Date(),
+    },
+];
+
 /** Small seeded PRNG, so every run produces the same data. */
 function random(seed: number) {
     return () => {
@@ -202,7 +267,8 @@ function slug(name: string) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function removeDummyData() {
-    // Memberships, submissions, and scores cascade from users and schools.
+    // Memberships, submissions, scores, and feature requests cascade from
+    // users and schools.
     const users = await db
         .delete(user)
         .where(like(user.email, `%@${EMAIL_DOMAIN}`))
@@ -308,10 +374,19 @@ async function insertDummyData() {
     }
     await db.insert(writtenTests).values(scores);
 
+    await db.insert(featureRequest).values(
+        FEATURE_REQUESTS.map(({ from, daysAgo, ...request }) => ({
+            ...request,
+            userId: `seed-${slug(from)}`,
+            timeSubmitted: new Date(now.getTime() - daysAgo * 86_400_000),
+        })),
+    );
+
     console.log(
         `Added ${SCHOOLS.length} schools, ${users.length} users ` +
             `(${users.length - students.length} teachers), ` +
-            `${submissions.length} submissions, and ${scores.length} written scores.`,
+            `${submissions.length} submissions, ${scores.length} written scores, ` +
+            `and ${FEATURE_REQUESTS.length} feature requests.`,
     );
 }
 

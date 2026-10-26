@@ -9,11 +9,16 @@ export default function AdminPage() {
             <div className="mx-auto max-w-5xl space-y-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Site admin</h1>
-                    <Button asChild variant="outline">
-                        <Link href="/dashboard/teacher/contests">
-                            Manage contests
-                        </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button asChild variant="outline">
+                            <Link href="/admin/requests">Feature requests</Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/teacher/contests">
+                                Manage contests
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
                 <CreateSchool />
                 <SchoolList />

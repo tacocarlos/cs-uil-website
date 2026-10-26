@@ -64,6 +64,13 @@
       "when": 1790876444373,
       "tag": "0008_contest_management",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793028313095,
+      "tag": "0009_bouncy_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

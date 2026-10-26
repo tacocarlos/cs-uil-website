@@ -48,6 +48,12 @@ const ACCESS: Record<string, Access> = {
     "execute.getLanguages": "public",
     "execute.runCode": "signed-in",
     "execute.submitCode": "signed-in",
+    // Feature requests: anyone signed in submits; site admins respond
+    "featureRequest.submit": "signed-in",
+    "featureRequest.getMine": "signed-in",
+    "featureRequest.delete": "signed-in",
+    "featureRequest.getAll": "site-admin",
+    "featureRequest.respond": "site-admin",
     // Returns null (no LSP) when signed out rather than rejecting.
     "lsp.getSession": "public",
     // Problem content
