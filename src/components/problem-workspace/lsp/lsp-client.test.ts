@@ -163,8 +163,7 @@ describe("connectLsp", () => {
 
         // The gateway ends the session, as after a real idle timeout.
         const deadline = Date.now() + 5000;
-        while ((await health()) > 0 && Date.now() < deadline)
-            await sleep(20);
+        while ((await health()) > 0 && Date.now() < deadline) await sleep(20);
         expect(await health()).toBe(0);
 
         // Resuming is just a fresh connection.
