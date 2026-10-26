@@ -124,7 +124,13 @@ export const featureRequestRouter = createTRPCRouter({
             z.object({
                 id: z.number().int(),
                 featureStatus: statusInput,
-                adminResponse: z.string().trim().max(2000).nullable(),
+                // A blank response clears it.
+                adminResponse: z
+                    .string()
+                    .trim()
+                    .max(2000)
+                    .nullable()
+                    .transform((s) => (s === "" ? null : s)),
             }),
         )
         .mutation(async ({ input }) => {
@@ -132,7 +138,7 @@ export const featureRequestRouter = createTRPCRouter({
                 .update(featureRequest)
                 .set({
                     featureStatus: input.featureStatus,
-                    adminResponse: input.adminResponse || null,
+                    adminResponse: input.adminResponse,
                 })
                 .where(
                     and(
