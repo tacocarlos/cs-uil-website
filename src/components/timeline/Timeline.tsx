@@ -125,8 +125,7 @@ export const DefaultTimelineData: TimelineProps["events"] = [
     {
         date: "April 28-29",
         eventName: "UIL Regional Meet",
-        description:
-            "UIL Regional Meet",
+        description: "UIL Regional Meet",
     },
     {
         organizationId: "groveton-hs",

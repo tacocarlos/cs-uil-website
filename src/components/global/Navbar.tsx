@@ -158,7 +158,9 @@ function DesktopNavbar() {
                         asChild
                         className={navigationMenuTriggerStyle()}
                     >
-                        <Link href="/resources/past-problem">Programming Problems</Link>
+                        <Link href="/resources/past-problem">
+                            Programming Problems
+                        </Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
 
@@ -202,7 +204,7 @@ function DesktopNavbar() {
                     </NavigationMenuItem>
                 )}
             </NavigationMenuList>
-        </NavigationMenu >
+        </NavigationMenu>
     );
 }
 
@@ -364,10 +366,11 @@ export default function Navbar() {
 
     return (
         <nav
-            className={`fixed z-50 w-full transition-all duration-300 ${isScrolled
-                ? "bg-white py-2 text-blue-900 shadow-md"
-                : "bg-transparent py-4 text-white"
-                }`}
+            className={`fixed z-50 w-full transition-all duration-300 ${
+                isScrolled
+                    ? "bg-white py-2 text-blue-900 shadow-md"
+                    : "bg-transparent py-4 text-white"
+            }`}
         >
             <div className="container mx-auto px-4">
                 {/* Top bar */}

@@ -40,7 +40,7 @@ export function useCodeEditor(
         language,
     );
 
-    const [options, setOptions] = useEditorOptions();    
+    const [options, setOptions] = useEditorOptions();
 
     // The change listener is registered once on mount, so it reads the active
     // language through a ref rather than the (stale) closure value.

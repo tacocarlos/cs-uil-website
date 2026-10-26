@@ -21,7 +21,7 @@ export function ResetCodeButton({ editor }: { editor: CodeEditorState }) {
         <Button
             variant="destructive"
             size="sm"
-            className="text-sm hover:motion-preset-seesaw"
+            className="hover:motion-preset-seesaw text-sm"
             onClick={() => {
                 const confirmed = confirm(
                     "This action will reset your code editor, and ALL PROGRESS WILL BE LOST. Are you sure?",
@@ -66,7 +66,10 @@ export function ChangeFontSizeButton({
             {...props}
             variant="outline"
             onClick={() => {
-                const newFontSize = Math.max(8, editor.options.fontSize + delta);
+                const newFontSize = Math.max(
+                    8,
+                    editor.options.fontSize + delta,
+                );
                 editor.setOptions.setFontSize(newFontSize);
             }}
             className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600"
@@ -76,11 +79,19 @@ export function ChangeFontSizeButton({
     );
 }
 
-export function ChangeFontSizeSelector({ editor }: { editor: CodeEditorState }) {
+export function ChangeFontSizeSelector({
+    editor,
+}: {
+    editor: CodeEditorState;
+}) {
     return (
         <span className="flex items-center gap-2 px-2 py-1 text-sm">
             <p className="text-slate-300">Font Size:</p>
-            <ChangeFontSizeButton disabled={editor.options.fontSize <= 8} editor={editor} delta={-1} />
+            <ChangeFontSizeButton
+                disabled={editor.options.fontSize <= 8}
+                editor={editor}
+                delta={-1}
+            />
             <Input
                 type="number"
                 min={8}
@@ -93,7 +104,11 @@ export function ChangeFontSizeSelector({ editor }: { editor: CodeEditorState }) 
                 }}
                 className="rounded bg-slate-700 px-2 py-1 text-sm text-white hover:bg-slate-600"
             />
-            <ChangeFontSizeButton disabled={editor.options.fontSize >= 50} editor={editor} delta={1} />
+            <ChangeFontSizeButton
+                disabled={editor.options.fontSize >= 50}
+                editor={editor}
+                delta={1}
+            />
         </span>
     );
 }
