@@ -29,6 +29,14 @@ export default function Footer() {
                                     Website Source Code
                                 </Link>
                             </li>
+                            <li>
+                                <Link
+                                    href="/request"
+                                    className="hover:text-accent-foreground"
+                                >
+                                    Request a Feature
+                                </Link>
+                            </li>
                         </ul>
                     </div>
                     <div>

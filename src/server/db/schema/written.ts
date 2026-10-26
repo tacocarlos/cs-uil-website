@@ -2,6 +2,7 @@ import { index } from "drizzle-orm/pg-core";
 import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
 import { randomUUID } from "crypto";
+import { currentSeasonYear } from "~/lib/written/season";
 
 export const writtenTests = createTable(
     "written_tests",
@@ -22,11 +23,12 @@ export const writtenTests = createTable(
                 "state",
             ],
         }),
+        /** The Aug 1 – Jul 31 season, named by its end year (see season.ts). */
         seasonYear: d
             .integer()
             .notNull()
             .default(2000)
-            .$defaultFn(() => new Date().getUTCFullYear()),
+            .$defaultFn(currentSeasonYear),
         score: d.integer().notNull(),
         takenAt: d.date().notNull().defaultNow(),
         accuracy: d.real().notNull().default(0),

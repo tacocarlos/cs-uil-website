@@ -21,17 +21,14 @@ import {
     LeaderboardPagination,
     usePagination,
 } from "~/app/leaderboard/pagination";
+import { currentSeasonYear } from "~/lib/written/season";
 import { api } from "~/trpc/react";
 import { FormerBadge, IncludeFormerCheckbox } from "../former";
-
-function getCurrentYear() {
-    return 2027;
-}
 
 function getYearParam(
     yearParam: "all" | "current" | number | string | undefined,
 ): number | undefined {
-    if (yearParam === "current") return getCurrentYear();
+    if (yearParam === "current") return currentSeasonYear();
     else if (yearParam === "all" || yearParam === undefined) return undefined;
     else if (typeof yearParam === "number") return yearParam;
     else return parseInt(yearParam);
@@ -129,7 +126,7 @@ export default function WrittenLeaderboard() {
                         <SelectContent>
                             <SelectItem value="all">All Years</SelectItem>
                             <SelectItem value="current">
-                                Current Year ({getCurrentYear()})
+                                Current Season ({currentSeasonYear()})
                             </SelectItem>
                             {years?.map((year) => (
                                 <SelectItem key={year} value={year.toString()}>
