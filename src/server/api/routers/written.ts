@@ -7,6 +7,7 @@ import { user } from "~/server/db/schema/auth";
 import { eq, and, desc, isNotNull, isNull, asc } from "drizzle-orm";
 import { inSchool } from "~/server/organizations";
 import { member } from "~/server/db/schema/organization";
+import { totalWrittenScores } from "~/lib/written/leaderboard";
 import { computeWrittenStatistics } from "~/lib/written/statistics";
 import { seasonYearOf } from "~/lib/written/season";
 
@@ -29,6 +30,7 @@ function schoolScores(
             userId: user.id,
             name: user.name,
             score: writtenTests.score,
+            accuracy: writtenTests.accuracy,
             formerAt: member.formerAt,
         })
         .from(writtenTests)
@@ -53,7 +55,10 @@ function schoolScores(
 // leaderboard privacy setting (which is about what other students see);
 // the public written leaderboard (src/app/leaderboard/written) respects it.
 export const writtenRouter = createTRPCRouter({
-    /** The teacher's students ranked by total written score. */
+    /**
+     * The teacher's students ranked by total written score, then average
+     * accuracy.
+     */
     getLeaderboard: teacherProcedure
         .input(
             z.object({
@@ -72,30 +77,12 @@ export const writtenRouter = createTRPCRouter({
                     : undefined,
                 year ? eq(writtenTests.seasonYear, year) : undefined,
             );
-
-            // Aggregate scores by user
-            const scoreMap = new Map<
-                string,
-                { name: string; totalScore: number; former: boolean }
-            >();
-            for (const test of tests) {
-                const current = scoreMap.get(test.userId);
-                scoreMap.set(test.userId, {
-                    name: test.name,
-                    totalScore: (current?.totalScore ?? 0) + test.score,
-                    former: test.formerAt !== null,
-                });
-            }
-
-            // Convert to array and sort by score descending
-            return Array.from(scoreMap.entries())
-                .map(([id, data]) => ({
-                    id,
-                    name: data.name,
-                    score: data.totalScore,
-                    former: data.former,
-                }))
-                .sort((a, b) => b.score - a.score);
+            return totalWrittenScores(
+                tests.map(({ formerAt, ...test }) => ({
+                    ...test,
+                    former: formerAt !== null,
+                })),
+            );
         }),
 
     /** Competitions the teacher's students have scores for. */
