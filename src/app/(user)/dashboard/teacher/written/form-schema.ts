@@ -1,16 +1,7 @@
 import { z } from "zod";
+import { WRITTEN_COMPETITIONS } from "~/lib/written/competitions";
 
-export const CompetitionEnum = z.enum([
-    "VCM-1",
-    "VCM-2",
-    "VCM-3",
-    "VCM-4",
-    "invA",
-    "invB",
-    "district",
-    "region",
-    "state",
-]);
+export const CompetitionEnum = z.enum(WRITTEN_COMPETITIONS);
 
 export const writtenScoreFormSchema = z.object({
     userId: z.string().min(1, "Please select a user"),

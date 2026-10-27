@@ -75,6 +75,8 @@
     "embla-carousel-react": "^8.6.0",
     "fastest-levenshtein": "^1.0.16",
     "input-otp": "^1.4.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "lucide-react": "^0.542.0",
     "monaco-languageclient": "^10.4.0",
     "next": "^15.5.9",

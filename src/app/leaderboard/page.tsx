@@ -12,6 +12,7 @@ import {
     schoolNamesByUser,
 } from "~/server/organizations";
 import Leaderboard, { type CompetitionLeaderboardData } from "./leaderboard";
+import { LeaderboardKindTabs } from "./kind-tabs";
 import { LeaderboardScopeTabs } from "./scope-tabs";
 
 export const dynamic = "force-dynamic";
@@ -110,6 +111,7 @@ export default async function LeaderboardPage({
     console.dir(apiProblems);
     return (
         <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
+            <LeaderboardKindTabs path="/leaderboard" />
             <LeaderboardScopeTabs
                 path="/leaderboard"
                 scope={scope}

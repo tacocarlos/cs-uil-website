@@ -148,6 +148,16 @@ function SolvedProblemsDialog({
 
 // ── Leaderboard table ─────────────────────────────────────────────────────────
 
+export function rowClassName(rank: number) {
+    // Medals for the top 3; a faint shared tint marks the rest of the
+    // top 6 without looking like an award.
+    if (rank === 1) return "bg-yellow-400 hover:bg-yellow-200";
+    if (rank === 2) return "bg-slate-400 hover:bg-slate-200";
+    if (rank === 3) return "bg-orange-400 hover:bg-orange-200";
+    if (rank <= 6) return "bg-sky-100 hover:bg-sky-50";
+    return "";
+}
+
 export default function Leaderboard({
     scores,
     problems,
@@ -180,16 +190,6 @@ export default function Leaderboard({
     }, [scores, searchTerm]);
     const columns = showSchools ? 4 : 3;
     const pagination = usePagination(filteredAndSortedData);
-
-    function rowClassName(rank: number) {
-        // Medals for the top 3; a faint shared tint marks the rest of the
-        // top 6 without looking like an award.
-        if (rank === 1) return "bg-yellow-400 hover:bg-yellow-200";
-        if (rank === 2) return "bg-slate-400 hover:bg-slate-200";
-        if (rank === 3) return "bg-orange-400 hover:bg-orange-200";
-        if (rank <= 6) return "bg-sky-100 hover:bg-sky-50";
-        return "";
-    }
 
     return (
         <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-4">
