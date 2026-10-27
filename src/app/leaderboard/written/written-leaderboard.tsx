@@ -10,6 +10,7 @@ import {
     TableBody,
     TableCell,
 } from "~/components/ui/table";
+import { compareWrittenTotals } from "~/lib/written/leaderboard";
 import { rowClassName } from "../leaderboard";
 import { LeaderboardPagination, usePagination } from "../pagination";
 
@@ -17,6 +18,8 @@ type WrittenLeaderboardEntry = {
     id: string;
     name: string;
     score: number;
+    /** Average accuracy, which breaks score ties. */
+    accuracy: number;
     /** The student's schools (only filled in on the shared leaderboard). */
     schools: string[];
 };
@@ -37,7 +40,7 @@ export default function WrittenLeaderboard({
     const filteredData = useMemo(() => {
         const term = searchTerm.toLowerCase();
         return [...scores]
-            .sort((a, b) => b.score - a.score)
+            .sort(compareWrittenTotals)
             .map((entry, idx) => ({ ...entry, rank: idx + 1 }))
             .filter(
                 (entry) =>

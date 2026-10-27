@@ -1,4 +1,5 @@
 import { downloadCsv, toCsv } from "~/lib/csv";
+import { formatAccuracy } from "~/lib/written/leaderboard";
 
 /** The leaderboard as the teacher sees it, for a report. */
 export type WrittenReportView = {
@@ -10,7 +11,14 @@ export type WrittenReportView = {
     includeFormer: boolean;
     searchTerm: string;
     /** Ranked rows, filtered by the search term. */
-    rows: { rank: number; name: string; score: number; former: boolean }[];
+    rows: {
+        rank: number;
+        name: string;
+        score: number;
+        /** Average accuracy over the counted tests, 0–1. */
+        accuracy: number;
+        former: boolean;
+    }[];
 };
 
 function filename(view: WrittenReportView, extension: string) {
@@ -34,11 +42,21 @@ function filterSummary(view: WrittenReportView): string[] {
  */
 export function downloadWrittenCsv(view: WrittenReportView) {
     const csv = toCsv(
-        ["Rank", "Student", "Score", "Season", "Competition", "Former student"],
+        [
+            "Rank",
+            "Student",
+            "Score",
+            "Accuracy",
+            "Season",
+            "Competition",
+            "Former student",
+        ],
         view.rows.map((row) => [
             row.rank,
             row.name,
             row.score,
+            // A 0–1 ratio, which spreadsheets can format as a percentage.
+            Number(row.accuracy.toFixed(4)),
             view.season,
             view.competition,
             row.former,
@@ -85,14 +103,16 @@ export async function downloadWrittenPdf(view: WrittenReportView) {
 
     const scores = view.rows.map((row) => row.score);
     if (scores.length > 0) {
-        const average = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const mean = (values: number[]) =>
+            values.reduce((a, b) => a + b, 0) / values.length;
         y += 6;
         doc.setTextColor(0).setFont("helvetica", "bold");
         doc.text(
             [
                 `Students: ${scores.length}`,
-                `Average: ${average.toFixed(1)}`,
+                `Average: ${mean(scores).toFixed(1)}`,
                 `Highest: ${Math.max(...scores)}`,
+                `Average accuracy: ${formatAccuracy(mean(view.rows.map((row) => row.accuracy)))}`,
             ].join("     "),
             margin,
             y,
@@ -103,20 +123,26 @@ export async function downloadWrittenPdf(view: WrittenReportView) {
     autoTable(doc, {
         startY: y + 8,
         margin: { left: margin, right: margin },
-        head: [["Rank", "Student", "Score"]],
+        head: [["Rank", "Student", "Score", "Accuracy"]],
         body:
             view.rows.length > 0
                 ? view.rows.map((row) => [
                       row.rank,
                       row.former ? `${row.name} (former)` : row.name,
                       row.score,
+                      formatAccuracy(row.accuracy),
                   ])
-                : [[{ content: "No scores yet.", colSpan: 3 }]],
+                : [[{ content: "No scores yet.", colSpan: 4 }]],
         headStyles: { fillColor: [30, 41, 59] },
-        columnStyles: { 0: { cellWidth: 50 }, 2: { cellWidth: 60 } },
-        // Right-align scores, heading included (columnStyles skip it).
+        columnStyles: {
+            0: { cellWidth: 50 },
+            2: { cellWidth: 60 },
+            3: { cellWidth: 70 },
+        },
+        // Right-align the numbers, headings included (columnStyles skip
+        // them).
         didParseCell: ({ column, cell }) => {
-            if (column.index === 2) cell.styles.halign = "right";
+            if (column.index >= 2) cell.styles.halign = "right";
         },
         didDrawPage: () => {
             doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(120);

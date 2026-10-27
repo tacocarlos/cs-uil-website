@@ -6,6 +6,7 @@ import {
     WRITTEN_COMPETITIONS,
     type WrittenCompetition,
 } from "~/lib/written/competitions";
+import { totalWrittenScores } from "~/lib/written/leaderboard";
 import { currentSeasonYear } from "~/lib/written/season";
 import {
     getCurrentMembership,
@@ -75,6 +76,7 @@ export default async function WrittenLeaderboardPage({
                 userId: user.id,
                 name: user.name,
                 score: writtenTests.score,
+                accuracy: writtenTests.accuracy,
             })
             .from(writtenTests)
             .innerJoin(user, eq(writtenTests.userId, user.id))
@@ -101,24 +103,17 @@ export default async function WrittenLeaderboardPage({
     ]);
 
     // Total each student's scores over the selected tests.
-    const totals = new Map<string, { name: string; score: number }>();
-    for (const row of rows) {
-        const entry = totals.get(row.userId);
-        if (entry) entry.score += row.score;
-        else totals.set(row.userId, { name: row.name, score: row.score });
-    }
+    const totals = totalWrittenScores(rows);
 
     // On the shared leaderboard, say which school each student is from.
     const schoolNames =
         scope === "global"
-            ? await schoolNamesByUser(Array.from(totals.keys()))
+            ? await schoolNamesByUser(totals.map((t) => t.id))
             : null;
 
-    const scores = Array.from(totals.entries()).map(([id, data]) => ({
-        id,
-        name: data.name,
-        score: data.score,
-        schools: schoolNames?.get(id) ?? [],
+    const scores = totals.map((total) => ({
+        ...total,
+        schools: schoolNames?.get(total.id) ?? [],
     }));
 
     return (
