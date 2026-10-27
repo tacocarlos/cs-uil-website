@@ -1,4 +1,4 @@
-import { asc, eq, isNotNull, sql } from "drizzle-orm";
+import { asc, eq, isNotNull } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
