@@ -22,6 +22,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "~/components/ui/select";
+import {
+    WRITTEN_COMPETITIONS,
+    competitionLabel,
+} from "~/lib/written/competitions";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -146,23 +150,11 @@ export function WrittenScoreForm() {
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    <SelectItem value="VCM-1">VCM-1</SelectItem>
-                                    <SelectItem value="VCM-2">VCM-2</SelectItem>
-                                    <SelectItem value="VCM-3">VCM-3</SelectItem>
-                                    <SelectItem value="VCM-4">VCM-4</SelectItem>
-                                    <SelectItem value="regionA">
-                                        Region A
-                                    </SelectItem>
-                                    <SelectItem value="regionB">
-                                        Region B
-                                    </SelectItem>
-                                    <SelectItem value="district">
-                                        District
-                                    </SelectItem>
-                                    <SelectItem value="region">
-                                        Region
-                                    </SelectItem>
-                                    <SelectItem value="state">State</SelectItem>
+                                    {WRITTEN_COMPETITIONS.map((c) => (
+                                        <SelectItem key={c} value={c}>
+                                            {competitionLabel(c)}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                             <FormDescription>

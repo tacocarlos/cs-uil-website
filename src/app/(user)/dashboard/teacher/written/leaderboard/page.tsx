@@ -5,7 +5,8 @@ import WrittenLeaderboard from "./written-leaderboard";
 
 /**
  * Written test scores of the teacher's students, ranked. Teachers only (the
- * teacher layout checks); students don't have a written leaderboard.
+ * teacher layout checks). Unlike the public written leaderboard
+ * (/leaderboard/written), it includes students who hid their scores.
  */
 export default function WrittenLeaderboardPage() {
     return (

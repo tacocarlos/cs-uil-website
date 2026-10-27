@@ -48,11 +48,10 @@ function schoolScores(
         );
 }
 
-// Written test scores are for teachers only: they record their own
-// school's students' scores and see them ranked. Students don't see a
-// written leaderboard; the site's public focus is the programming section.
-// Teachers see all their students, whatever the students' leaderboard
-// privacy setting (which is about what other students see).
+// Teachers record their own school's students' written scores and see them
+// ranked here. They see all their students, whatever the students'
+// leaderboard privacy setting (which is about what other students see);
+// the public written leaderboard (src/app/leaderboard/written) respects it.
 export const writtenRouter = createTRPCRouter({
     /** The teacher's students ranked by total written score. */
     getLeaderboard: teacherProcedure

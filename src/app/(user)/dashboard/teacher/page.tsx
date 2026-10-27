@@ -4,6 +4,7 @@ import { RevalidateCacheButton } from "./revalidate-cache-button";
 import { Judge0StatusCard } from "./judge0-status";
 import { SchoolClassificationCard } from "./school-classification";
 import { SchoolMembersCard } from "./school-members";
+import { ExportDataCard } from "./export-data";
 import { Button } from "~/components/ui/button";
 import { RecentOrgSubmissions } from "./recent-submissions";
 
@@ -50,6 +51,7 @@ export default async function TeacherDashboardPage() {
                     <Judge0StatusCard />
                 </div>
                 <SchoolClassificationCard />
+                <ExportDataCard />
             </div>
 
             {/* ── Recent submissions ─────────────────────────────────────── */}

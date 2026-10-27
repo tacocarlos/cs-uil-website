@@ -2,6 +2,7 @@ import { index } from "drizzle-orm/pg-core";
 import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
 import { randomUUID } from "crypto";
+import { WRITTEN_COMPETITIONS } from "~/lib/written/competitions";
 import { currentSeasonYear } from "~/lib/written/season";
 
 export const writtenTests = createTable(
@@ -10,19 +11,7 @@ export const writtenTests = createTable(
         id: d.text().$defaultFn(randomUUID).primaryKey(),
         adminShow: d.boolean().default(false),
         userId: d.text().notNull(),
-        competition: d.text({
-            enum: [
-                "VCM-1",
-                "VCM-2",
-                "VCM-3",
-                "VCM-4",
-                "invA",
-                "invB",
-                "district",
-                "region",
-                "state",
-            ],
-        }),
+        competition: d.text({ enum: WRITTEN_COMPETITIONS }),
         /** The Aug 1 – Jul 31 season, named by its end year (see season.ts). */
         seasonYear: d
             .integer()

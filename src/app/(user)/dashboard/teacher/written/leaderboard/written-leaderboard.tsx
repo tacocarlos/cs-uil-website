@@ -21,9 +21,21 @@ import {
     LeaderboardPagination,
     usePagination,
 } from "~/app/leaderboard/pagination";
+import { Download, FileText } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "~/components/ui/button";
+import {
+    competitionLabel,
+    type WrittenCompetition,
+} from "~/lib/written/competitions";
 import { currentSeasonYear } from "~/lib/written/season";
 import { api } from "~/trpc/react";
 import { FormerBadge, IncludeFormerCheckbox } from "../former";
+import {
+    downloadWrittenCsv,
+    downloadWrittenPdf,
+    type WrittenReportView,
+} from "./report";
 
 function getYearParam(
     yearParam: "all" | "current" | number | string | undefined,
@@ -38,7 +50,7 @@ function getYearParam(
 export default function WrittenLeaderboard() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCompetition, setSelectedCompetition] = useState<
-        string | "all" | undefined
+        WrittenCompetition | "all" | undefined
     >(undefined);
     const [selectedYear, setSelectedYear] = useState<
         number | string | "all" | "current" | undefined
@@ -84,7 +96,7 @@ export default function WrittenLeaderboard() {
     // Fetch leaderboard data based on selected competition and year
     const { data: scores, isLoading } = api.written.getLeaderboard.useQuery(
         {
-            competition: competitionParam as any,
+            competition: competitionParam,
             year: yearParam,
             includeFormer,
         },
@@ -108,6 +120,22 @@ export default function WrittenLeaderboard() {
     // Back to the first page when another year or competition loads.
     const { setPage } = pagination;
     useEffect(() => setPage(0), [scores, setPage]);
+
+    // What the filters and search show (every page), for the downloads.
+    const { data: school } = api.school.getMine.useQuery();
+    const reportView: WrittenReportView = {
+        school: school?.name,
+        season: yearParam?.toString() ?? "All seasons",
+        competition:
+            competitionParam === undefined
+                ? "All competitions"
+                : competitionLabel(competitionParam),
+        includeFormer,
+        searchTerm,
+        rows: filteredData,
+    };
+    const canDownload = !isLoading && selectedCompetition !== undefined;
+    const [pdfPending, setPdfPending] = useState(false);
 
     return (
         <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-sm">
@@ -143,7 +171,11 @@ export default function WrittenLeaderboard() {
                     </label>
                     <Select
                         value={selectedCompetition}
-                        onValueChange={setSelectedCompetition}
+                        onValueChange={(value) =>
+                            setSelectedCompetition(
+                                value as WrittenCompetition | "all",
+                            )
+                        }
                     >
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select a competition" />
@@ -154,7 +186,7 @@ export default function WrittenLeaderboard() {
                             </SelectItem>
                             {competitions?.map((comp) => (
                                 <SelectItem key={comp} value={comp}>
-                                    {comp}
+                                    {competitionLabel(comp)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -179,12 +211,41 @@ export default function WrittenLeaderboard() {
                         setSelectedCompetition(undefined);
                     }}
                 />
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canDownload}
+                        onClick={() => downloadWrittenCsv(reportView)}
+                    >
+                        <Download className="mr-1.5 h-4 w-4" />
+                        Export CSV
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canDownload || pdfPending}
+                        onClick={async () => {
+                            setPdfPending(true);
+                            try {
+                                await downloadWrittenPdf(reportView);
+                            } catch {
+                                toast.error("Couldn't generate the report.");
+                            } finally {
+                                setPdfPending(false);
+                            }
+                        }}
+                    >
+                        <FileText className="mr-1.5 h-4 w-4" />
+                        {pdfPending ? "Generating…" : "PDF report"}
+                    </Button>
+                </div>
             </div>
 
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-[50px]">Rank</TableHead>
+                        <TableHead className="w-12.5">Rank</TableHead>
                         <TableHead>Student</TableHead>
                         <TableHead className="text-right">Score</TableHead>
                     </TableRow>
