@@ -104,7 +104,9 @@ export async function ensureDefaultOrganization(): Promise<void> {
 }
 
 /** Whether the user teaches (owns or administers) their active school. */
-export function isSchoolTeacher(membership: ActiveMembership | null): boolean {
+export function isSchoolTeacher(
+    membership: ActiveMembership | null,
+): membership is ActiveMembership {
     return isTeacherRole(membership?.role);
 }
 

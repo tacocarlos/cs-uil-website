@@ -1,13 +1,10 @@
-import { redirect } from "next/navigation";
-import { signInUrl } from "~/lib/auth/redirect-utils";
-import { getCurrentMembership } from "~/server/current-membership";
+import { requireSession } from "~/server/current-membership";
 import { MyRequests } from "./my-requests";
 import { RequestForm } from "./request-form";
 
 /** Where signed-in users suggest features or report bugs. */
 export default async function RequestPage() {
-    const { session } = await getCurrentMembership();
-    if (!session) redirect(signInUrl("/request"));
+    await requireSession("/request");
 
     return (
         <main className="min-h-screen bg-gray-50 px-4 pt-24 pb-12">

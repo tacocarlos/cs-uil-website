@@ -1,9 +1,7 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { signInUrl } from "~/lib/auth/redirect-utils";
 import { isSiteAdmin } from "~/lib/auth/roles";
-import { getCurrentMembership } from "~/server/current-membership";
+import { currentPathname, requireSession } from "~/server/current-membership";
 import { isSchoolTeacher } from "~/server/organizations";
 
 /**
@@ -16,13 +14,9 @@ export default async function TeacherLayout({
 }: {
     children: ReactNode;
 }) {
-    const { session, membership } = await getCurrentMembership();
+    const { session, membership } = await requireSession("/dashboard/teacher");
 
-    const headersList = await headers();
-    const pathname = headersList.get("x-pathname") ?? "/dashboard/teacher";
-
-    if (!session) redirect(signInUrl(pathname));
-
+    const pathname = await currentPathname("/dashboard/teacher");
     const siteAdminOnContests =
         isSiteAdmin(session.user.role) &&
         pathname.startsWith("/dashboard/teacher/contests");

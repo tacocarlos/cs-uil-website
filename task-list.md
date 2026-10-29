@@ -161,7 +161,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
 - [x] **7. "User's current schools" query**: written 4 times (`schoolsOf`
       and `schoolIdsOf` in `server/contests.ts`, `school.leave`, the session
       hook in root `auth.ts`).
-- [ ] **8. Auth guards**: 5 layouts (sandbox, past-problem, contest,
+- [x] **8. Auth guards**: 5 layouts (sandbox, past-problem, contest,
       admin, teacher) repeat "session or redirect to sign-in", 3 of them via
       `auth.api.getSession` instead of the cached `getCurrentMembership`.
       `teacher/export/[kind]/route.ts` re-implements the teacher check. Add
