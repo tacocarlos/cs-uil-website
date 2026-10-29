@@ -167,7 +167,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
       `teacher/export/[kind]/route.ts` re-implements the teacher check. Add
       `requireSession(fallbackPath)` and `requireTeacher()` to
       `current-membership.ts`.
-- [ ] **9. Navbar links**: desktop and mobile lists have drifted apart
+- [x] **9. Navbar links**: desktop and mobile lists have drifted apart
       (desktop has Past Problems and calls the editor "Online Editor";
       mobile has Timeline and Skill Tree and calls it "Sandbox"). Use one
       `NAV_LINKS` array for both.

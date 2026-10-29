@@ -61,127 +61,113 @@ function CloseButtonSVG() {
     );
 }
 
+// ── Links ─────────────────────────────────────────────────────────────────────
+
+type NavLink = { href: string; label: string };
+
+/** Where the Account menu goes among the links (desktop only). */
+const ACCOUNT_MENU = "account";
+
+/** Top-level links, shared by the desktop and mobile menus. */
+const NAV_LINKS: (NavLink | typeof ACCOUNT_MENU)[] = [
+    { href: "/calculator", label: "TI 84 Plus CE Online" },
+    ACCOUNT_MENU,
+    { href: "/resources", label: "Resources" },
+    { href: "/resources/past-problem", label: "Programming Problems" },
+    { href: "/sandbox", label: "Online Editor" },
+    { href: "/leaderboard", label: "Leaderboard" },
+];
+
+/** The signed-in user (if any) and the links in their Account menu. */
+function useAccount() {
+    const { data: session } = useSession();
+    const { data: activeMember } = useActiveMember();
+
+    const links: NavLink[] = isTeacherRole(activeMember?.role)
+        ? [
+              { href: "/dashboard/teacher", label: "Teacher Dashboard" },
+              { href: "/dashboard/student", label: "Student Dashboard" },
+          ]
+        : [{ href: "/dashboard", label: "Dashboard" }];
+    if (isSiteAdmin(session?.user.role)) {
+        links.push({ href: "/admin", label: "Site Admin" });
+    }
+    if (session) links.push({ href: "/join", label: "Join a School" });
+
+    return { session, links };
+}
+
+function UserIcon({ image, size }: { image?: string | null; size: number }) {
+    return image ? (
+        <Image
+            src={image}
+            width={size}
+            height={size}
+            alt="User icon"
+            className="rounded-full"
+        />
+    ) : (
+        <CircleUserRound style={{ width: size, height: size }} />
+    );
+}
+
 // ── Desktop nav ───────────────────────────────────────────────────────────────
 
 function DesktopNavbar() {
-    const { data: session } = useSession();
-    const haveUserImageURL =
-        session?.user.image != null || session?.user.image != undefined;
-    const user = session?.user;
-    const { data: activeMember } = useActiveMember();
-    const isTeacher = isTeacherRole(activeMember?.role);
+    const { session, links: accountLinks } = useAccount();
     const pathname = usePathname();
 
     return (
         <NavigationMenu viewport={false} className="text-foreground space-x-3">
             <NavigationMenuList>
-                <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
-                    >
-                        <Link href="/calculator">TI 84 Plus CE Online</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuTrigger>Account</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                        <ul className="grid w-[200px] gap-4">
-                            <li>
-                                {isTeacher ? (
-                                    <>
+                {NAV_LINKS.map((item) =>
+                    item === ACCOUNT_MENU ? (
+                        <NavigationMenuItem key={item}>
+                            <NavigationMenuTrigger>
+                                Account
+                            </NavigationMenuTrigger>
+                            <NavigationMenuContent>
+                                <ul className="grid w-[200px] gap-4">
+                                    <li>
+                                        {accountLinks.map(({ href, label }) => (
+                                            <NavigationMenuLink
+                                                key={href}
+                                                asChild
+                                            >
+                                                <Link href={href}>{label}</Link>
+                                            </NavigationMenuLink>
+                                        ))}
+                                        <SchoolSwitcher
+                                            labelClassName="px-2 pt-2 pb-1 text-xs font-semibold tracking-wider text-gray-400 uppercase"
+                                            itemClassName="hover:bg-accent rounded-sm px-2 py-1.5 text-sm disabled:opacity-50"
+                                        />
                                         <NavigationMenuLink asChild>
-                                            <Link href="/dashboard/teacher">
-                                                Teacher Dashboard
+                                            <Link
+                                                href="/dashboard"
+                                                className="flex-row items-center gap-2"
+                                            >
+                                                <UserIcon
+                                                    image={session?.user.image}
+                                                    size={25}
+                                                />
+                                                Account Settings
                                             </Link>
                                         </NavigationMenuLink>
-                                        <NavigationMenuLink asChild>
-                                            <Link href="/dashboard/student">
-                                                Student Dashboard
-                                            </Link>
-                                        </NavigationMenuLink>
-                                    </>
-                                ) : (
-                                    <NavigationMenuLink asChild>
-                                        <Link href="/dashboard">Dashboard</Link>
-                                    </NavigationMenuLink>
-                                )}
-                                {isSiteAdmin(user?.role) && (
-                                    <NavigationMenuLink asChild>
-                                        <Link href="/admin">Site Admin</Link>
-                                    </NavigationMenuLink>
-                                )}
-                                {session && (
-                                    <NavigationMenuLink asChild>
-                                        <Link href="/join">Join a School</Link>
-                                    </NavigationMenuLink>
-                                )}
-                                <SchoolSwitcher
-                                    labelClassName="px-2 pt-2 pb-1 text-xs font-semibold tracking-wider text-gray-400 uppercase"
-                                    itemClassName="hover:bg-accent rounded-sm px-2 py-1.5 text-sm disabled:opacity-50"
-                                />
-                                <NavigationMenuLink asChild>
-                                    <Link
-                                        href="/dashboard"
-                                        className="flex-row items-center gap-2"
-                                    >
-                                        {haveUserImageURL ? (
-                                            <Image
-                                                src={session!.user.image!}
-                                                width={25}
-                                                height={25}
-                                                alt="User icon"
-                                                className="rounded-xl"
-                                            />
-                                        ) : (
-                                            <CircleUserRound />
-                                        )}
-                                        Account Settings
-                                    </Link>
-                                </NavigationMenuLink>
-                            </li>
-                        </ul>
-                    </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
-                    >
-                        <Link href="/resources">Resources</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
-                    >
-                        <Link href="/resources/past-problem">
-                            Programming Problems
-                        </Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
-                    >
-                        <Link href="/sandbox">Online Editor</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                    <NavigationMenuLink
-                        asChild
-                        className={navigationMenuTriggerStyle()}
-                    >
-                        <Link href="/leaderboard">Leaderboard</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
+                                    </li>
+                                </ul>
+                            </NavigationMenuContent>
+                        </NavigationMenuItem>
+                    ) : (
+                        <NavigationMenuItem key={item.href}>
+                            <NavigationMenuLink
+                                asChild
+                                className={navigationMenuTriggerStyle()}
+                            >
+                                <Link href={item.href}>{item.label}</Link>
+                            </NavigationMenuLink>
+                        </NavigationMenuItem>
+                    ),
+                )}
 
                 {session ? (
                     <NavigationMenuItem>
@@ -212,13 +198,8 @@ function DesktopNavbar() {
 // ── Mobile menu ───────────────────────────────────────────────────────────────
 
 function MobileMenu({ onClose }: { onClose: () => void }) {
-    const { data: session } = useSession();
-    const user = session?.user;
-    const { data: activeMember } = useActiveMember();
-    const isTeacher = isTeacherRole(activeMember?.role);
+    const { session, links: accountLinks } = useAccount();
     const pathname = usePathname();
-    const haveUserImageURL =
-        session?.user.image != null || session?.user.image != undefined;
 
     const link =
         "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-100";
@@ -228,73 +209,35 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     return (
         <div className="mt-2 rounded-xl border bg-white shadow-lg">
             <nav className="flex flex-col p-2">
-                {/* Top-level links */}
-                <Link href="/calculator" className={link} onClick={onClose}>
-                    TI 84 Plus CE Online
-                </Link>
-                <Link href="/timeline" className={link} onClick={onClose}>
-                    Timeline
-                </Link>
-                <Link href="/resources" className={link} onClick={onClose}>
-                    Resources
-                </Link>
-                <Link
-                    href="/resources/skill-tree"
-                    className={link}
-                    onClick={onClose}
-                >
-                    Skill Tree
-                </Link>
-                <Link href="/sandbox" className={link} onClick={onClose}>
-                    Sandbox
-                </Link>
-
-                <Link href="/leaderboard" className={link} onClick={onClose}>
-                    Leaderboard
-                </Link>
+                {/* Top-level links; the account section comes last */}
+                {NAV_LINKS.map(
+                    (item) =>
+                        item !== ACCOUNT_MENU && (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={link}
+                                onClick={onClose}
+                            >
+                                {item.label}
+                            </Link>
+                        ),
+                )}
 
                 {/* Account */}
                 <p className={sectionLabel}>Account</p>
                 {session ? (
                     <>
-                        {isTeacher ? (
-                            <>
-                                <Link
-                                    href="/dashboard/teacher"
-                                    className={link}
-                                    onClick={onClose}
-                                >
-                                    Teacher Dashboard
-                                </Link>
-                                <Link
-                                    href="/dashboard/student"
-                                    className={link}
-                                    onClick={onClose}
-                                >
-                                    Student Dashboard
-                                </Link>
-                            </>
-                        ) : (
+                        {accountLinks.map(({ href, label }) => (
                             <Link
-                                href="/dashboard"
+                                key={href}
+                                href={href}
                                 className={link}
                                 onClick={onClose}
                             >
-                                Dashboard
+                                {label}
                             </Link>
-                        )}
-                        {isSiteAdmin(user?.role) && (
-                            <Link
-                                href="/admin"
-                                className={link}
-                                onClick={onClose}
-                            >
-                                Site Admin
-                            </Link>
-                        )}
-                        <Link href="/join" className={link} onClick={onClose}>
-                            Join a School
-                        </Link>
+                        ))}
                         <SchoolSwitcher
                             labelClassName={sectionLabel}
                             itemClassName={link}
@@ -305,17 +248,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                             className={link}
                             onClick={onClose}
                         >
-                            {haveUserImageURL ? (
-                                <Image
-                                    src={session.user.image!}
-                                    width={20}
-                                    height={20}
-                                    alt="User icon"
-                                    className="rounded-full"
-                                />
-                            ) : (
-                                <CircleUserRound className="h-5 w-5" />
-                            )}
+                            <UserIcon image={session.user.image} size={20} />
                             Account Settings
                         </Link>
 
