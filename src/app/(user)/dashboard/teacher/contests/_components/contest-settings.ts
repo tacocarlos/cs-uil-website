@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { DEFAULT_PENALTY_POINTS } from "~/lib/contest/scoring";
 import type {
     ContestVisibility,
     ScoringMode,
@@ -34,7 +35,7 @@ export const EMPTY_CONTEST_SETTINGS: ContestSettings = {
     startsAt: "",
     endsAt: "",
     scoringMode: "simple",
-    penaltyPoints: 20,
+    penaltyPoints: DEFAULT_PENALTY_POINTS,
     visibility: "school",
     invitedSchools: [],
 };

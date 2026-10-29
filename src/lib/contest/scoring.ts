@@ -3,6 +3,9 @@ import type { ScoringMode } from "~/server/db/schema/contest";
 
 export type { ScoringMode };
 
+/** Points deducted per wrong attempt in penalty mode, unless set. */
+export const DEFAULT_PENALTY_POINTS = 20;
+
 /**
  * Points for a contest submission.
  * - simple: an accepted submission earns full points.

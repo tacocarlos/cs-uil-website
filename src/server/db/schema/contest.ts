@@ -4,6 +4,7 @@ import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
 import { organization } from "./organization";
 import { randomUUID } from "crypto";
+import { DEFAULT_PENALTY_POINTS } from "~/lib/contest/scoring";
 import { CONTEST_STATUSES } from "~/lib/contest/status";
 import { DEFAULT_MAX_POINTS } from "~/lib/problems/scoring";
 import {
@@ -32,7 +33,7 @@ export const contest = createTable(
             .notNull()
             .default("simple"),
         /** Points deducted per wrong attempt in penalty mode */
-        penaltyPoints: d.integer().notNull().default(20),
+        penaltyPoints: d.integer().notNull().default(DEFAULT_PENALTY_POINTS),
         createdAt: d.timestamp().defaultNow().notNull(),
         /**
          * The hosting school, whose teachers manage the contest (site admins
