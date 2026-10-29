@@ -28,7 +28,7 @@ import {
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
-import { schoolsOf } from "~/server/organizations";
+import { requireSchool, schoolsOf } from "~/server/organizations";
 import { generateJoinCode, normalizeJoinCode } from "~/lib/join-codes";
 import { CONFERENCES, MAX_DISTRICT, REGIONS } from "~/lib/schools";
 
@@ -58,10 +58,7 @@ async function setClassification(
         .set(classification)
         .where(eq(organization.id, organizationId))
         .returning(schoolColumns);
-    if (!school) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "No such school" });
-    }
-    return school;
+    return requireSchool(school);
 }
 
 /** "Groveton High School" → "groveton-high-school-3f9a2c". */
@@ -378,7 +375,7 @@ export const schoolRouter = createTRPCRouter({
             }),
         )
         .mutation(async ({ input }) => {
-            const [[school], [teacher]] = await Promise.all([
+            const [[found], [teacher]] = await Promise.all([
                 db
                     .select({ id: organization.id, name: organization.name })
                     .from(organization)
@@ -395,12 +392,7 @@ export const schoolRouter = createTRPCRouter({
                     )
                     .limit(1),
             ]);
-            if (!school) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "No such school",
-                });
-            }
+            const school = requireSchool(found);
             if (!teacher) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
@@ -505,13 +497,7 @@ export const schoolRouter = createTRPCRouter({
                 .set({ name: input.name })
                 .where(eq(organization.id, input.organizationId))
                 .returning(schoolColumns);
-            if (!school) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "No such school",
-                });
-            }
-            return school;
+            return requireSchool(school);
         }),
 
     /**
@@ -529,16 +515,10 @@ export const schoolRouter = createTRPCRouter({
                     message: `${DEFAULT_ORGANIZATION.name} can't be deleted.`,
                 });
             }
-            const deleted = await db
+            const [deleted] = await db
                 .delete(organization)
                 .where(eq(organization.id, input.organizationId))
                 .returning({ name: organization.name });
-            if (deleted.length === 0) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "No such school",
-                });
-            }
-            return deleted[0]!;
+            return requireSchool(deleted);
         }),
 });

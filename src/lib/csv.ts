@@ -34,3 +34,14 @@ export function toCsv(header: string[], rows: CsvCell[][]): string {
         .join("\r\n")
         .concat("\r\n");
 }
+
+/** A CSV column: its header and how to get its value from a row. */
+export type CsvColumn<T> = { header: string; value: (row: T) => CsvCell };
+
+/** A CSV document with one line per row, laid out by `columns`. */
+export function columnsToCsv<T>(columns: CsvColumn<T>[], rows: T[]): string {
+    return toCsv(
+        columns.map((c) => c.header),
+        rows.map((row) => columns.map((c) => c.value(row))),
+    );
+}

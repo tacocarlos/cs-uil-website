@@ -183,14 +183,14 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
 
 ### Low impact / cleanup
 
-- [ ] Delete the dead stub `src/app/api/run-problem.ts/route.tsx`.
-- [ ] Remove the debug `console.log`s in `leaderboard/page.tsx`, and the
+- [x] Delete the dead stub `src/app/api/run-problem.ts/route.tsx`.
+- [x] Remove the debug `console.log`s in `leaderboard/page.tsx`, and the
       redundant `accepted` re-check after the query already filters on it.
-- [ ] `judge0-status.tsx` sums the worker totals twice.
-- [ ] The tab class helper is repeated in `scope-tabs.tsx` and `kind-tabs.tsx`.
-- [ ] CSV exports (`server/exports.ts`, written `report.ts`): keep
+- [x] `judge0-status.tsx` sums the worker totals twice.
+- [x] The tab class helper is repeated in `scope-tabs.tsx` and `kind-tabs.tsx`.
+- [x] CSV exports (`server/exports.ts`, written `report.ts`): keep
       headers and values together as `{ header, value }[]` columns.
-- [ ] "No such school" `NOT_FOUND` is thrown 4 times in `school.ts` and
+- [x] "No such school" `NOT_FOUND` is thrown 4 times in `school.ts` and
       `admin.ts`.
 
 Suggested order: #1–#3 first (most files, and #3 closes the

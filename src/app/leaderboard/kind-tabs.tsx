@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cn } from "~/lib/utils";
+import { tabClass } from "./tab-class";
 
 const KINDS = [
     { path: "/leaderboard", label: "Programming" },
@@ -14,11 +14,9 @@ export function LeaderboardKindTabs({ path }: { path: string }) {
                 <Link
                     key={kind.path}
                     href={kind.path}
-                    className={cn(
-                        "rounded-md px-4 py-1.5 text-sm font-semibold",
-                        path === kind.path
-                            ? "bg-white text-black"
-                            : "text-white hover:bg-white/20",
+                    className={tabClass(
+                        path === kind.path,
+                        "px-4 py-1.5 font-semibold",
                     )}
                 >
                     {kind.label}

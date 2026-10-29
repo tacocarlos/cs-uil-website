@@ -1,5 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
-import { toCsv } from "~/lib/csv";
+import { columnsToCsv, type CsvColumn } from "~/lib/csv";
 import { getAllCompetitions, getAllMinimalProblems } from "~/lib/api/lunaghs";
 import { fetchJudge0Languages } from "~/lib/problems/execute/judge0";
 import { FALLBACK_LANGUAGES } from "~/components/problem-workspace/languages";
@@ -27,6 +27,17 @@ function schoolMember(userId: typeof user.id, organizationId: string) {
     );
 }
 
+/** The first columns of every export: who the row is about. */
+const studentColumns: CsvColumn<{
+    name: string;
+    email: string;
+    formerAt: Date | null;
+}>[] = [
+    { header: "Student", value: (r) => r.name },
+    { header: "Email", value: (r) => r.email },
+    { header: "Former student", value: (r) => r.formerAt !== null },
+];
+
 /**
  * Every written test score of the school's students, current and former,
  * whatever their leaderboard privacy setting (teachers see all of their
@@ -49,27 +60,19 @@ export async function writtenScoresCsv(organizationId: string) {
         .innerJoin(member, schoolMember(user.id, organizationId))
         .orderBy(asc(user.name), asc(writtenTests.takenAt));
 
-    return toCsv(
+    return columnsToCsv<(typeof rows)[number]>(
         [
-            "Student",
-            "Email",
-            "Former student",
-            "Competition",
-            "Season",
-            "Date taken",
-            "Score",
-            "Accuracy",
+            ...studentColumns,
+            {
+                header: "Competition",
+                value: (r) => r.competition && competitionLabel(r.competition),
+            },
+            { header: "Season", value: (r) => r.seasonYear },
+            { header: "Date taken", value: (r) => r.takenAt },
+            { header: "Score", value: (r) => r.score },
+            { header: "Accuracy", value: (r) => r.accuracy },
         ],
-        rows.map((r) => [
-            r.name,
-            r.email,
-            r.formerAt !== null,
-            r.competition && competitionLabel(r.competition),
-            r.seasonYear,
-            r.takenAt,
-            r.score,
-            r.accuracy,
-        ]),
+        rows,
     );
 }
 
@@ -134,16 +137,17 @@ export async function programmingSubmissionsCsv(organizationId: string) {
 
     const problemById = new Map(problems.map((p) => [p.id, p]));
     const competitionById = new Map(competitions.map((c) => [c.id, c]));
-    // "District 2019"; blank if the problem API is unavailable.
-    function problemColumns(problemId: number) {
+    // Blank if the problem API is unavailable.
+    const problemName = (problemId: number) => problemById.get(problemId)?.name;
+    // e.g. "District 2019".
+    function competitionName(problemId: number) {
         const problem = problemById.get(problemId);
         const competition =
             problem && competitionById.get(problem.competition_id);
-        return [
-            problem?.name,
+        return (
             competition &&
-                `${COMPETITION_LEVEL_LABELS[competition.level]} ${competition.year}`,
-        ];
+            `${COMPETITION_LEVEL_LABELS[competition.level]} ${competition.year}`
+        );
     }
 
     const rows = [
@@ -165,35 +169,23 @@ export async function programmingSubmissionsCsv(organizationId: string) {
             a.submittedAt.getTime() - b.submittedAt.getTime(),
     );
 
-    return toCsv(
+    return columnsToCsv<(typeof rows)[number]>(
         [
-            "Student",
-            "Email",
-            "Former student",
-            "Source",
-            "Problem ID",
-            "Problem",
-            "Competition",
-            "Submitted at",
-            "Attempt",
-            "Accepted",
-            "Points",
-            "Max points",
-            "Language",
+            ...studentColumns,
+            { header: "Source", value: (r) => r.source },
+            { header: "Problem ID", value: (r) => r.problemId },
+            { header: "Problem", value: (r) => problemName(r.problemId) },
+            {
+                header: "Competition",
+                value: (r) => competitionName(r.problemId),
+            },
+            { header: "Submitted at", value: (r) => r.submittedAt },
+            { header: "Attempt", value: (r) => r.attempt },
+            { header: "Accepted", value: (r) => r.accepted === true },
+            { header: "Points", value: (r) => r.points },
+            { header: "Max points", value: (r) => r.maxPoints },
+            { header: "Language", value: (r) => r.language },
         ],
-        rows.map((r) => [
-            r.name,
-            r.email,
-            r.formerAt !== null,
-            r.source,
-            r.problemId,
-            ...problemColumns(r.problemId),
-            r.submittedAt,
-            r.attempt,
-            r.accepted === true,
-            r.points,
-            r.maxPoints,
-            r.language,
-        ]),
+        rows,
     );
 }
