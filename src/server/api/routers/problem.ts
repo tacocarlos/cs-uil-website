@@ -9,7 +9,7 @@ import {
 } from "~/lib/api/lunaghs";
 
 export const problemRouter = createTRPCRouter({
-    /** Lightweight list — only id, name, number, competition_id. Use this in
+    /** Lightweight list — only id, name, number, competitionId. Use this in
      *  client components instead of calling getAllMinimalProblems() directly,
      *  which would fire from the browser and hit CORS. */
     getMinimalProblems: publicProcedure.query(async () => {
@@ -38,8 +38,8 @@ export const problemRouter = createTRPCRouter({
             ]);
             if (!problem) return null;
             const [sampleInput, sampleOutput] = await Promise.all([
-                fetchUrlContent(problem.student_data_url),
-                fetchUrlContent(problem.student_output_url),
+                fetchUrlContent(problem.studentDataUrl),
+                fetchUrlContent(problem.studentOutputUrl),
             ]);
             return {
                 markdown: markdown ?? "",

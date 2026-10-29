@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
-import type { ApiMinimalProblem } from "~/lib/api/lunaghs";
+import type { ShortProblem } from "~/lib/api/lunaghs";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
@@ -22,14 +22,14 @@ export function ProblemSearchList({
     label,
     listClassName,
 }: {
-    problems: ApiMinimalProblem[];
+    problems: ShortProblem[];
     isLoading: boolean;
     excludeIds: Set<number>;
     search: string;
     onSearchChange: (search: string) => void;
-    onSelect: (problem: ApiMinimalProblem) => void;
+    onSelect: (problem: ShortProblem) => void;
     selectedId?: number;
-    renderAction?: (problem: ApiMinimalProblem) => ReactNode;
+    renderAction?: (problem: ShortProblem) => ReactNode;
     label?: string;
     /** Sets the list's height, e.g. "h-72". */
     listClassName?: string;
