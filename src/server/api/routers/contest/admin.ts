@@ -13,10 +13,24 @@ import { organization } from "~/server/db/schema/organization";
 import { requireManagedContest, type ContestManager } from "~/server/contests";
 import { canTransition, CONTEST_STATUSES } from "~/lib/contest/status";
 
-const scoringMode = z.enum(contest.scoringMode.enumValues);
-const visibility = z.enum(CONTEST_VISIBILITIES);
-/** Schools invited to an invite-only contest (replaces the previous list). */
-const invitedSchoolIds = z.array(z.string()).max(500);
+/**
+ * A contest's settings, as `create` and `update` take them. No defaults
+ * here: `.partial()` would still apply them, so updates would reset
+ * omitted fields.
+ */
+const contestSettings = z.object({
+    name: z.string().min(1),
+    description: z.string(),
+    startsAt: z.string(),
+    endsAt: z.string(),
+    scoringMode: z.enum(contest.scoringMode.enumValues),
+    penaltyPoints: z.number().int().min(0),
+    visibility: z.enum(CONTEST_VISIBILITIES),
+    /** Schools invited to an invite-only contest (replaces the previous list). */
+    invitedSchoolIds: z.array(z.string()).max(500),
+    /** Site admins only: the host school (any school). */
+    organizationId: z.string(),
+});
 
 /**
  * The host school a contest should have, given who is asking. Global
@@ -133,24 +147,26 @@ async function requireManagedProblem(
 export const contestAdmin = {
     create: contestManagerProcedure
         .input(
-            z.object({
-                name: z.string().min(1),
-                description: z.string().default(""),
-                startsAt: z.string(),
-                endsAt: z.string(),
-                scoringMode,
-                penaltyPoints: z.number().int().min(0).optional(),
-                visibility: visibility.default("school"),
-                invitedSchoolIds: invitedSchoolIds.default([]),
-                /** Site admins only: the host school (any school). */
-                organizationId: z.string().optional(),
+            // Omitted description and penalty points take the table's
+            // defaults.
+            contestSettings.partial({
+                description: true,
+                penaltyPoints: true,
+                visibility: true,
+                invitedSchoolIds: true,
+                organizationId: true,
             }),
         )
         .mutation(async ({ ctx, input }) => {
-            const { invitedSchoolIds, organizationId, ...fields } = input;
+            const {
+                visibility = "school",
+                invitedSchoolIds = [],
+                organizationId,
+                ...fields
+            } = input;
             const host = await resolveHost(
                 ctx.manager,
-                input.visibility,
+                visibility,
                 organizationId,
                 null,
             );
@@ -158,13 +174,14 @@ export const contestAdmin = {
                 .insert(contest)
                 .values({
                     ...fields,
+                    visibility,
                     startsAt: new Date(input.startsAt),
                     endsAt: new Date(input.endsAt),
                     createdBy: ctx.user.id,
                     organizationId: host,
                 })
                 .returning();
-            if (input.visibility === "invite") {
+            if (visibility === "invite") {
                 await setInvites(row!.id, host, invitedSchoolIds);
             }
             return row!;
@@ -172,19 +189,8 @@ export const contestAdmin = {
 
     update: contestManagerProcedure
         .input(
-            z.object({
-                contestId: z.number().int(),
-                name: z.string().min(1).optional(),
-                description: z.string().optional(),
-                startsAt: z.string().optional(),
-                endsAt: z.string().optional(),
-                scoringMode: scoringMode.optional(),
-                penaltyPoints: z.number().int().min(0).optional(),
-                visibility: visibility.optional(),
-                invitedSchoolIds: invitedSchoolIds.optional(),
-                /** Site admins only: move the contest to another host. */
-                organizationId: z.string().optional(),
-            }),
+            // Omitted fields are left unchanged.
+            contestSettings.partial().extend({ contestId: z.number().int() }),
         )
         .mutation(async ({ ctx, input }) => {
             const {

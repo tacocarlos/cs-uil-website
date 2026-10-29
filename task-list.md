@@ -171,7 +171,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
       (desktop has Past Problems and calls the editor "Online Editor";
       mobile has Timeline and Skill Tree and calls it "Sandbox"). Use one
       `NAV_LINKS` array for both.
-- [ ] **10. Contest input schemas**: `create` and `update` in
+- [x] **10. Contest input schemas**: `create` and `update` in
       `routers/contest/admin.ts` repeat the same fields; define once and use
       `.partial()`. The `penaltyPoints: 20` default is repeated in the schema
       and `contest-settings.ts`.
