@@ -36,7 +36,7 @@ type LeaderboardEntry = {
 
 export type ProblemLeaderboardData = {
     id: number;
-    competition_id: number;
+    competitionId: number;
     name: string;
 };
 
@@ -108,7 +108,7 @@ function SolvedProblemsDialog({
                                     <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
                                     <CompetitionBadge
                                         competition={competitions.get(
-                                            problem.competition_id,
+                                            problem.competitionId,
                                         )}
                                     />
                                     {problem.name}

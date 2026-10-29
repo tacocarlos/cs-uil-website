@@ -1,11 +1,13 @@
 /**
- * Fixtures mirror the live api.lunaghs.dev response shapes. If the API
- * changes shape, update the fixtures and these wrappers together.
+ * Fixtures mirror the live api.lunaghs.dev response shapes (snake_case
+ * JSON, which the SDK parses). If the API changes shape, update the
+ * fixtures alongside the SDK.
  */
 import { afterEach, describe, expect, test } from "vitest";
-import { type ApiProblem, getProblemById } from "./lunaghs";
+import { CompetitionLevelEnum } from "@tacocarlos/luna-cs-uil";
+import { competitionLevel, getProblemById } from "./lunaghs";
 
-const problem: ApiProblem = {
+const problemJson = {
     id: 1,
     competition: 1,
     createdAt: "2026-04-15T19:30:52.442Z",
@@ -21,9 +23,14 @@ const problem: ApiProblem = {
 };
 
 const realFetch = globalThis.fetch;
+let requests: { url: string; init?: RequestInit }[] = [];
 
 function stubFetch(respond: () => Response | Promise<Response>) {
-    globalThis.fetch = (async () => respond()) as unknown as typeof fetch;
+    requests = [];
+    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+        requests.push({ url, init });
+        return respond();
+    }) as unknown as typeof fetch;
 }
 
 afterEach(() => {
@@ -31,23 +38,36 @@ afterEach(() => {
 });
 
 describe("getProblemById", () => {
-    test("unwraps the { success, problem } envelope", async () => {
-        stubFetch(() => Response.json({ success: true, problem }));
+    test("parses the problem", async () => {
+        stubFetch(() => Response.json(problemJson));
 
         const result = await getProblemById(1);
 
-        expect(result).toEqual(problem);
-        // The past-problem page joins on this field to find the competition.
-        expect(result?.competition).toBe(1);
+        expect(requests[0]?.url).toBe("https://api.lunaghs.dev/api/problems/1");
+        expect(result).toMatchObject({
+            id: 1,
+            name: "Abby",
+            // The past-problem page looks the competition up by this field.
+            competition: 1,
+            studentDataUrl: null,
+            testOutputUrl: "https://example.com/abby-test.out",
+            createdAt: new Date("2026-04-15T19:30:52.442Z"),
+        });
     });
 
-    test("returns null when the envelope has no problem", async () => {
-        stubFetch(() => Response.json({ success: false, problem: null }));
-        expect(await getProblemById(1)).toBeNull();
+    test("caches the request with Next.js", async () => {
+        stubFetch(() => Response.json(problemJson));
+        await getProblemById(1);
+        expect(requests[0]?.init?.next?.revalidate).toBe(3600);
     });
 
-    test("returns null on a non-OK response", async () => {
-        stubFetch(() => new Response("Not found", { status: 404 }));
+    test("returns null on a 404", async () => {
+        stubFetch(() =>
+            Response.json(
+                { message: "Problem 999 not found" },
+                { status: 404 },
+            ),
+        );
         expect(await getProblemById(999)).toBeNull();
     });
 
@@ -56,5 +76,31 @@ describe("getProblemById", () => {
             throw new Error("network down");
         });
         expect(await getProblemById(1)).toBeNull();
+    });
+});
+
+describe("competitionLevel", () => {
+    const competition = {
+        id: 1,
+        createdAt: null,
+        updatedAt: null,
+        year: 2026,
+        studentPacketUrl: "",
+        dataZipUrl: "",
+    };
+
+    test("is the competition's level", () => {
+        expect(
+            competitionLevel({
+                ...competition,
+                level: CompetitionLevelEnum.District,
+            }),
+        ).toBe("district");
+    });
+
+    test("counts competitions without a level as custom", () => {
+        expect(competitionLevel({ ...competition, level: null })).toBe(
+            "custom",
+        );
     });
 });

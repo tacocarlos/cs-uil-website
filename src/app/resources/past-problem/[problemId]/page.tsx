@@ -1,11 +1,6 @@
 import { redirect } from "next/navigation";
-import {
-    getProblemById,
-    getAllCompetitions,
-    toAppProblem,
-} from "~/lib/api/lunaghs";
+import { getAppProblem } from "~/lib/api/lunaghs";
 import PageCore from "./page-core";
-import type { Problem } from "~/server/db/schema/types";
 
 export default async function Page({
     params,
@@ -19,23 +14,11 @@ export default async function Page({
         redirect("/resources/past-problem/");
     }
 
-    const [apiProblem, competitions] = await Promise.all([
-        getProblemById(id),
-        getAllCompetitions(),
-    ]);
+    const problem = await getAppProblem(id);
 
-    if (!apiProblem) {
+    if (!problem) {
         redirect("/resources/past-problem/");
     }
-    const competition = competitions.find(
-        (c) => c.id === apiProblem.competition,
-    );
-
-    if (!competition) {
-        redirect("/resources/past-problem/");
-    }
-
-    const problem = (await toAppProblem(apiProblem, competition)) as Problem;
 
     return (
         <main>

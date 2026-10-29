@@ -1,6 +1,10 @@
 import { and, asc, eq } from "drizzle-orm";
 import { columnsToCsv, type CsvColumn } from "~/lib/csv";
-import { getAllCompetitions, getAllMinimalProblems } from "~/lib/api/lunaghs";
+import {
+    competitionLevel,
+    getAllCompetitions,
+    getAllMinimalProblems,
+} from "~/lib/api/lunaghs";
 import { fetchJudge0Languages } from "~/lib/problems/execute/judge0";
 import { FALLBACK_LANGUAGES } from "~/components/problem-workspace/languages";
 import { competitionLabel } from "~/lib/written/competitions";
@@ -143,10 +147,10 @@ export async function programmingSubmissionsCsv(organizationId: string) {
     function competitionName(problemId: number) {
         const problem = problemById.get(problemId);
         const competition =
-            problem && competitionById.get(problem.competition_id);
+            problem && competitionById.get(problem.competitionId);
         return (
             competition &&
-            `${COMPETITION_LEVEL_LABELS[competition.level]} ${competition.year}`
+            `${COMPETITION_LEVEL_LABELS[competitionLevel(competition)]} ${competition.year}`
         );
     }
 

@@ -1,68 +1,51 @@
 /**
- * API client for https://api.lunaghs.dev
+ * The app's access to https://api.lunaghs.dev, through the
+ * @tacocarlos/luna-cs-uil SDK.
  *
- * Provides typed wrappers around every endpoint and a helper that converts
- * API responses into the app-level Problem shape used throughout the UI.
+ * Wraps the SDK with Next.js caching and the app's error handling (lists
+ * come back empty and lookups null when the API is unavailable), and
+ * converts API problems into the app-level Problem shape used by the UI.
  */
 
+import {
+    LunaCsUilClient,
+    type Competition,
+    type Problem as ApiProblem,
+    type ShortProblem,
+} from "@tacocarlos/luna-cs-uil";
 import type { CompetitionLevel } from "~/lib/problems/competition-levels";
+import type { Problem } from "~/server/db/schema/types";
 
-const API_BASE = "https://api.lunaghs.dev";
+export type { ApiProblem, Competition, ShortProblem };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// API response types
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface ApiMinimalProblem {
-    id: number;
-    competition_id: number;
-    name: string;
-    number: number;
-}
-
-export interface ApiProblem {
-    id: number;
-    competition: number;
-    createdAt: string | null;
-    updatedAt: string | null;
-    name: string;
-    number: number;
-    problem_text_url: string | null;
-    student_data_url: string | null;
-    student_output_url: string | null;
-    test_data_url: string | null;
-    test_output_url: string | null;
-    solution: string;
-}
-
-export interface ApiCompetition {
-    id: number;
-    createdAt: string | null;
-    updatedAt: string | null;
-    level: CompetitionLevel;
-    year: number;
-    student_packet_url: string;
-    data_zip_url: string;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Low-level fetch helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Shared Next.js cache options – revalidate every hour so the site stays fresh
- * without hammering the API on every request.
- *
- * Next.js augments the global RequestInit with a `next` property, so this is
- * well-typed when the project includes `/// <reference types="next" />`.
- */
 /** Tag applied to every fetch so the entire problem API cache can be
  * invalidated on demand via `revalidateTag(LUNAGHS_CACHE_TAG)`. */
 export const LUNAGHS_CACHE_TAG = "lunaghs-problems-api";
 
+/**
+ * Revalidate every hour so the site stays fresh without hammering the API
+ * on every request. (Next.js adds `next` to RequestInit.)
+ */
 const CACHE_OPTS: RequestInit = {
     next: { revalidate: 3600, tags: [LUNAGHS_CACHE_TAG] },
 };
+
+// Looks up the global fetch on each call, so tests can stub it.
+const cachedFetch = (input: RequestInfo | URL, init?: RequestInit) =>
+    fetch(input, { ...init, ...CACHE_OPTS });
+
+// The cast only drops extras some runtimes add to fetch's type (Bun's
+// `preconnect`), which the SDK doesn't use.
+const client = new LunaCsUilClient({ fetch: cachedFetch as typeof fetch });
+
+/** `request`'s result, or `fallback` if it fails. */
+async function orElse<T, F>(request: Promise<T>, fallback: F) {
+    try {
+        return await request;
+    } catch {
+        return fallback;
+    }
+}
 
 /**
  * Safely fetch the text content at a URL.
@@ -97,123 +80,98 @@ function filenameFromUrl(url: string | null | undefined): string | null {
 // API endpoint wrappers
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getAllMinimalProblems(): Promise<ApiMinimalProblem[]> {
-    try {
-        const res = await fetch(`${API_BASE}/api/problems/`, CACHE_OPTS);
-        if (!res.ok) return [];
-        return (await res.json()) as ApiMinimalProblem[];
-    } catch {
-        return [];
-    }
+export function getAllMinimalProblems(): Promise<ShortProblem[]> {
+    return orElse(client.problems.getAllProblems(), []);
 }
 
-/** Returns null if the problem doesn't exist (404) or the request fails. */
-export async function getProblemById(id: number): Promise<ApiProblem | null> {
-    try {
-        const res = await fetch(`${API_BASE}/api/problems/${id}`, CACHE_OPTS);
-        if (!res.ok) return null;
-        // Unlike the other endpoints, this one wraps its payload.
-        const data = (await res.json()) as {
-            success: boolean;
-            problem: ApiProblem | null;
-        };
-        return data.problem;
-    } catch {
-        return null;
-    }
+/**
+ * The full problem, with the reference solution and hidden test URLs, so
+ * server-side only. Returns null if the problem doesn't exist (404) or the
+ * request fails.
+ */
+export function getProblemById(id: number): Promise<ApiProblem | null> {
+    return orElse(client.problems.getProblemById({ id }), null);
 }
 
-export async function getProblemMarkdown(id: number): Promise<string | null> {
-    try {
-        const res = await fetch(
-            `${API_BASE}/api/problems/${id}/markdown`,
-            CACHE_OPTS,
-        );
-        if (!res.ok) return null;
-        const data = (await res.json()) as { markdown: string };
-        return data.markdown;
-    } catch {
-        return null;
-    }
+/** The statement as markdown, with figure links resolved to their images. */
+export function getProblemMarkdown(id: number): Promise<string | null> {
+    return orElse(client.getProblemStatement(id), null);
 }
 
-export async function getAllCompetitions(): Promise<ApiCompetition[]> {
-    try {
-        const res = await fetch(`${API_BASE}/api/competition/`, CACHE_OPTS);
-        if (!res.ok) return [];
-        return (await res.json()) as ApiCompetition[];
-    } catch {
-        return [];
-    }
+export function getAllCompetitions(): Promise<Competition[]> {
+    return orElse(client.competitions.getAllCompetitions(), []);
 }
 
-export async function getCompetitionProblems(
+export function getCompetitionProblems(
     competitionId: number,
 ): Promise<ApiProblem[]> {
-    try {
-        const res = await fetch(
-            `${API_BASE}/api/competition/${competitionId}/problems`,
-            CACHE_OPTS,
-        );
-        if (!res.ok) return [];
-        return (await res.json()) as ApiProblem[];
-    } catch {
-        return [];
-    }
+    return orElse(
+        client.competitions.getCompetitionProblems({ id: competitionId }),
+        [],
+    );
 }
 
-export async function getCompetitionById(
+/** Returns null if the competition doesn't exist or the request fails. */
+export function getCompetitionById(
     competitionId: number,
-): Promise<ApiCompetition | undefined> {
-    try {
-        const res = await fetch(
-            `${API_BASE}/api/competition/${competitionId}`,
-            CACHE_OPTS,
-        );
-        if (!res.ok) return undefined;
-
-        return (await res.json()) as ApiCompetition;
-    } catch {
-        return undefined;
-    }
+): Promise<Competition | null> {
+    return orElse(
+        client.competitions.getCompetitionById({ id: competitionId }),
+        null,
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // App-level mapping helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** A competition's level; competitions without one count as custom. */
+export function competitionLevel(competition: Competition): CompetitionLevel {
+    return competition.level ?? "custom";
+}
+
 /**
  * Converts a raw API problem + its parent competition into the shape used
  * throughout the app (mirrors the old Drizzle `Problem` type).
  *
  * Fetches markdown, student sample data, and sample output in parallel.
- *
- * `testInput` and `testOutput` are intentionally left empty here – callers
- * that need them for grading should use `fetchUrlContent` directly with
- * `apiProblem.test_data_url` / `apiProblem.test_output_url`.
+ * Leaves out the solution and hidden test data, which only grading reads
+ * (server-side, from the ApiProblem).
  */
 export async function toAppProblem(
     apiProblem: ApiProblem,
-    competition: ApiCompetition,
-) {
+    competition: Competition,
+): Promise<Problem> {
     const [markdown, defaultInput, sampleOutput] = await Promise.all([
         getProblemMarkdown(apiProblem.id),
-        fetchUrlContent(apiProblem.student_data_url),
-        fetchUrlContent(apiProblem.student_output_url),
+        fetchUrlContent(apiProblem.studentDataUrl),
+        fetchUrlContent(apiProblem.studentOutputUrl),
     ]);
 
     return {
         id: apiProblem.id,
         problemName: apiProblem.name,
         competitionYear: competition.year,
-        competitionLevel: competition.level ?? "custom",
+        competitionLevel: competitionLevel(competition),
         problemText: markdown ?? "",
         programName: "",
         sampleOutput,
-        inputFileName: filenameFromUrl(apiProblem.student_data_url),
+        inputFileName: filenameFromUrl(apiProblem.studentDataUrl),
         defaultInputFile: defaultInput || null,
         enabled: true,
     };
+}
+
+/**
+ * The app-level problem with this ID, or null if the problem or its
+ * competition can't be found.
+ */
+export async function getAppProblem(id: number): Promise<Problem | null> {
+    const apiProblem = await getProblemById(id);
+    if (!apiProblem) return null;
+    const competition = await getCompetitionById(apiProblem.competition);
+    if (!competition) return null;
+    return toAppProblem(apiProblem, competition);
 }
 
 /**
@@ -229,9 +187,9 @@ export type PublicApiProblem = Pick<
     | "updatedAt"
     | "name"
     | "number"
-    | "problem_text_url"
-    | "student_data_url"
-    | "student_output_url"
+    | "problemTextUrl"
+    | "studentDataUrl"
+    | "studentOutputUrl"
 >;
 
 export function toPublicProblem(problem: ApiProblem): PublicApiProblem {
@@ -242,9 +200,9 @@ export function toPublicProblem(problem: ApiProblem): PublicApiProblem {
         updatedAt: problem.updatedAt,
         name: problem.name,
         number: problem.number,
-        problem_text_url: problem.problem_text_url,
-        student_data_url: problem.student_data_url,
-        student_output_url: problem.student_output_url,
+        problemTextUrl: problem.problemTextUrl,
+        studentDataUrl: problem.studentDataUrl,
+        studentOutputUrl: problem.studentOutputUrl,
     };
 }
 
@@ -255,7 +213,7 @@ export function toPublicProblem(problem: ApiProblem): PublicApiProblem {
  * Results are sorted by competition year descending, then by problem number
  * ascending within each competition.
  */
-export async function getAllAppProblems() {
+export async function getAllAppProblems(): Promise<Problem[]> {
     const competitions = await getAllCompetitions();
     if (competitions.length === 0) return [];
 

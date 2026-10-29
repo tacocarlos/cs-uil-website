@@ -2,7 +2,11 @@ import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { submission } from "~/server/db/schema/submission";
 import { and, eq } from "drizzle-orm";
-import { getAllCompetitions, getAllMinimalProblems } from "~/lib/api/lunaghs";
+import {
+    competitionLevel,
+    getAllCompetitions,
+    getAllMinimalProblems,
+} from "~/lib/api/lunaghs";
 import {
     getCurrentMembership,
     leaderboardView,
@@ -82,10 +86,16 @@ export default async function LeaderboardPage({
     const problems = apiProblems.map((p) => ({
         id: p.id,
         name: p.name,
-        competition_id: p.competition_id,
+        competitionId: p.competitionId,
     }));
     const competitions = new Map<number, CompetitionLeaderboardData>();
-    apiCompetitions.forEach((c) => competitions.set(c.id, c));
+    apiCompetitions.forEach((c) =>
+        competitions.set(c.id, {
+            id: c.id,
+            level: competitionLevel(c),
+            year: c.year,
+        }),
+    );
 
     return (
         <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">

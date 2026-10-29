@@ -20,8 +20,8 @@ export async function gradeSubmission(
     }
 
     const [testInput, testOutput] = await Promise.all([
-        fetchUrlContent(problem.test_data_url),
-        fetchUrlContent(problem.test_output_url),
+        fetchUrlContent(problem.testDataUrl),
+        fetchUrlContent(problem.testOutputUrl),
     ]);
     const expected = testOutput.replaceAll("\r", "");
 

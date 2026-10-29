@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeMathjax from "rehype-mathjax";
 import { api } from "~/trpc/react";
-import type { ApiMinimalProblem } from "~/lib/api/lunaghs";
+import type { ShortProblem } from "~/lib/api/lunaghs";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
@@ -14,9 +14,9 @@ export function ProblemPreview({
     isAdded,
     onAdd,
 }: {
-    problem: ApiMinimalProblem | null;
+    problem: ShortProblem | null;
     isAdded: boolean;
-    onAdd: (problem: ApiMinimalProblem) => void;
+    onAdd: (problem: ShortProblem) => void;
 }) {
     return (
         <div className="flex h-full flex-col overflow-hidden rounded-md border bg-white">

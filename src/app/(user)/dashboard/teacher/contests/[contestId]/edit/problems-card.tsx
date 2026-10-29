@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { api, type RouterOutputs } from "~/trpc/react";
-import type { ApiMinimalProblem } from "~/lib/api/lunaghs";
+import type { ShortProblem } from "~/lib/api/lunaghs";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { DEFAULT_MAX_POINTS } from "~/lib/problems/scoring";
@@ -75,7 +75,7 @@ export function ProblemsCard({
         }
     };
 
-    const handleAdd = async (apiProblem: ApiMinimalProblem) => {
+    const handleAdd = async (apiProblem: ShortProblem) => {
         if (addProblem.isPending) return;
         try {
             const added = await addProblem.mutateAsync({

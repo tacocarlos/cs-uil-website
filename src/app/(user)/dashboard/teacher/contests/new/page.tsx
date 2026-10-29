@@ -6,7 +6,7 @@ import { useSession } from "auth-client";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { isSiteAdmin } from "~/lib/auth/roles";
-import type { ApiMinimalProblem } from "~/lib/api/lunaghs";
+import type { ShortProblem } from "~/lib/api/lunaghs";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
@@ -58,8 +58,9 @@ export default function NewContestPage() {
     const [selectedProblems, setSelectedProblems] = useState<SelectedProblem[]>(
         [],
     );
-    const [previewProblem, setPreviewProblem] =
-        useState<ApiMinimalProblem | null>(null);
+    const [previewProblem, setPreviewProblem] = useState<ShortProblem | null>(
+        null,
+    );
 
     const [submitting, setSubmitting] = useState(false);
 
@@ -68,7 +69,7 @@ export default function NewContestPage() {
 
     const selectedIds = new Set(selectedProblems.map((p) => p.apiProblemId));
 
-    const handleAddProblem = (p: ApiMinimalProblem) => {
+    const handleAddProblem = (p: ShortProblem) => {
         setSelectedProblems((prev) => [
             ...prev,
             {

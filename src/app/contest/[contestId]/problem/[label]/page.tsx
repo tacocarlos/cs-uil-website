@@ -8,12 +8,7 @@ import {
     findAccessibleContest,
 } from "~/server/contests";
 import { requireSession } from "~/server/current-membership";
-import {
-    getProblemById,
-    getAllCompetitions,
-    toAppProblem,
-} from "~/lib/api/lunaghs";
-import type { Problem } from "~/server/db/schema/types";
+import { getAppProblem } from "~/lib/api/lunaghs";
 import ContestEditor from "./contest-editor";
 
 export default async function ContestProblemPage({
@@ -62,23 +57,11 @@ export default async function ContestProblemPage({
     }
 
     // ── Fetch full problem from external API ─────────────────────────────────
-    const [apiProblem, competitions] = await Promise.all([
-        getProblemById(cp.apiProblemId),
-        getAllCompetitions(),
-    ]);
+    const problem = await getAppProblem(cp.apiProblemId);
 
-    if (!apiProblem) {
+    if (!problem) {
         notFound();
     }
-    const competition = competitions.find(
-        (c) => c.id === apiProblem.competition,
-    );
-
-    if (!competition) {
-        notFound();
-    }
-
-    const problem = (await toAppProblem(apiProblem, competition)) as Problem;
 
     return (
         <div className="flex h-screen flex-col pt-[10vh]">
