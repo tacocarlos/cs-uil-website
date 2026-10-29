@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/table";
 import { Monitor, Pencil, PlusCircle } from "lucide-react";
 import { getCurrentMembership } from "~/server/current-membership";
+import { isSiteAdmin } from "~/lib/auth/roles";
 import { isSchoolTeacher } from "~/server/organizations";
 import { ContestInvitations } from "./invitations";
 
@@ -39,7 +40,7 @@ function StatusBadge({ status }: { status: ContestSummary["status"] }) {
 /** Contests the user manages, invitations, and other contests to follow. */
 export default async function ContestsPage() {
     const { session, membership } = await getCurrentMembership();
-    const isSiteAdmin = session?.user.role === "site-admin";
+    const siteAdmin = isSiteAdmin(session?.user.role);
     const isTeacher = isSchoolTeacher(membership);
 
     const [managed, visible] = await Promise.all([
@@ -56,7 +57,7 @@ export default async function ContestsPage() {
                 <div>
                     <h1 className="text-2xl font-bold">Contests</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        {isSiteAdmin
+                        {siteAdmin
                             ? "As a site admin you manage every contest, and can create global contests or host one at any school."
                             : "Contests your school hosts. You can invite other schools to them."}
                     </p>
@@ -73,7 +74,7 @@ export default async function ContestsPage() {
 
             <section className="mb-8">
                 <h2 className="mb-3 text-lg font-semibold">
-                    {isSiteAdmin ? "All contests" : "Your school's contests"}
+                    {siteAdmin ? "All contests" : "Your school's contests"}
                 </h2>
                 {managed.length === 0 ? (
                     <div className="rounded-lg border bg-white py-12 text-center">

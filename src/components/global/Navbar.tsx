@@ -7,6 +7,7 @@ import { Button } from "../ui/button";
 import { usePathname } from "next/navigation";
 import { signInUrl } from "~/lib/auth/redirect-utils";
 import { isTeacherRole } from "~/lib/auth/organizations";
+import { isSiteAdmin } from "~/lib/auth/roles";
 import { SchoolSwitcher } from "./school-switcher";
 import { NavigationMenu } from "~/components/ui/navigation-menu";
 import {
@@ -106,7 +107,7 @@ function DesktopNavbar() {
                                         <Link href="/dashboard">Dashboard</Link>
                                     </NavigationMenuLink>
                                 )}
-                                {user?.role === "site-admin" && (
+                                {isSiteAdmin(user?.role) && (
                                     <NavigationMenuLink asChild>
                                         <Link href="/admin">Site Admin</Link>
                                     </NavigationMenuLink>
@@ -282,7 +283,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
                                 Dashboard
                             </Link>
                         )}
-                        {user?.role === "site-admin" && (
+                        {isSiteAdmin(user?.role) && (
                             <Link
                                 href="/admin"
                                 className={link}

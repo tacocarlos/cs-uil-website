@@ -10,6 +10,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { auth } from "auth";
+import { isSiteAdmin } from "~/lib/auth/roles";
 import {
     getActiveMembership,
     isSchoolTeacher,
@@ -177,7 +178,7 @@ export const contestManagerProcedure = protectedProcedure.use(
 
 /** Requires a site admin (global role), who can manage every school. */
 export const siteAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
-    if (ctx.user.role !== "site-admin") {
+    if (!isSiteAdmin(ctx.user.role)) {
         throw new TRPCError({
             code: "FORBIDDEN",
             message: "Only site admins can do that.",

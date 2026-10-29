@@ -21,6 +21,7 @@ import {
 import { member } from "~/server/db/schema/organization";
 import { isSchoolTeacher, type ActiveMembership } from "~/server/organizations";
 import { withEffectiveStatus } from "~/lib/contest/status";
+import { isSiteAdmin } from "~/lib/auth/roles";
 
 // Two kinds of contest:
 // - School contests (visibility "school" or "invite") are hosted by a
@@ -53,7 +54,7 @@ export function contestManagerFor(
     membership: ActiveMembership | null,
 ): ContestManager {
     return {
-        siteAdmin: user.role === "site-admin",
+        siteAdmin: isSiteAdmin(user.role),
         organizationId: isSchoolTeacher(membership)
             ? membership!.organizationId
             : null,

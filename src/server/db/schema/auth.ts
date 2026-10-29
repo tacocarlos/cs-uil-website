@@ -1,4 +1,5 @@
 import { text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { USER_ROLES } from "~/lib/auth/roles";
 import createTable, { cascadeFk } from "./createTable";
 
 export const user = createTable("user", {
@@ -16,9 +17,7 @@ export const user = createTable("user", {
         .$defaultFn(() => /* @__PURE__ */ new Date())
         .notNull(),
     showSubmissionScores: boolean().notNull().default(true),
-    role: text({ enum: ["student", "teacher", "site-admin"] }).default(
-        "student",
-    ),
+    role: text({ enum: USER_ROLES }).default("student"),
     showScoresInLeaderboard: boolean().notNull().default(true),
     /**
      * Opt-in: also appear on the leaderboards shared by all schools. Only

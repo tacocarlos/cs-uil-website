@@ -114,7 +114,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
     - Labels disagree across `teacher/school-members.tsx`,
       `admin/manage-school.tsx` (plus an inline union type), and
       `student/my-schools.tsx`.
-- [ ] **2. Global user role**: the `"site-admin"` check is repeated in
+- [x] **2. Global user role**: the `"site-admin"` check is repeated in
       10 places (`trpc.ts`, `contests.ts`, admin and teacher layouts, 3
       contest pages, `Navbar.tsx` ×2, root `auth.ts`). The enum is inline
       in `schema/auth.ts`. Add `USER_ROLES` and `isSiteAdmin(user)`.

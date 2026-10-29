@@ -6,6 +6,7 @@ import { useSession } from "auth-client";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import { api } from "~/trpc/react";
+import { isSiteAdmin } from "~/lib/auth/roles";
 import { Button } from "~/components/ui/button";
 import { SettingsCard } from "./settings-card";
 import { ProblemsCard } from "./problems-card";
@@ -29,7 +30,7 @@ export default function EditContestPage({
     // Site admins can change the host or make the contest global. Wait for
     // the session, since the settings form is seeded once.
     const { data: session, isPending: sessionPending } = useSession();
-    const isSiteAdmin = session?.user.role === "site-admin";
+    const siteAdmin = isSiteAdmin(session?.user.role);
 
     if (isNaN(contestId)) {
         return (
@@ -108,7 +109,7 @@ export default function EditContestPage({
             </div>
 
             <div className="max-w-3xl space-y-6">
-                <SettingsCard contest={data} canChooseHost={isSiteAdmin} />
+                <SettingsCard contest={data} canChooseHost={siteAdmin} />
                 <ProblemsCard
                     contestId={contestId}
                     initialProblems={data.problems}

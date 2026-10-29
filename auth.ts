@@ -6,6 +6,7 @@ import { organization } from "better-auth/plugins";
 import { env } from "~/env";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
 import { isBlockedAuthPath } from "~/lib/auth/organization-endpoints";
+import { isSiteAdmin } from "~/lib/auth/roles";
 import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
 import * as orgSchema from "~/server/db/schema/organization";
@@ -34,7 +35,9 @@ export const auth = betterAuth({
             // Schools are set up by site admins, not self-serve. (Creating,
             // deleting, and most other plugin endpoints are also refused by
             // the `hooks.before` below; this is a second line of defense.)
-            allowUserToCreateOrganization: (user) => user.role === "site-admin",
+            // The plugin types `user` without our additional fields.
+            allowUserToCreateOrganization: (user) =>
+                isSiteAdmin(user.role as string | undefined),
             disableOrganizationDeletion: true,
             schema: {
                 organization: {
