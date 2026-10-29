@@ -10,6 +10,7 @@ import {
     contestProblem,
 } from "~/server/db/schema/contest";
 import { organization } from "~/server/db/schema/organization";
+import { requireSchool } from "~/server/organizations";
 import { requireManagedContest, type ContestManager } from "~/server/contests";
 import { canTransition, CONTEST_STATUSES } from "~/lib/contest/status";
 
@@ -79,9 +80,7 @@ async function resolveHost(
         .from(organization)
         .where(eq(organization.id, host))
         .limit(1);
-    if (!school) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "No such school" });
-    }
+    requireSchool(school);
     return host;
 }
 

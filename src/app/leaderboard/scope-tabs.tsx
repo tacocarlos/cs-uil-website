@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { type SchoolFilter } from "~/lib/schools";
-import { cn } from "~/lib/utils";
 import { type LeaderboardScope } from "~/server/organizations";
 import { SchoolFilterControls } from "./school-filter";
+import { tabClass } from "./tab-class";
 
 /**
  * Switches a leaderboard page between the viewer's school and everyone,
@@ -19,11 +19,7 @@ export function LeaderboardScopeTabs({
     filter: SchoolFilter;
     hasSchool: boolean;
 }) {
-    const tab = (active: boolean) =>
-        cn(
-            "rounded-md px-3 py-1 text-sm font-medium",
-            active ? "bg-white text-black" : "text-white hover:bg-white/20",
-        );
+    const tab = (active: boolean) => tabClass(active, "px-3 py-1 font-medium");
 
     return (
         <div className="mb-4 flex flex-col items-center gap-1">

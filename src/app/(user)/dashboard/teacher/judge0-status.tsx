@@ -36,14 +36,29 @@ type HealthState = "healthy" | "no-workers" | "error" | "offline" | "unknown";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function deriveHealth(status: Judge0Status): HealthState {
+type WorkerTotals = Pick<
+    Judge0Worker,
+    "size" | "idle" | "working" | "paused" | "failed"
+>;
+
+/** Each worker count summed over all queues (all zero without workers). */
+function totalWorkers(workers: Judge0Worker[] | null): WorkerTotals {
+    const totals = { size: 0, idle: 0, working: 0, paused: 0, failed: 0 };
+    for (const w of workers ?? []) {
+        totals.size += w.size;
+        totals.idle += w.idle;
+        totals.working += w.working;
+        totals.paused += w.paused;
+        totals.failed += w.failed;
+    }
+    return totals;
+}
+
+function deriveHealth(status: Judge0Status, totals: WorkerTotals): HealthState {
     if (!status.online) return "offline";
     if (!status.workers) return "unknown";
-    const working = status.workers.reduce((s, w) => s + w.working, 0);
-    const idle = status.workers.reduce((s, w) => s + w.idle, 0);
-    const failed = status.workers.reduce((s, w) => s + w.failed, 0);
-    if (failed > 0) return "error";
-    if (working > 0 || idle > 0) return "healthy";
+    if (totals.failed > 0) return "error";
+    if (totals.working > 0 || totals.idle > 0) return "healthy";
     return "no-workers";
 }
 
@@ -156,15 +171,9 @@ export function Judge0StatusCard() {
         stats: null,
     };
 
-    const health = deriveHealth(status);
+    const totals = totalWorkers(status.workers);
+    const health = deriveHealth(status, totals);
     const colors = HEALTH_COLOR[health];
-
-    const totalWorking =
-        status.workers?.reduce((s, w) => s + w.working, 0) ?? 0;
-    const totalIdle = status.workers?.reduce((s, w) => s + w.idle, 0) ?? 0;
-    const totalPaused = status.workers?.reduce((s, w) => s + w.paused, 0) ?? 0;
-    const totalFailed = status.workers?.reduce((s, w) => s + w.failed, 0) ?? 0;
-    const totalQueued = status.workers?.reduce((s, w) => s + w.size, 0) ?? 0;
 
     const noData = status.workers === null;
 
@@ -206,10 +215,10 @@ export function Judge0StatusCard() {
                 <div className="mb-4 grid grid-cols-4 gap-3 text-center">
                     {(
                         [
-                            ["Working", totalWorking, "text-blue-600"],
-                            ["Idle", totalIdle, "text-green-600"],
-                            ["Paused", totalPaused, "text-amber-600"],
-                            ["Failed", totalFailed, "text-red-600"],
+                            ["Working", totals.working, "text-blue-600"],
+                            ["Idle", totals.idle, "text-green-600"],
+                            ["Paused", totals.paused, "text-amber-600"],
+                            ["Failed", totals.failed, "text-red-600"],
                         ] as const
                     ).map(([label, value, color]) => (
                         <div
@@ -231,7 +240,7 @@ export function Judge0StatusCard() {
                     <span>
                         Queue:{" "}
                         <span className="font-medium text-gray-700">
-                            {noData ? "—" : `${totalQueued} pending`}
+                            {noData ? "—" : `${totals.size} pending`}
                         </span>
                     </span>
                     {status.stats && (

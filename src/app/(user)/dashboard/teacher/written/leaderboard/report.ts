@@ -1,4 +1,4 @@
-import { downloadCsv, toCsv } from "~/lib/csv";
+import { columnsToCsv, downloadCsv } from "~/lib/csv";
 import { formatAccuracy } from "~/lib/written/leaderboard";
 
 /** The leaderboard as the teacher sees it, for a report. */
@@ -41,26 +41,21 @@ function filterSummary(view: WrittenReportView): string[] {
  * so the file explains itself.
  */
 export function downloadWrittenCsv(view: WrittenReportView) {
-    const csv = toCsv(
+    const csv = columnsToCsv<WrittenReportView["rows"][number]>(
         [
-            "Rank",
-            "Student",
-            "Score",
-            "Accuracy",
-            "Season",
-            "Competition",
-            "Former student",
+            { header: "Rank", value: (row) => row.rank },
+            { header: "Student", value: (row) => row.name },
+            { header: "Score", value: (row) => row.score },
+            {
+                header: "Accuracy",
+                // A 0–1 ratio, which spreadsheets can format as a percentage.
+                value: (row) => Number(row.accuracy.toFixed(4)),
+            },
+            { header: "Season", value: () => view.season },
+            { header: "Competition", value: () => view.competition },
+            { header: "Former student", value: (row) => row.former },
         ],
-        view.rows.map((row) => [
-            row.rank,
-            row.name,
-            row.score,
-            // A 0–1 ratio, which spreadsheets can format as a percentage.
-            Number(row.accuracy.toFixed(4)),
-            view.season,
-            view.competition,
-            row.former,
-        ]),
+        view.rows,
     );
     downloadCsv(filename(view, "csv"), csv);
 }

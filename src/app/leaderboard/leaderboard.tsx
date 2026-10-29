@@ -78,18 +78,11 @@ function SolvedProblemsDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     const solved = useMemo(() => {
-        const idSet = new Set();
-        entry.solvedProblemIds.forEach((pid) => idSet.add(pid));
-        console.dir(idSet);
+        const idSet = new Set(entry.solvedProblemIds);
         return problems
-            .filter((p) => {
-                console.dir(`checking: ${p.id}`);
-                return idSet.has(p.id);
-            })
+            .filter((p) => idSet.has(p.id))
             .sort((a, b) => a.name.localeCompare(b.name));
     }, [entry.solvedProblemIds, problems]);
-
-    console.dir(competitions);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { toCsv } from "./csv";
+import { columnsToCsv, toCsv } from "./csv";
 
 describe("toCsv", () => {
     test("writes a header and rows with CRLF line endings", () => {
@@ -34,5 +34,23 @@ describe("toCsv", () => {
         expect(toCsv(["a"], [['=HYPERLINK("x","y")']])).toBe(
             'a\r\n"\'=HYPERLINK(""x"",""y"")"\r\n',
         );
+    });
+});
+
+describe("columnsToCsv", () => {
+    test("writes each column's header and its value per row", () => {
+        const rows = [
+            { name: "Ada", score: 90 },
+            { name: "Alan", score: 85 },
+        ];
+        expect(
+            columnsToCsv(
+                [
+                    { header: "Student", value: (r) => r.name },
+                    { header: "Score", value: (r) => r.score },
+                ],
+                rows,
+            ),
+        ).toBe("Student,Score\r\nAda,90\r\nAlan,85\r\n");
     });
 });

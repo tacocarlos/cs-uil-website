@@ -10,6 +10,7 @@ import {
     type SQL,
 } from "drizzle-orm";
 import { type AnyPgColumn } from "drizzle-orm/pg-core";
+import { TRPCError } from "@trpc/server";
 import {
     DEFAULT_ORGANIZATION,
     isTeacherRole,
@@ -19,6 +20,14 @@ import { type SchoolFilter } from "~/lib/schools";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
+
+/** `school` from a lookup by ID, or a NOT_FOUND error if there was none. */
+export function requireSchool<T>(school: T | undefined): T {
+    if (school === undefined) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No such school" });
+    }
+    return school;
+}
 
 /** The signed-in user's membership in the school they're acting in. */
 export type ActiveMembership = {
