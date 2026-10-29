@@ -20,7 +20,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from "~/components/ui/dialog";
-import type { CompetitionLevel } from "~/lib/api/lunaghs";
+import {
+    COMPETITION_LEVEL_ABBREVIATIONS,
+    type CompetitionLevel,
+} from "~/lib/problems/competition-levels";
 
 type LeaderboardEntry = {
     id: string;
@@ -53,16 +56,9 @@ function CompetitionBadge({
         return "UC2067 ";
     }
 
-    let ident = competition.level.at(0)!.toUpperCase();
-    if (ident === "I") {
-        ident = competition.level
-            .at(competition.level.length - 1)!
-            .toUpperCase();
-    }
-
     return (
         <span>
-            {ident}
+            {COMPETITION_LEVEL_ABBREVIATIONS[competition.level]}
             {competition.year}
         </span>
     );

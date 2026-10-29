@@ -5,19 +5,13 @@
  * API responses into the app-level Problem shape used throughout the UI.
  */
 
+import type { CompetitionLevel } from "~/lib/problems/competition-levels";
+
 const API_BASE = "https://api.lunaghs.dev";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API response types
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type CompetitionLevel =
-    | "invA"
-    | "invB"
-    | "district"
-    | "state"
-    | "region"
-    | "custom";
 
 export interface ApiMinimalProblem {
     id: number;

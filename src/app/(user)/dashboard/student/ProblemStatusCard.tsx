@@ -16,6 +16,7 @@ import { Progress } from "~/components/ui/progress";
 import { CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import type { Problem } from "~/server/db/schema/types";
 import type { Submission } from "~/server/db/schema/submission";
+import { COMPETITION_LEVEL_LABELS } from "~/lib/problems/competition-levels";
 import { useSession } from "auth-client";
 
 export function ProblemStatusCard({
@@ -27,11 +28,7 @@ export function ProblemStatusCard({
 }) {
     const hasSubmission = submission !== undefined;
     const isAccepted = hasSubmission && submission.accepted;
-    const formatLevel = (level: string) => {
-        return level.charAt(0).toUpperCase() + level.slice(1);
-    };
-
-    const compLevel = formatLevel(problem.competitionLevel);
+    const compLevel = COMPETITION_LEVEL_LABELS[problem.competitionLevel];
     const { data: session } = useSession();
 
     return (

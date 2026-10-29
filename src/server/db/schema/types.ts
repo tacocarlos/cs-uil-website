@@ -1,3 +1,5 @@
+import type { CompetitionLevel } from "~/lib/problems/competition-levels";
+
 /**
  * Standalone Problem type – mirrors the shape previously inferred from the
  * Drizzle schema so that all existing UI components continue to compile
@@ -11,13 +13,7 @@ export interface Problem {
     id: number;
     problemName: string;
     competitionYear: number;
-    competitionLevel:
-        | "invA"
-        | "invB"
-        | "district"
-        | "region"
-        | "state"
-        | "custom";
+    competitionLevel: CompetitionLevel;
     problemText: string;
     programName: string;
     sampleOutput: string;

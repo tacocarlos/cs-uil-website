@@ -3,6 +3,10 @@
 import { type Problem } from "~/server/db/schema/types";
 import type { Submission } from "~/server/db/schema/submission";
 import { ProblemCard } from "./problem-card";
+import {
+    COMPETITION_LEVEL_LABELS,
+    COMPETITION_LEVELS,
+} from "~/lib/problems/competition-levels";
 import { Input } from "~/components/ui/input";
 import {
     Select,
@@ -142,18 +146,11 @@ export default function ProblemList({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All levels</SelectItem>
-                                <SelectItem value="invA">
-                                    Invitational A
-                                </SelectItem>
-                                <SelectItem value="invB">
-                                    Invitational B
-                                </SelectItem>
-                                <SelectItem value="district">
-                                    District
-                                </SelectItem>
-                                <SelectItem value="region">Region</SelectItem>
-                                <SelectItem value="state">State</SelectItem>
-                                <SelectItem value="custom">Custom</SelectItem>
+                                {COMPETITION_LEVELS.map((level) => (
+                                    <SelectItem key={level} value={level}>
+                                        {COMPETITION_LEVEL_LABELS[level]}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

@@ -138,7 +138,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
       `submission.maxPoints`.
     - Practice `CalculateScore` has no floor at 0, unlike contest
       `contestPoints`. Merge the penalty rules into one scoring module.
-- [ ] **5. Competition levels (`invA`, `district`, …)**: the type is in
+- [x] **5. Competition levels (`invA`, `district`, …)**: the type is in
       both `lib/api/lunaghs.ts` and `schema/types.ts`. Display formatting
       differs 5 ways: `formatLevel` in `problem-card.tsx` and
       `ProblemStatusCard.tsx`, hardcoded `<SelectItem>`s in
