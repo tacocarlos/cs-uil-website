@@ -11,6 +11,7 @@ import {
 } from "~/server/db/schema/contest";
 import { organization } from "~/server/db/schema/organization";
 import { requireManagedContest, type ContestManager } from "~/server/contests";
+import { canTransition, CONTEST_STATUSES } from "~/lib/contest/status";
 
 const scoringMode = z.enum(contest.scoringMode.enumValues);
 const visibility = z.enum(CONTEST_VISIBILITIES);
@@ -232,7 +233,7 @@ export const contestAdmin = {
         .input(
             z.object({
                 contestId: z.number().int(),
-                status: z.enum(contest.status.enumValues),
+                status: z.enum(CONTEST_STATUSES),
             }),
         )
         .mutation(async ({ ctx, input }) => {
@@ -240,6 +241,12 @@ export const contestAdmin = {
                 input.contestId,
                 ctx.manager,
             );
+            if (!canTransition(existing.status, input.status)) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `A contest that is ${existing.status} can't be made ${input.status}.`,
+                });
+            }
             // Starting or ending by hand moves the schedule to now, so the
             // times shown stay true.
             const now = new Date();

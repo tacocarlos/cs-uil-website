@@ -1,6 +1,6 @@
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import type { ContestStatus } from "~/server/db/schema/contest";
+import type { ContestStatus } from "~/lib/contest/status";
 
 const STATUS_COLORS: Record<ContestStatus, string> = {
     draft: "bg-gray-100 text-gray-800",
@@ -8,6 +8,15 @@ const STATUS_COLORS: Record<ContestStatus, string> = {
     active: "bg-green-100 text-green-800",
     frozen: "bg-amber-100 text-amber-800",
     ended: "bg-slate-100 text-slate-600",
+};
+
+/** Wording for contest managers. */
+const LABELS: Record<ContestStatus, string> = {
+    draft: "Draft",
+    scheduled: "Scheduled",
+    active: "Active",
+    frozen: "Frozen",
+    ended: "Ended",
 };
 
 /** Student-facing wording for each status. */
@@ -25,13 +34,13 @@ export function ContestStatusBadge({
     className,
 }: {
     status: ContestStatus;
-    /** Show "Upcoming"/"Live" instead of the raw status name. */
+    /** Show "Upcoming"/"Live" instead of the status name. */
     friendly?: boolean;
     className?: string;
 }) {
     return (
         <Badge className={cn(STATUS_COLORS[status], className)}>
-            {friendly ? FRIENDLY_LABELS[status] : status}
+            {(friendly ? FRIENDLY_LABELS : LABELS)[status]}
         </Badge>
     );
 }

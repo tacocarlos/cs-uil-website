@@ -15,27 +15,10 @@ import { Monitor, Pencil, PlusCircle } from "lucide-react";
 import { getCurrentMembership } from "~/server/current-membership";
 import { isSiteAdmin } from "~/lib/auth/roles";
 import { isSchoolTeacher } from "~/server/organizations";
+import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
 import { ContestInvitations } from "./invitations";
 
 export const dynamic = "force-dynamic";
-
-const STATUS_STYLES = {
-    draft: "bg-gray-100 text-gray-700",
-    scheduled: "bg-blue-100 text-blue-700",
-    active: "bg-green-100 text-green-700",
-    frozen: "bg-amber-100 text-amber-700",
-    ended: "bg-slate-100 text-slate-700",
-} as const;
-
-type ContestSummary = Awaited<ReturnType<typeof api.contest.getAll>>[number];
-
-function StatusBadge({ status }: { status: ContestSummary["status"] }) {
-    return (
-        <Badge className={STATUS_STYLES[status]}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-        </Badge>
-    );
-}
 
 /** Contests the user manages, invitations, and other contests to follow. */
 export default async function ContestsPage() {
@@ -112,7 +95,9 @@ export default async function ContestsPage() {
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <StatusBadge status={c.status} />
+                                            <ContestStatusBadge
+                                                status={c.status}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             {format(
@@ -201,7 +186,9 @@ export default async function ContestsPage() {
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <StatusBadge status={c.status} />
+                                            <ContestStatusBadge
+                                                status={c.status}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             {format(

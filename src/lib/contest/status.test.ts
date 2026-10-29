@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { type ContestStatus } from "~/server/db/schema/contest";
-import { effectiveStatus } from "./status";
+import {
+    canTransition,
+    CONTEST_STATUSES,
+    effectiveStatus,
+    isEnrollable,
+    isInProgress,
+    type ContestStatus,
+} from "./status";
 
 const startsAt = new Date("2026-11-07T09:00:00Z");
 const endsAt = new Date("2026-11-07T11:00:00Z");
@@ -33,5 +39,39 @@ describe("effectiveStatus", () => {
         expect(at("active", before)).toBe("active");
         expect(at("frozen", during)).toBe("frozen");
         expect(at("ended", during)).toBe("ended");
+    });
+});
+
+describe("canTransition", () => {
+    test("allows each step forward that managers take by hand", () => {
+        expect(canTransition("draft", "scheduled")).toBe(true);
+        expect(canTransition("scheduled", "active")).toBe(true);
+        expect(canTransition("active", "frozen")).toBe(true);
+        expect(canTransition("active", "ended")).toBe(true);
+        expect(canTransition("frozen", "ended")).toBe(true);
+    });
+
+    test("refuses going back, skipping ahead, or staying put", () => {
+        expect(canTransition("ended", "draft")).toBe(false);
+        expect(canTransition("ended", "active")).toBe(false);
+        expect(canTransition("frozen", "active")).toBe(false);
+        expect(canTransition("scheduled", "draft")).toBe(false);
+        expect(canTransition("draft", "active")).toBe(false);
+        for (const status of CONTEST_STATUSES) {
+            expect(canTransition(status, status)).toBe(false);
+        }
+    });
+});
+
+describe("status groups", () => {
+    const where = (test: (s: ContestStatus) => boolean) =>
+        CONTEST_STATUSES.filter(test);
+
+    test("in progress: active and frozen", () => {
+        expect(where(isInProgress)).toEqual(["active", "frozen"]);
+    });
+
+    test("enrollable: scheduled and active", () => {
+        expect(where(isEnrollable)).toEqual(["scheduled", "active"]);
     });
 });

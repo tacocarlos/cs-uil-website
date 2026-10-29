@@ -118,7 +118,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
       10 places (`trpc.ts`, `contests.ts`, admin and teacher layouts, 3
       contest pages, `Navbar.tsx` ×2, root `auth.ts`). The enum is inline
       in `schema/auth.ts`. Add `USER_ROLES` and `isSiteAdmin(user)`.
-- [ ] **3. Contest status rules** 🐛: put `CONTEST_STATUSES`,
+- [x] **3. Contest status rules** 🐛: put `CONTEST_STATUSES`,
       `STATUS_TRANSITIONS`, `isInProgress()` and `isEnrollable()` in
       `src/lib/contest/status.ts`.
     - Allowed transitions exist only as buttons in

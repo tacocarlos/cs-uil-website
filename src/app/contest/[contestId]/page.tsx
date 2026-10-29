@@ -14,6 +14,7 @@ import { Countdown } from "~/components/contest/countdown";
 import { RefreshAt } from "~/components/contest/refresh-at";
 import { Button } from "~/components/ui/button";
 import { EnrollButton } from "./_enroll-button";
+import { isEnrollable, isInProgress } from "~/lib/contest/status";
 import { VISIBILITY_LABELS } from "~/lib/contest/visibility";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -66,10 +67,7 @@ export default async function ContestLobbyPage({
     const problemNameMap = new Map(apiProblems.map((p) => [p.id, p.name]));
 
     const status = contest.status;
-    const canEnroll =
-        !isEnrolled &&
-        (status === "active" || status === "scheduled") &&
-        signedIn;
+    const canEnroll = !isEnrolled && isEnrollable(status) && signedIn;
 
     // Measured here, so countdowns don't depend on the viewer's clock.
     const now = Date.now();
@@ -85,9 +83,7 @@ export default async function ContestLobbyPage({
             {/* Shows the problems as soon as the contest starts, and the
                 final status when it ends. */}
             {status === "scheduled" && <RefreshAt inMs={msUntilStart} />}
-            {(status === "active" || status === "frozen") && (
-                <RefreshAt inMs={msUntilEnd} />
-            )}
+            {isInProgress(status) && <RefreshAt inMs={msUntilEnd} />}
             <div className="text-primary-foreground mx-auto max-w-4xl px-6 pb-12">
                 {/* ── Contest header card ──────────────────────────────────── */}
                 <Card className="mb-6">
