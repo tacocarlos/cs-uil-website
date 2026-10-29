@@ -1,4 +1,47 @@
-import type { ContestStatus } from "~/server/db/schema/contest";
+/**
+ * A contest's lifecycle, in order: draft → scheduled → active → frozen →
+ * ended. The single source of truth for the `contest.status` column and
+ * the rules below. Kept free of server imports so client components can
+ * use it.
+ */
+export const CONTEST_STATUSES = [
+    "draft",
+    "scheduled",
+    "active",
+    "frozen",
+    "ended",
+] as const;
+export type ContestStatus = (typeof CONTEST_STATUSES)[number];
+
+/**
+ * The statuses a contest manager may move a contest to from each (current,
+ * effective) status; nothing goes back to draft. Contests also start and
+ * end on their own (below).
+ */
+export const STATUS_TRANSITIONS: Record<
+    ContestStatus,
+    readonly Exclude<ContestStatus, "draft">[]
+> = {
+    draft: ["scheduled"],
+    scheduled: ["active"],
+    active: ["frozen", "ended"],
+    frozen: ["ended"],
+    ended: [],
+};
+
+export function canTransition(from: ContestStatus, to: ContestStatus) {
+    return (STATUS_TRANSITIONS[from] as readonly ContestStatus[]).includes(to);
+}
+
+/** Whether the contest is running: started and not yet ended. */
+export function isInProgress(status: ContestStatus) {
+    return status === "active" || status === "frozen";
+}
+
+/** Whether students may enroll: until the leaderboard freezes. */
+export function isEnrollable(status: ContestStatus) {
+    return status === "scheduled" || status === "active";
+}
 
 type Timed = { status: ContestStatus; startsAt: Date; endsAt: Date };
 

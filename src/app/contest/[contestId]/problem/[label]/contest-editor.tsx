@@ -8,7 +8,7 @@ import { Badge } from "~/components/ui/badge";
 import { Countdown } from "~/components/contest/countdown";
 import { RefreshAt } from "~/components/contest/refresh-at";
 import type { Problem } from "~/server/db/schema/types";
-import type { ContestStatus } from "~/server/db/schema/contest";
+import { isInProgress, type ContestStatus } from "~/lib/contest/status";
 import { CodeEditor } from "~/components/problem-workspace/code-editor";
 import {
     LanguageSelect,
@@ -98,7 +98,7 @@ export default function ContestEditor({
     }
 
     const isActive = contestStatus === "active";
-    const inProgress = contestStatus === "active" || contestStatus === "frozen";
+    const inProgress = isInProgress(contestStatus);
 
     return (
         <ProblemWorkspace

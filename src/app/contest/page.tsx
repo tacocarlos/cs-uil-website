@@ -12,6 +12,7 @@ import {
     ChevronRight,
     School,
 } from "lucide-react";
+import { isInProgress } from "~/lib/contest/status";
 import { VISIBILITY_LABELS } from "~/lib/contest/visibility";
 import { api } from "~/trpc/server";
 import type { RouterOutputs } from "~/trpc/react";
@@ -231,9 +232,7 @@ export default async function StudentContestsPage() {
     // Students never see draft contests
     const visible = allContests.filter((c) => c.status !== "draft");
 
-    const active = visible.filter(
-        (c) => c.status === "active" || c.status === "frozen",
-    );
+    const active = visible.filter((c) => isInProgress(c.status));
     const upcoming = visible.filter((c) => c.status === "scheduled");
     const ended = visible.filter((c) => c.status === "ended");
 

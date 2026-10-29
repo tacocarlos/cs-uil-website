@@ -17,12 +17,9 @@ import {
 } from "~/server/contests";
 import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
 import { contestPoints, pickBestPerProblem } from "~/lib/contest/scoring";
-import { effectiveStatus } from "~/lib/contest/status";
+import { effectiveStatus, isEnrollable } from "~/lib/contest/status";
 
 const byContest = z.object({ contestId: z.number().int() });
-
-/** Contest statuses in which students may enroll. */
-const ENROLLABLE_STATUSES = new Set(["scheduled", "active"]);
 
 function findEnrollment(contestId: number, userId: string) {
     return db
@@ -63,7 +60,7 @@ export const contestParticipation = {
                     message: "Contest not found",
                 });
             }
-            if (!ENROLLABLE_STATUSES.has(contestRow.status)) {
+            if (!isEnrollable(contestRow.status)) {
                 throw new TRPCError({
                     code: "FORBIDDEN",
                     message: "This contest isn't open for enrollment",

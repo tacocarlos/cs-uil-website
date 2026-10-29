@@ -28,9 +28,20 @@ import {
     TableRow,
 } from "~/components/ui/table";
 import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
-import type { ContestStatus } from "~/server/db/schema/contest";
+import { STATUS_TRANSITIONS, type ContestStatus } from "~/lib/contest/status";
 
 // ─── ContestControls (inline "use client" component) ─────────────────────────
+
+/** The button that moves a contest to each status (see STATUS_TRANSITIONS). */
+const STATUS_ACTIONS: Record<
+    Exclude<ContestStatus, "draft">,
+    { label: string; variant: "default" | "outline" | "destructive" }
+> = {
+    scheduled: { label: "Publish", variant: "default" },
+    active: { label: "Start Now", variant: "default" },
+    frozen: { label: "Freeze Leaderboard", variant: "outline" },
+    ended: { label: "End Contest", variant: "destructive" },
+};
 
 function ContestControls({
     contestId,
@@ -53,52 +64,16 @@ function ContestControls({
 
     return (
         <div className="flex flex-wrap items-center gap-2">
-            {status === "draft" && (
+            {STATUS_TRANSITIONS[status].map((next) => (
                 <Button
-                    onClick={() => mutate("scheduled")}
+                    key={next}
+                    variant={STATUS_ACTIONS[next].variant}
+                    onClick={() => mutate(next)}
                     disabled={setStatus.isPending}
                 >
-                    Publish
+                    {STATUS_ACTIONS[next].label}
                 </Button>
-            )}
-
-            {status === "scheduled" && (
-                <Button
-                    onClick={() => mutate("active")}
-                    disabled={setStatus.isPending}
-                >
-                    Start Now
-                </Button>
-            )}
-
-            {status === "active" && (
-                <>
-                    <Button
-                        variant="outline"
-                        onClick={() => mutate("frozen")}
-                        disabled={setStatus.isPending}
-                    >
-                        Freeze Leaderboard
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={() => mutate("ended")}
-                        disabled={setStatus.isPending}
-                    >
-                        End Contest
-                    </Button>
-                </>
-            )}
-
-            {status === "frozen" && (
-                <Button
-                    variant="destructive"
-                    onClick={() => mutate("ended")}
-                    disabled={setStatus.isPending}
-                >
-                    End Contest
-                </Button>
-            )}
+            ))}
 
             <Button asChild variant="ghost" size="sm">
                 <Link href={`/dashboard/teacher/contests/${contestId}/edit`}>

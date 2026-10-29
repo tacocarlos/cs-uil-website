@@ -4,6 +4,7 @@ import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
 import { organization } from "./organization";
 import { randomUUID } from "crypto";
+import { CONTEST_STATUSES } from "~/lib/contest/status";
 import {
     CONTEST_VISIBILITIES,
     type ContestVisibility,
@@ -22,12 +23,7 @@ export const contest = createTable(
         startsAt: d.timestamp().notNull(),
         endsAt: d.timestamp().notNull(),
         /** draft → scheduled → active → frozen → ended */
-        status: d
-            .text({
-                enum: ["draft", "scheduled", "active", "frozen", "ended"],
-            })
-            .notNull()
-            .default("draft"),
+        status: d.text({ enum: CONTEST_STATUSES }).notNull().default("draft"),
         createdBy: d.text().notNull(),
         /** simple = first accepted wins full points; penalty = ICPC-style deductions */
         scoringMode: d
