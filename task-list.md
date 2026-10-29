@@ -93,7 +93,108 @@ practice on the site. All phases are done in code.
 
 ## Open items
 
-None in this repo; see "Before the next deploy" above.
+See "Before the next deploy" above, and the refactor list below.
+
+## Refactor: single source of truth (audit 2026-10-27)
+
+Already done right (copy their pattern): `lib/written/competitions.ts`,
+`lib/schools.ts`, `components/feature-request/labels.ts`,
+`lib/contest/visibility.ts`. 🐛 = also fixes a real bug.
+
+### High impact
+
+- [ ] **1. Member roles (`owner`/`admin`/`member`)**: defined in 6+
+      places. Add `MEMBER_ROLES`, `TEACHER_ROLES`, `MEMBER_ROLE_LABELS` to
+      `src/lib/auth/organizations.ts` and derive the rest.
+    - `uil_member.role` is untyped `text`, hence `as MemberRole` casts
+      (`src/server/organizations.ts`); use `text("role", { enum })`.
+    - `school.ts`: `z.enum([...])` in `setMemberRole`;
+      `inArray(member.role, ["owner","admin"])` in `listTeachers`
+      repeats `isTeacherRole`; the `CASE` ordering in `listMembers`.
+    - Labels disagree across `teacher/school-members.tsx`,
+      `admin/manage-school.tsx` (plus an inline union type), and
+      `student/my-schools.tsx`.
+- [ ] **2. Global user role**: the `"site-admin"` check is repeated in
+      10 places (`trpc.ts`, `contests.ts`, admin and teacher layouts, 3
+      contest pages, `Navbar.tsx` ×2, root `auth.ts`). The enum is inline
+      in `schema/auth.ts`. Add `USER_ROLES` and `isSiteAdmin(user)`.
+- [ ] **3. Contest status rules** 🐛: put `CONTEST_STATUSES`,
+      `STATUS_TRANSITIONS`, `isInProgress()` and `isEnrollable()` in
+      `src/lib/contest/status.ts`.
+    - Allowed transitions exist only as buttons in
+      `teacher/contests/[contestId]/page.tsx`; `contest.setStatus`
+      (`routers/contest/admin.ts`) accepts any status, e.g. ended → draft.
+      Validate there, and render the buttons from the same table.
+    - "In progress" (`active || frozen`) is repeated in `contest/page.tsx`,
+      `contest/[contestId]/page.tsx` and `contest-editor.tsx`;
+      "enrollable" (`scheduled || active`) in `participation.ts` and
+      `contest/[contestId]/page.tsx`.
+    - `teacher/contests/page.tsx` has its own `STATUS_STYLES` badge;
+      use `ContestStatusBadge` instead.
+- [ ] **4. Max points (60)** 🐛: a magic number in ~8 places (both schema
+      defaults, `DEFAULT_MAX_POINTS`, `calculate-score.ts`,
+      `routers/execute.ts`, `override-form.tsx`, `problem-notes.tsx`).
+    - `ProblemStatusCard.tsx` hardcodes 60 and ignores
+      `submission.maxPoints`.
+    - Practice `CalculateScore` has no floor at 0, unlike contest
+      `contestPoints`. Merge the penalty rules into one scoring module.
+- [ ] **5. Competition levels (`invA`, `district`, …)**: the type is in
+      both `lib/api/lunaghs.ts` and `schema/types.ts`. Display formatting
+      differs 5 ways: `formatLevel` in `problem-card.tsx` and
+      `ProblemStatusCard.tsx`, hardcoded `<SelectItem>`s in
+      `problem-list.tsx`, `CompetitionBadge` in `leaderboard/leaderboard.tsx`,
+      and `exports.ts` (outputs "InvA 2019"). Add `COMPETITION_LEVEL_LABELS`
+      (plus badge colours).
+
+### Medium impact
+
+- [ ] **6. Written leaderboard queries** 🐛: the public
+      `leaderboard/written/page.tsx` and `routers/written.ts` run the same
+      three queries (scores, distinct years, distinct competitions). Only
+      the visibility condition differs. Move them to `src/server/written.ts`
+      as builders that take a `where`.
+    - `getAvailableCompetitions` and `getMostRecentCompetition` build
+      identical conditions.
+    - Year parsing is duplicated (`parseWrittenFilter` vs `getYearParam`).
+    - Both `.sort()` competitions alphabetically rather than in season
+      order; sort by index in `WRITTEN_COMPETITIONS`.
+- [ ] **7. "User's current schools" query**: written 4 times (`schoolsOf`
+      and `schoolIdsOf` in `server/contests.ts`, `school.leave`, the session
+      hook in root `auth.ts`).
+- [ ] **8. Auth guards**: 5 layouts (sandbox, past-problem, contest,
+      admin, teacher) repeat "session or redirect to sign-in", 3 of them via
+      `auth.api.getSession` instead of the cached `getCurrentMembership`.
+      `teacher/export/[kind]/route.ts` re-implements the teacher check. Add
+      `requireSession(fallbackPath)` and `requireTeacher()` to
+      `current-membership.ts`.
+- [ ] **9. Navbar links**: desktop and mobile lists have drifted apart
+      (desktop has Past Problems and calls the editor "Online Editor";
+      mobile has Timeline and Skill Tree and calls it "Sandbox"). Use one
+      `NAV_LINKS` array for both.
+- [ ] **10. Contest input schemas**: `create` and `update` in
+      `routers/contest/admin.ts` repeat the same fields; define once and use
+      `.partial()`. The `penaltyPoints: 20` default is repeated in the schema
+      and `contest-settings.ts`.
+- [ ] **11. App ↔ `lsp-gateway` contract**: server IDs, the token payload
+      and Judge0 version pins (Java 13, Python 3.8, gnu11) are synced by
+      hand ("must match" comments). Use a shared module, or at least a test
+      that fails when they diverge. In the app, `LSP_TARGETS` could become a
+      field on `LANGUAGE_FAMILIES`.
+
+### Low impact / cleanup
+
+- [ ] Delete the dead stub `src/app/api/run-problem.ts/route.tsx`.
+- [ ] Remove the debug `console.log`s in `leaderboard/page.tsx`, and the
+      redundant `accepted` re-check after the query already filters on it.
+- [ ] `judge0-status.tsx` sums the worker totals twice.
+- [ ] The tab class helper is repeated in `scope-tabs.tsx` and `kind-tabs.tsx`.
+- [ ] CSV exports (`server/exports.ts`, written `report.ts`): keep
+      headers and values together as `{ header, value }[]` columns.
+- [ ] "No such school" `NOT_FOUND` is thrown 4 times in `school.ts` and
+      `admin.ts`.
+
+Suggested order: #1–#3 first (most files, and #3 closes the
+status-transition gap).
 
 ## Cleanups (done 2026-09-30, uncommitted)
 
