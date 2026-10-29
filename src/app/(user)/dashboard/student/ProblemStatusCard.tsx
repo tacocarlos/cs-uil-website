@@ -33,7 +33,6 @@ export function ProblemStatusCard({
 
     const compLevel = formatLevel(problem.competitionLevel);
     const { data: session } = useSession();
-    const maxPoints = 60;
 
     return (
         <Card className="flex flex-col justify-between">
@@ -82,11 +81,14 @@ export function ProblemStatusCard({
                                     Score
                                 </span>
                                 <span className="font-semibold">
-                                    {submission.points} / {maxPoints}
+                                    {submission.points} / {submission.maxPoints}
                                 </span>
                             </div>
                             <Progress
-                                value={submission.points * (100 / maxPoints)}
+                                value={
+                                    (submission.points / submission.maxPoints) *
+                                    100
+                                }
                                 className="h-2"
                             />
                         </div>

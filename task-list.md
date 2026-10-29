@@ -131,7 +131,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
       `contest/[contestId]/page.tsx`.
     - `teacher/contests/page.tsx` has its own `STATUS_STYLES` badge;
       use `ContestStatusBadge` instead.
-- [ ] **4. Max points (60)** 🐛: a magic number in ~8 places (both schema
+- [x] **4. Max points (60)** 🐛: a magic number in ~8 places (both schema
       defaults, `DEFAULT_MAX_POINTS`, `calculate-score.ts`,
       `routers/execute.ts`, `override-form.tsx`, `problem-notes.tsx`).
     - `ProblemStatusCard.tsx` hardcodes 60 and ignores

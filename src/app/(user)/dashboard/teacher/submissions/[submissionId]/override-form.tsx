@@ -10,7 +10,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { ShieldAlert } from "lucide-react";
-import CalculateScore from "~/lib/problems/judge/calculate-score";
+import { practicePoints } from "~/lib/problems/scoring";
 
 type SubmissionRow = {
     id: string;
@@ -28,10 +28,12 @@ export function OverrideForm({ submission }: { submission: SubmissionRow }) {
     const [points, setPoints] = useState<number>(submission.points);
 
     const [stdPts, uilPts] = [
-        CalculateScore(submission.numAttempts),
-        CalculateScore(submission.numAttempts, {
-            scoringType: "UIL",
-            maxPoints: 60,
+        practicePoints(submission.numAttempts, {
+            maxPoints: submission.maxPoints,
+        }),
+        practicePoints(submission.numAttempts, {
+            maxPoints: submission.maxPoints,
+            scoring: "UIL",
         }),
     ];
 

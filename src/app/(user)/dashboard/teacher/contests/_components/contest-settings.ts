@@ -39,8 +39,6 @@ export const EMPTY_CONTEST_SETTINGS: ContestSettings = {
     invitedSchools: [],
 };
 
-export const DEFAULT_MAX_POINTS = 60;
-
 /**
  * Build form state from a contest loaded from the server. `canChooseHost`
  * (site admins) includes the host so it can be changed.

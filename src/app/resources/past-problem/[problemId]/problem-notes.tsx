@@ -14,6 +14,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "~/components/ui/dialog";
+import {
+    ACCEPTANCE_DISTANCE_THRESHOLD,
+    DEFAULT_MAX_POINTS,
+    PRACTICE_PENALTIES,
+    PRACTICE_SCORING,
+} from "~/lib/problems/scoring";
+
+const penalty = PRACTICE_PENALTIES[PRACTICE_SCORING];
+const pointsOff = penalty === 1 ? "one point is" : `${penalty} points are`;
 
 export default function ProblemFAQ() {
     return (
@@ -36,8 +45,8 @@ export default function ProblemFAQ() {
                         >
                             {`**Scoring**
 
-These problems are scored using rules similar to CS UIL. Every time you submit an incorrect solution, one point is subtracted from the maximum 60 pts you can get. You can run code without submitting to check for correctness.
-Problems are considered "correct" when the Levenshtein distance of your output text and of the solution's output text are less than 10 (in other words, there are at most 9 different deletions/insertions/substitutions required to create the correct output text).
+These problems are scored using rules similar to CS UIL. Every time you submit an incorrect solution, ${pointsOff} subtracted from the maximum ${DEFAULT_MAX_POINTS} pts you can get. You can run code without submitting to check for correctness.
+Problems are considered "correct" when the Levenshtein distance of your output text and of the solution's output text are less than ${ACCEPTANCE_DISTANCE_THRESHOLD} (in other words, there are at most ${ACCEPTANCE_DISTANCE_THRESHOLD - 1} different deletions/insertions/substitutions required to create the correct output text).
 
 **Problem Input**
 
