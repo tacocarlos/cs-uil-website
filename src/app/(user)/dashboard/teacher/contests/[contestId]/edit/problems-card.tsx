@@ -5,10 +5,8 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import type { ApiMinimalProblem } from "~/lib/api/lunaghs";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import {
-    autoLabel,
-    DEFAULT_MAX_POINTS,
-} from "../../_components/contest-settings";
+import { DEFAULT_MAX_POINTS } from "~/lib/problems/scoring";
+import { autoLabel } from "../../_components/contest-settings";
 import { ContestProblemRow } from "../../_components/contest-problem-row";
 import { ProblemSearchList } from "../../_components/problem-search-list";
 

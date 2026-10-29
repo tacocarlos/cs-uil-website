@@ -9,7 +9,7 @@ import {
 import { eq, and } from "drizzle-orm";
 import { diffChars } from "diff";
 import { submission } from "~/server/db/schema/submission";
-import CalculateScore from "~/lib/problems/judge/calculate-score";
+import { DEFAULT_MAX_POINTS, practicePoints } from "~/lib/problems/scoring";
 import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
 import {
     fetchJudge0Languages,
@@ -88,14 +88,14 @@ export const executeRouter = createTRPCRouter({
 
             const graded = await gradeSubmission(problemId, code, languageId);
             const diff = diffStrings(graded.actual, graded.expected);
-            const score = graded.accepted ? CalculateScore(numSubmissions) : 0;
+            const score = graded.accepted ? practicePoints(numSubmissions) : 0;
             const alreadySucceeded = prevSubmissions.some((ps) => ps.accepted);
 
             if (!alreadySucceeded) {
                 await db.insert(submission).values({
                     problemId: graded.problem.id,
                     userId,
-                    maxPoints: 60,
+                    maxPoints: DEFAULT_MAX_POINTS,
                     points: score,
                     accepted: graded.accepted,
                     isStudentVisible: ctx.user.showSubmissionScores,

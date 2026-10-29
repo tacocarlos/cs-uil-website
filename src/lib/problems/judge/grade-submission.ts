@@ -2,12 +2,7 @@ import { distance } from "fastest-levenshtein";
 import { fetchUrlContent, getProblemById } from "~/lib/api/lunaghs";
 import { runOnJudge0 } from "~/lib/problems/execute/judge0";
 import { isJudge0Failure } from "~/lib/problems/execute/judge0-result";
-
-/**
- * Max Levenshtein distance between the program's output and the expected
- * output that still counts as accepted.
- */
-export const ACCEPTANCE_DISTANCE_THRESHOLD = 5;
+import { ACCEPTANCE_DISTANCE_THRESHOLD } from "~/lib/problems/scoring";
 
 /**
  * Runs `code` against a problem's hidden test data and compares its output to

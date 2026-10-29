@@ -1,3 +1,4 @@
+import { penalizedPoints } from "~/lib/problems/scoring";
 import type { ScoringMode } from "~/server/db/schema/contest";
 
 export type { ScoringMode };
@@ -24,7 +25,7 @@ export function contestPoints({
 }): number {
     if (!accepted) return 0;
     if (scoringMode === "simple") return maxPoints;
-    return Math.max(0, maxPoints - wrongAttempts * penaltyPoints);
+    return penalizedPoints(maxPoints, penaltyPoints, wrongAttempts);
 }
 
 type ScoredSubmission = {

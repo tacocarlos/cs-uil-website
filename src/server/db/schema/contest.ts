@@ -5,6 +5,7 @@ import { user } from "./auth";
 import { organization } from "./organization";
 import { randomUUID } from "crypto";
 import { CONTEST_STATUSES } from "~/lib/contest/status";
+import { DEFAULT_MAX_POINTS } from "~/lib/problems/scoring";
 import {
     CONTEST_VISIBILITIES,
     type ContestVisibility,
@@ -79,7 +80,7 @@ export const contestProblem = createTable(
         apiProblemId: d.integer().notNull(),
         /** Teacher-assigned label shown to students, e.g. "A", "B", "Sorting" */
         label: d.text().notNull(),
-        maxPoints: d.integer().notNull().default(60),
+        maxPoints: d.integer().notNull().default(DEFAULT_MAX_POINTS),
         displayOrder: d.integer().notNull().default(0),
     }),
     (t) => [

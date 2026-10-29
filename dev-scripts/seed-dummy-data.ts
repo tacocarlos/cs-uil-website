@@ -20,6 +20,7 @@ import {
     DEFAULT_ORGANIZATION,
     type MemberRole,
 } from "~/lib/auth/organizations";
+import { DEFAULT_MAX_POINTS, practicePoints } from "~/lib/problems/scoring";
 import { type Conference } from "~/lib/schools";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
@@ -152,10 +153,6 @@ const PEOPLE: Person[] = [
  * correct (see task-list.md); others show up but can't really be solved.
  */
 const PROBLEM_IDS = [1, 2, 3, 13, 14, 18, 26, 27, 28, 30, 38, 39];
-
-const MAX_POINTS = 60;
-/** UIL programming: 5 points off per rejected attempt. */
-const PENALTY = 5;
 
 /** Written tests per season, with a representative date for each. */
 const WRITTEN_SEASONS: { year: number; dates: Record<string, string> }[] = [
@@ -339,10 +336,8 @@ async function insertDummyData() {
                     timeSubmitted: new Date(
                         now.getTime() - pick(60 * 24 * 60) * 60_000,
                     ),
-                    points: accepted
-                        ? Math.max(MAX_POINTS - PENALTY * (attempt - 1), 0)
-                        : 0,
-                    maxPoints: MAX_POINTS,
+                    points: accepted ? practicePoints(attempt) : 0,
+                    maxPoints: DEFAULT_MAX_POINTS,
                     accepted,
                     attemptNumber: attempt,
                     submittedCode:

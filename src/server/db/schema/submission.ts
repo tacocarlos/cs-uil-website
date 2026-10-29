@@ -1,4 +1,5 @@
 import { index } from "drizzle-orm/pg-core";
+import { DEFAULT_MAX_POINTS } from "~/lib/problems/scoring";
 import createTable, { cascadeFk } from "./createTable";
 
 import { user } from "./auth";
@@ -12,7 +13,7 @@ export const submission = createTable(
         userId: d.text().notNull(),
         timeSubmitted: d.timestamp().defaultNow().notNull(),
         points: d.integer().notNull().default(0),
-        maxPoints: d.integer().notNull().default(60),
+        maxPoints: d.integer().notNull().default(DEFAULT_MAX_POINTS),
         accepted: d.boolean().default(false),
         submittedCode: d.text().notNull(),
         isStudentVisible: d.boolean().notNull().default(true),

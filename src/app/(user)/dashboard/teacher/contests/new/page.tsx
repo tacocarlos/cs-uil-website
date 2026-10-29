@@ -11,9 +11,9 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Loader2, Plus, X } from "lucide-react";
+import { DEFAULT_MAX_POINTS } from "~/lib/problems/scoring";
 import {
     autoLabel,
-    DEFAULT_MAX_POINTS,
     EMPTY_CONTEST_SETTINGS,
     settingsToMutationInput,
     validateSettings,
