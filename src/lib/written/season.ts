@@ -23,3 +23,15 @@ export function seasonYearOf(date: Date | string): number {
 export function currentSeasonYear(): number {
     return seasonYearOf(new Date());
 }
+
+/**
+ * A season picked by name, as in ?year=: "all" for every season
+ * (undefined), a year like "2027", or anything else ("current", nothing)
+ * for the current one.
+ */
+export function parseSeasonYear(value: string | undefined): number | undefined {
+    if (value === "all") return undefined;
+    return value !== undefined && /^\d+$/.test(value)
+        ? Number(value)
+        : currentSeasonYear();
+}

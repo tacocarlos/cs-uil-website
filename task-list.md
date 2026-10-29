@@ -148,7 +148,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
 
 ### Medium impact
 
-- [ ] **6. Written leaderboard queries** 🐛: the public
+- [x] **6. Written leaderboard queries** 🐛: the public
       `leaderboard/written/page.tsx` and `routers/written.ts` run the same
       three queries (scores, distinct years, distinct competitions). Only
       the visibility condition differs. Move them to `src/server/written.ts`

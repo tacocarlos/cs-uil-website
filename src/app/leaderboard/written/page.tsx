@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, type SQL } from "drizzle-orm";
+import { and, eq, type SQL } from "drizzle-orm";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { writtenTests } from "~/server/db/schema/written";
@@ -7,7 +7,7 @@ import {
     type WrittenCompetition,
 } from "~/lib/written/competitions";
 import { totalWrittenScores } from "~/lib/written/leaderboard";
-import { currentSeasonYear } from "~/lib/written/season";
+import { parseSeasonYear } from "~/lib/written/season";
 import {
     getCurrentMembership,
     leaderboardView,
@@ -16,6 +16,7 @@ import {
     leaderboardVisibility,
     schoolNamesByUser,
 } from "~/server/organizations";
+import { writtenCompetitions, writtenYears } from "~/server/written";
 import { LeaderboardKindTabs } from "../kind-tabs";
 import { LeaderboardScopeTabs } from "../scope-tabs";
 import WrittenLeaderboard from "./written-leaderboard";
@@ -34,14 +35,8 @@ function parseWrittenFilter(params: SearchParams): {
     competition: WrittenCompetition | undefined;
 } {
     const { year, competition } = params;
-    const n = typeof year === "string" ? Number(year) : NaN;
     return {
-        year:
-            year === "all"
-                ? undefined
-                : Number.isInteger(n)
-                  ? n
-                  : currentSeasonYear(),
+        year: parseSeasonYear(typeof year === "string" ? year : undefined),
         competition: WRITTEN_COMPETITIONS.find((c) => c === competition),
     };
 }
@@ -70,7 +65,7 @@ export default async function WrittenLeaderboardPage({
     const inYear: SQL | undefined =
         year === undefined ? undefined : eq(writtenTests.seasonYear, year);
 
-    const [rows, yearRows, competitionRows] = await Promise.all([
+    const [rows, years, competitions] = await Promise.all([
         db
             .select({
                 userId: user.id,
@@ -89,17 +84,8 @@ export default async function WrittenLeaderboardPage({
                         : undefined,
                 ),
             ),
-        db
-            .selectDistinct({ year: writtenTests.seasonYear })
-            .from(writtenTests)
-            .innerJoin(user, eq(writtenTests.userId, user.id))
-            .where(visible)
-            .orderBy(desc(writtenTests.seasonYear)),
-        db
-            .selectDistinct({ competition: writtenTests.competition })
-            .from(writtenTests)
-            .innerJoin(user, eq(writtenTests.userId, user.id))
-            .where(and(visible, inYear, isNotNull(writtenTests.competition))),
+        writtenYears(visible),
+        writtenCompetitions(and(visible, inYear)),
     ]);
 
     // Total each student's scores over the selected tests.
@@ -128,11 +114,8 @@ export default async function WrittenLeaderboardPage({
             <WrittenFilterControls
                 year={year}
                 competition={competition}
-                years={yearRows.map((r) => r.year)}
-                competitions={competitionRows
-                    .map((r) => r.competition)
-                    .filter((c) => c !== null)
-                    .sort()}
+                years={years}
+                competitions={competitions}
             />
             <WrittenLeaderboard
                 scores={scores}

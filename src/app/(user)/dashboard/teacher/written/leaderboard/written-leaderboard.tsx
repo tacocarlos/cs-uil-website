@@ -28,7 +28,7 @@ import {
     competitionLabel,
     type WrittenCompetition,
 } from "~/lib/written/competitions";
-import { currentSeasonYear } from "~/lib/written/season";
+import { currentSeasonYear, parseSeasonYear } from "~/lib/written/season";
 import { api } from "~/trpc/react";
 import { FormerBadge, IncludeFormerCheckbox } from "../former";
 import {
@@ -37,31 +37,21 @@ import {
     type WrittenReportView,
 } from "./report";
 
-function getYearParam(
-    yearParam: "all" | "current" | number | string | undefined,
-): number | undefined {
-    if (yearParam === "current") return currentSeasonYear();
-    else if (yearParam === "all" || yearParam === undefined) return undefined;
-    else if (typeof yearParam === "number") return yearParam;
-    else return parseInt(yearParam);
-}
-
 /** The teacher's students ranked by written test score. */
 export default function WrittenLeaderboard() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCompetition, setSelectedCompetition] = useState<
         WrittenCompetition | "all" | undefined
     >(undefined);
-    const [selectedYear, setSelectedYear] = useState<
-        number | string | "all" | "current" | undefined
-    >("current");
+    // "all", "current" or a season year like "2027".
+    const [selectedYear, setSelectedYear] = useState("current");
     const [includeFormer, setIncludeFormer] = useState(false);
 
     // Fetch available years (not year-dependent)
     const { data: years } = api.written.getAvailableYears.useQuery();
 
     // Determine year parameter before using it in dependent queries
-    const yearParam = getYearParam(selectedYear);
+    const yearParam = parseSeasonYear(selectedYear);
 
     // Competitions and most-recent-competition are scoped to the selected year
     const { data: competitions } =
@@ -101,8 +91,7 @@ export default function WrittenLeaderboard() {
             includeFormer,
         },
         {
-            enabled:
-                selectedCompetition !== undefined && selectedYear !== undefined,
+            enabled: selectedCompetition !== undefined,
         },
     );
 
@@ -145,8 +134,8 @@ export default function WrittenLeaderboard() {
                         Season Year
                     </label>
                     <Select
-                        value={selectedYear?.toString()}
-                        onValueChange={(value) => setSelectedYear(value)}
+                        value={selectedYear}
+                        onValueChange={setSelectedYear}
                     >
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select a year" />
