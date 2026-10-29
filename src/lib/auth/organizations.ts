@@ -8,11 +8,25 @@ export const DEFAULT_ORGANIZATION = {
     slug: "groveton",
 } as const;
 
-export type MemberRole = "owner" | "admin" | "member";
+/**
+ * Roles in a school, highest first. The single source of truth for the
+ * `uil_member.role` column, inputs, and labels.
+ */
+export const MEMBER_ROLES = ["owner", "admin", "member"] as const;
+export type MemberRole = (typeof MEMBER_ROLES)[number];
 
 /** Owners and admins of a school are its teachers. */
+export const TEACHER_ROLES = ["owner", "admin"] as const satisfies MemberRole[];
+
+/** How each role is shown to users. */
+export const MEMBER_ROLE_LABELS: Record<MemberRole, string> = {
+    owner: "Teacher (owner)",
+    admin: "Teacher",
+    member: "Student",
+};
+
 export function isTeacherRole(role: string | null | undefined): boolean {
-    return role === "owner" || role === "admin";
+    return TEACHER_ROLES.includes(role as (typeof TEACHER_ROLES)[number]);
 }
 
 /**

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { isTeacherRole, MEMBER_ROLE_LABELS } from "~/lib/auth/organizations";
 import { api } from "~/trpc/react";
 
 /** The user's schools, with a way to leave the ones they're a student at. */
@@ -35,8 +36,10 @@ export function MySchools() {
                     >
                         <span className="flex items-center gap-2">
                             {s.name}
-                            {s.role !== "member" ? (
-                                <Badge variant="outline">Teacher</Badge>
+                            {isTeacherRole(s.role) ? (
+                                <Badge variant="outline">
+                                    {MEMBER_ROLE_LABELS[s.role]}
+                                </Badge>
                             ) : s.formerAt ? (
                                 <Badge variant="outline">Former student</Badge>
                             ) : null}

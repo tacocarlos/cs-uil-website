@@ -103,7 +103,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
 
 ### High impact
 
-- [ ] **1. Member roles (`owner`/`admin`/`member`)**: defined in 6+
+- [x] **1. Member roles (`owner`/`admin`/`member`)**: defined in 6+
       places. Add `MEMBER_ROLES`, `TEACHER_ROLES`, `MEMBER_ROLE_LABELS` to
       `src/lib/auth/organizations.ts` and derive the rest.
     - `uil_member.role` is untyped `text`, hence `as MemberRole` casts
