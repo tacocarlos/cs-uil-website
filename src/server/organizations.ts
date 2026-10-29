@@ -3,6 +3,7 @@ import {
     asc,
     eq,
     inArray,
+    isNotNull,
     isNull,
     notInArray,
     sql,
@@ -47,6 +48,24 @@ export async function getActiveMembership(session: {
         )
         .limit(1);
     return row ? { organizationId, role: row.role } : null;
+}
+
+/**
+ * The user's current schools (not ones they're a former student of),
+ * earliest joined first; with `includeFormer`, former-student schools
+ * follow them. Usable as a subquery, or awaited for the rows.
+ */
+export function schoolsOf(userId: string, { includeFormer = false } = {}) {
+    return db
+        .select({ id: member.organizationId })
+        .from(member)
+        .where(
+            and(
+                eq(member.userId, userId),
+                includeFormer ? undefined : isNull(member.formerAt),
+            ),
+        )
+        .orderBy(isNotNull(member.formerAt), asc(member.createdAt));
 }
 
 /**

@@ -9,7 +9,6 @@ import {
     ilike,
     inArray,
     isNotNull,
-    isNull,
     ne,
     sql,
 } from "drizzle-orm";
@@ -29,6 +28,7 @@ import {
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
+import { schoolsOf } from "~/server/organizations";
 import { generateJoinCode, normalizeJoinCode } from "~/lib/join-codes";
 import { CONFERENCES, MAX_DISTRICT, REGIONS } from "~/lib/schools";
 
@@ -303,17 +303,7 @@ export const schoolRouter = createTRPCRouter({
                 ctx.session.session.activeOrganizationId ===
                 input.organizationId
             ) {
-                const [next] = await db
-                    .select({ id: member.organizationId })
-                    .from(member)
-                    .where(
-                        and(
-                            eq(member.userId, ctx.user.id),
-                            isNull(member.formerAt),
-                        ),
-                    )
-                    .orderBy(asc(member.createdAt))
-                    .limit(1);
+                const [next] = await schoolsOf(ctx.user.id).limit(1);
                 await auth.api.setActiveOrganization({
                     headers: ctx.headers,
                     body: { organizationId: next?.id ?? null },

@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import {
     and,
-    asc,
     eq,
     exists,
     inArray,
@@ -18,8 +17,11 @@ import {
     type ContestStatus,
     type ContestVisibility,
 } from "~/server/db/schema/contest";
-import { member } from "~/server/db/schema/organization";
-import { isSchoolTeacher, type ActiveMembership } from "~/server/organizations";
+import {
+    isSchoolTeacher,
+    schoolsOf,
+    type ActiveMembership,
+} from "~/server/organizations";
 import { withEffectiveStatus } from "~/lib/contest/status";
 import { isSiteAdmin } from "~/lib/auth/roles";
 
@@ -109,14 +111,6 @@ export function canSeeProblems(
         PROBLEMS_REVEALED.has(contestRow.status) ||
         canManageContest(contestRow, manager)
     );
-}
-
-/** The user's current (not former) schools. */
-function schoolsOf(userId: string) {
-    return db
-        .select({ id: member.organizationId })
-        .from(member)
-        .where(and(eq(member.userId, userId), isNull(member.formerAt)));
 }
 
 /** Condition selecting the contests `userId` (null: signed out) may see. */
@@ -243,10 +237,6 @@ export function pickCompetingSchool(
  * earliest joined first: the schools they can compete for.
  */
 export async function schoolIdsOf(userId: string) {
-    const rows = await db
-        .select({ id: member.organizationId })
-        .from(member)
-        .where(and(eq(member.userId, userId), isNull(member.formerAt)))
-        .orderBy(asc(member.createdAt));
+    const rows = await schoolsOf(userId);
     return rows.map((r) => r.id);
 }

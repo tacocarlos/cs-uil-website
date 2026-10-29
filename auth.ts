@@ -1,4 +1,3 @@
-import { asc, eq, isNotNull } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
@@ -10,6 +9,7 @@ import { isSiteAdmin } from "~/lib/auth/roles";
 import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
 import * as orgSchema from "~/server/db/schema/organization";
+import { schoolsOf } from "~/server/organizations";
 
 export const auth = betterAuth({
     baseURL: env.BASE_URL,
@@ -85,15 +85,9 @@ export const auth = betterAuth({
                 // (former-student memberships last), so school-scoped pages
                 // work without picking one first.
                 before: async (session) => {
-                    const [first] = await db
-                        .select({ id: orgSchema.member.organizationId })
-                        .from(orgSchema.member)
-                        .where(eq(orgSchema.member.userId, session.userId))
-                        .orderBy(
-                            isNotNull(orgSchema.member.formerAt),
-                            asc(orgSchema.member.createdAt),
-                        )
-                        .limit(1);
+                    const [first] = await schoolsOf(session.userId, {
+                        includeFormer: true,
+                    }).limit(1);
                     return {
                         data: {
                             ...session,
