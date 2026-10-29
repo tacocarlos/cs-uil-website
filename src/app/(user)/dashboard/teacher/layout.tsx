@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { signInUrl } from "~/lib/auth/redirect-utils";
+import { isSiteAdmin } from "~/lib/auth/roles";
 import { getCurrentMembership } from "~/server/current-membership";
 import { isSchoolTeacher } from "~/server/organizations";
 
@@ -23,7 +24,7 @@ export default async function TeacherLayout({
     if (!session) redirect(signInUrl(pathname));
 
     const siteAdminOnContests =
-        session.user.role === "site-admin" &&
+        isSiteAdmin(session.user.role) &&
         pathname.startsWith("/dashboard/teacher/contests");
     if (!isSchoolTeacher(membership) && !siteAdminOnContests) {
         redirect("/dashboard/student");

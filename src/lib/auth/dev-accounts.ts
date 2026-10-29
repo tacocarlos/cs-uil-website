@@ -1,3 +1,5 @@
+import { type UserRole } from "./roles";
+
 /**
  * Fake accounts for local development, so testing doesn't need a real
  * Google login. Only usable when devLoginEnabled() (dev-login.ts) is true.
@@ -20,6 +22,9 @@ export const DEV_ACCOUNTS = {
         email: "dev-admin@dev.local",
         role: "site-admin",
     },
-} as const;
+} as const satisfies Record<
+    string,
+    { name: string; email: string; role: UserRole }
+>;
 
 export type DevAccountKind = keyof typeof DEV_ACCOUNTS;
