@@ -7,6 +7,7 @@ import {
     timestamp,
     unique,
 } from "drizzle-orm/pg-core";
+import { MEMBER_ROLES } from "~/lib/auth/organizations";
 import { CONFERENCES, MAX_DISTRICT, REGIONS } from "~/lib/schools";
 import createTable, { cascadeFk } from "./createTable";
 import { user } from "./auth";
@@ -61,7 +62,7 @@ export const member = createTable(
         organizationId: text("organization_id").notNull(),
         userId: text("user_id").notNull(),
         /** owner | admin (teachers) | member (students) */
-        role: text("role").notNull().default("member"),
+        role: text("role", { enum: MEMBER_ROLES }).notNull().default("member"),
         createdAt: timestamp("created_at").notNull(),
         /**
          * When a teacher marked this student as former (graduated or left);

@@ -15,14 +15,9 @@ import {
     TableHeader,
     TableRow,
 } from "~/components/ui/table";
+import { MEMBER_ROLE_LABELS } from "~/lib/auth/organizations";
 import { formatJoinCode } from "~/lib/join-codes";
 import { api } from "~/trpc/react";
-
-const ROLE_LABELS: Record<string, string> = {
-    owner: "Teacher (owner)",
-    admin: "Teacher",
-    member: "Student",
-};
 
 async function copy(text: string, what: string) {
     await navigator.clipboard.writeText(text);
@@ -170,8 +165,9 @@ export function SchoolMembersCard() {
                                             <Badge variant="outline">
                                                 {m.formerAt
                                                     ? "Former student"
-                                                    : (ROLE_LABELS[m.role] ??
-                                                      m.role)}
+                                                    : MEMBER_ROLE_LABELS[
+                                                          m.role
+                                                      ]}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>

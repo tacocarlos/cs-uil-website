@@ -46,7 +46,7 @@ export async function getActiveMembership(session: {
             ),
         )
         .limit(1);
-    return row ? { organizationId, role: row.role as MemberRole } : null;
+    return row ? { organizationId, role: row.role } : null;
 }
 
 /**

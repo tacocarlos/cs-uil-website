@@ -8,11 +8,16 @@ import {
     eq,
     ilike,
     inArray,
+    isNotNull,
     isNull,
     ne,
     sql,
 } from "drizzle-orm";
-import { DEFAULT_ORGANIZATION } from "~/lib/auth/organizations";
+import {
+    DEFAULT_ORGANIZATION,
+    MEMBER_ROLES,
+    TEACHER_ROLES,
+} from "~/lib/auth/organizations";
 import { auth } from "auth";
 import {
     contestManagerProcedure,
@@ -145,7 +150,14 @@ export const schoolRouter = createTRPCRouter({
             .innerJoin(user, eq(member.userId, user.id))
             .where(eq(member.organizationId, ctx.organizationId))
             .orderBy(
-                sql`CASE WHEN ${member.role} = 'owner' THEN 0 WHEN ${member.role} = 'admin' THEN 1 WHEN ${member.formerAt} IS NULL THEN 2 ELSE 3 END`,
+                sql`CASE ${member.role} ${sql.join(
+                    MEMBER_ROLES.map(
+                        (role, i) =>
+                            sql`WHEN ${role} THEN ${sql.raw(String(i))}`,
+                    ),
+                    sql` `,
+                )} END`,
+                isNotNull(member.formerAt),
                 asc(user.name),
             ),
     ),
@@ -439,7 +451,7 @@ export const schoolRouter = createTRPCRouter({
                 .where(
                     and(
                         eq(member.organizationId, input.organizationId),
-                        inArray(member.role, ["owner", "admin"]),
+                        inArray(member.role, TEACHER_ROLES),
                     ),
                 )
                 .orderBy(asc(user.name)),
@@ -454,7 +466,7 @@ export const schoolRouter = createTRPCRouter({
             z.object({
                 organizationId: z.string(),
                 userId: z.string(),
-                role: z.enum(["owner", "admin", "member"]),
+                role: z.enum(MEMBER_ROLES),
             }),
         )
         .mutation(async ({ input }) => {

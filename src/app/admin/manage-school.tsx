@@ -21,13 +21,12 @@ import {
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
+import {
+    MEMBER_ROLE_LABELS,
+    MEMBER_ROLES,
+    type MemberRole,
+} from "~/lib/auth/organizations";
 import { api } from "~/trpc/react";
-
-const ROLE_OPTIONS = [
-    { value: "owner", label: "Owner" },
-    { value: "admin", label: "Teacher" },
-    { value: "member", label: "Student" },
-] as const;
 
 /** Rename a school, manage its teachers, or delete it (site admins). */
 export function ManageSchoolDialog({
@@ -168,26 +167,20 @@ function SchoolTeachers({ organizationId }: { organizationId: string }) {
                                         setRole.mutate({
                                             organizationId,
                                             userId: t.userId,
-                                            role: role as
-                                                | "owner"
-                                                | "admin"
-                                                | "member",
+                                            role: role as MemberRole,
                                         })
                                     }
                                 >
                                     <SelectTrigger
-                                        className="h-8 w-28"
+                                        className="h-8 w-36"
                                         aria-label={`${t.name}'s role`}
                                     >
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {ROLE_OPTIONS.map((o) => (
-                                            <SelectItem
-                                                key={o.value}
-                                                value={o.value}
-                                            >
-                                                {o.label}
+                                        {MEMBER_ROLES.map((role) => (
+                                            <SelectItem key={role} value={role}>
+                                                {MEMBER_ROLE_LABELS[role]}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
