@@ -163,6 +163,7 @@ const WRITTEN_SEASONS: { year: number; dates: Record<string, string> }[] = [
             "VCM-2": "2025-11-15",
             invA: "2026-01-24",
             district: "2026-03-28",
+            "VCM-5": "2026-04-11",
             region: "2026-04-25",
         },
     },
