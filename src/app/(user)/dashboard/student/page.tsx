@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { signInUrl } from "~/lib/auth/redirect-utils";
-import { getCurrentMembership } from "~/server/current-membership";
+import { requireSession } from "~/server/current-membership";
 import { Button } from "~/components/ui/button";
 import SettingsSection from "./settings";
 import { MySchools } from "./my-schools";
@@ -11,20 +9,8 @@ import InProgressProblems from "./in-progress";
 import SubmittedProblems from "./submitted-problems";
 
 export default async function DashboardPage() {
-    const { session, membership } = await getCurrentMembership();
-    const user = session?.user;
-    const isAuthenticated = session !== null;
-    if (!isAuthenticated) {
-        redirect(signInUrl("/dashboard/student"));
-    }
-
-    if (user === undefined) {
-        redirect(signInUrl("/dashboard/student"));
-    }
-
-    if (session?.user === undefined || session?.user === null) {
-        return null;
-    }
+    const { session, membership } = await requireSession("/dashboard/student");
+    const user = session.user;
 
     void api.user.getMe.prefetch();
 

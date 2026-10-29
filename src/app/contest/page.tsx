@@ -1,5 +1,3 @@
-import { auth } from "auth";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { format, formatDistanceToNow, isPast, isFuture } from "date-fns";
 import { eq } from "drizzle-orm";
@@ -16,6 +14,7 @@ import { isInProgress } from "~/lib/contest/status";
 import { VISIBILITY_LABELS } from "~/lib/contest/visibility";
 import { api } from "~/trpc/server";
 import type { RouterOutputs } from "~/trpc/react";
+import { requireSession } from "~/server/current-membership";
 import { db } from "~/server/db";
 import { contestEnrollment } from "~/server/db/schema/contest";
 import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
@@ -214,9 +213,8 @@ function Section({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function StudentContestsPage() {
-    const headersList = await headers();
-    const session = await auth.api.getSession({ headers: headersList });
-    const userId = session!.user.id; // layout guarantees auth
+    const { session } = await requireSession("/contest");
+    const userId = session.user.id;
 
     // Fetch contests and this student's enrollments in parallel
     const [allContests, myEnrollments] = await Promise.all([

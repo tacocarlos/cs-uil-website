@@ -1,6 +1,8 @@
 import { cache } from "react";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { auth } from "auth";
+import { signInUrl } from "~/lib/auth/redirect-utils";
 import { parseSchoolFilter, type SchoolFilter } from "~/lib/schools";
 import {
     getActiveMembership,
@@ -22,6 +24,32 @@ export const getCurrentMembership = cache(
         return { session, membership };
     },
 );
+
+type Session = NonNullable<
+    Awaited<ReturnType<typeof getCurrentMembership>>["session"]
+>;
+
+/**
+ * The page being requested (the middleware's x-pathname header), or
+ * `fallback` if it isn't known.
+ */
+export async function currentPathname(fallback: string): Promise<string> {
+    return (await headers()).get("x-pathname") ?? fallback;
+}
+
+/**
+ * Like getCurrentMembership, but sends signed-out visitors to sign in,
+ * coming back to this page afterwards (or to `fallbackPath`, when the
+ * page isn't known).
+ */
+export async function requireSession(fallbackPath: string): Promise<{
+    session: Session;
+    membership: ActiveMembership | null;
+}> {
+    const { session, membership } = await getCurrentMembership();
+    if (!session) redirect(signInUrl(await currentPathname(fallbackPath)));
+    return { session, membership };
+}
 
 /**
  * Leaderboard pages show the viewer's school unless `?view=global` is set.

@@ -1,7 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
-import { auth } from "auth";
 import { db } from "~/server/db";
 import { contestProblem } from "~/server/db/schema/contest";
 import {
@@ -9,13 +7,12 @@ import {
     contestManagerFor,
     findAccessibleContest,
 } from "~/server/contests";
-import { getActiveMembership } from "~/server/organizations";
+import { requireSession } from "~/server/current-membership";
 import {
     getProblemById,
     getAllCompetitions,
     toAppProblem,
 } from "~/lib/api/lunaghs";
-import { signInUrl } from "~/lib/auth/redirect-utils";
 import type { Problem } from "~/server/db/schema/types";
 import ContestEditor from "./contest-editor";
 
@@ -32,16 +29,12 @@ export default async function ContestProblemPage({
     }
 
     // ── Auth ────────────────────────────────────────────────────────────────
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session) {
-        redirect(signInUrl(`/contest/${contestIdStr}/problem/${label}`));
-    }
+    const { session, membership } = await requireSession(
+        `/contest/${contestIdStr}/problem/${label}`,
+    );
 
     // ── Fetch contest (if visible to, or managed by, this user) + problem ──
-    const manager = contestManagerFor(
-        session.user,
-        await getActiveMembership(session),
-    );
+    const manager = contestManagerFor(session.user, membership);
     const [contestRow, contestProblemRows] = await Promise.all([
         findAccessibleContest(contestId, session.user.id, manager),
         db

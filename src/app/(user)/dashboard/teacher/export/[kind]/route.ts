@@ -35,7 +35,7 @@ export async function GET(
 
     const { session, membership } = await getCurrentMembership();
     if (!session) return new Response("Sign in first", { status: 401 });
-    if (!membership || !isSchoolTeacher(membership)) {
+    if (!isSchoolTeacher(membership)) {
         return new Response("Only teachers can export data", { status: 403 });
     }
 

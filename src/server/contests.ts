@@ -58,7 +58,7 @@ export function contestManagerFor(
     return {
         siteAdmin: isSiteAdmin(user.role),
         organizationId: isSchoolTeacher(membership)
-            ? membership!.organizationId
+            ? membership.organizationId
             : null,
     };
 }
