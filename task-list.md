@@ -158,7 +158,7 @@ Already done right (copy their pattern): `lib/written/competitions.ts`,
     - Year parsing is duplicated (`parseWrittenFilter` vs `getYearParam`).
     - Both `.sort()` competitions alphabetically rather than in season
       order; sort by index in `WRITTEN_COMPETITIONS`.
-- [ ] **7. "User's current schools" query**: written 4 times (`schoolsOf`
+- [x] **7. "User's current schools" query**: written 4 times (`schoolsOf`
       and `schoolIdsOf` in `server/contests.ts`, `school.leave`, the session
       hook in root `auth.ts`).
 - [ ] **8. Auth guards**: 5 layouts (sandbox, past-problem, contest,
