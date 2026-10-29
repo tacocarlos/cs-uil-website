@@ -11,7 +11,11 @@ export const COMPETITION_LABELS = {
     invA: "Invitational A",
     invB: "Invitational B",
     district: "District",
+    // VCMs 5 and 6 are practice between district and region, and between
+    // region and state.
+    "VCM-5": "VCM 5",
     region: "Region",
+    "VCM-6": "VCM 6",
     state: "State",
 } as const;
 
