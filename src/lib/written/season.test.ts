@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { seasonYearOf } from "./season";
+import { currentSeasonYear, parseSeasonYear, seasonYearOf } from "./season";
 
 describe("seasonYearOf", () => {
     test("fall dates are in the season ending the next year", () => {
@@ -22,5 +22,21 @@ describe("seasonYearOf", () => {
     test("reads Date objects by their local date", () => {
         expect(seasonYearOf(new Date(2026, 6, 31))).toBe(2026);
         expect(seasonYearOf(new Date(2026, 7, 1))).toBe(2027);
+    });
+});
+
+describe("parseSeasonYear", () => {
+    test('"all" means every season', () => {
+        expect(parseSeasonYear("all")).toBeUndefined();
+    });
+
+    test("reads a year", () => {
+        expect(parseSeasonYear("2025")).toBe(2025);
+    });
+
+    test("anything else is the current season", () => {
+        for (const value of [undefined, "", "current", "2025.5", "abc"]) {
+            expect(parseSeasonYear(value)).toBe(currentSeasonYear());
+        }
     });
 });

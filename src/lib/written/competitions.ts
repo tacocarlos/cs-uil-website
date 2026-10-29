@@ -27,3 +27,13 @@ export const WRITTEN_COMPETITIONS = Object.keys(COMPETITION_LABELS) as [
 export function competitionLabel(competition: WrittenCompetition): string {
     return COMPETITION_LABELS[competition];
 }
+
+/** Competitions sorted in season order. */
+export function inSeasonOrder(
+    competitions: WrittenCompetition[],
+): WrittenCompetition[] {
+    return [...competitions].sort(
+        (a, b) =>
+            WRITTEN_COMPETITIONS.indexOf(a) - WRITTEN_COMPETITIONS.indexOf(b),
+    );
+}

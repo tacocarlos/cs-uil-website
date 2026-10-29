@@ -4,8 +4,13 @@ import { createTRPCRouter, teacherProcedure } from "../trpc";
 import { db } from "~/server/db";
 import { writtenTests } from "~/server/db/schema/written";
 import { user } from "~/server/db/schema/auth";
-import { eq, and, desc, isNotNull, isNull, asc } from "drizzle-orm";
+import { eq, and, isNull, asc } from "drizzle-orm";
 import { inSchool } from "~/server/organizations";
+import {
+    mostRecentWrittenCompetition,
+    writtenCompetitions,
+    writtenYears,
+} from "~/server/written";
 import { member } from "~/server/db/schema/organization";
 import { totalWrittenScores } from "~/lib/written/leaderboard";
 import { computeWrittenStatistics } from "~/lib/written/statistics";
@@ -15,6 +20,25 @@ const competitionInput = z.enum(writtenTests.competition.enumValues);
 
 /** Former students are left out unless asked for (e.g. to see trends). */
 const includeFormerInput = z.boolean().default(false);
+
+/** One season year (every season without one), and whether to include former students. */
+const seasonInput = z.object({
+    year: z.number().int().optional(),
+    includeFormer: includeFormerInput,
+});
+
+/** The school's students' tests, from one season year if given. */
+function schoolTests(
+    organizationId: string,
+    { year, includeFormer }: { year?: number; includeFormer: boolean },
+) {
+    return and(
+        inSchool(writtenTests.userId, organizationId, {
+            currentOnly: !includeFormer,
+        }),
+        year === undefined ? undefined : eq(writtenTests.seasonYear, year),
+    );
+}
 
 /**
  * Written scores of a school's students with their names and whether
@@ -87,74 +111,27 @@ export const writtenRouter = createTRPCRouter({
 
     /** Competitions the teacher's students have scores for. */
     getAvailableCompetitions: teacherProcedure
-        .input(
-            z.object({
-                year: z.number().int().optional(),
-                includeFormer: includeFormerInput,
-            }),
-        )
-        .query(async ({ ctx, input }) => {
-            const conditions = [
-                inSchool(writtenTests.userId, ctx.organizationId, {
-                    currentOnly: !input.includeFormer,
-                }),
-                isNotNull(writtenTests.competition),
-            ];
-            if (input.year !== undefined) {
-                conditions.push(eq(writtenTests.seasonYear, input.year));
-            }
-
-            const competitions = await db
-                .selectDistinct({ competition: writtenTests.competition })
-                .from(writtenTests)
-                .where(and(...conditions));
-
-            return competitions
-                .map((c) => c.competition)
-                .filter((c) => c !== null)
-                .sort();
-        }),
+        .input(seasonInput)
+        .query(({ ctx, input }) =>
+            writtenCompetitions(schoolTests(ctx.organizationId, input)),
+        ),
 
     /** The competition with the teacher's students' most recent score. */
     getMostRecentCompetition: teacherProcedure
-        .input(
-            z.object({
-                year: z.number().int().optional(),
-                includeFormer: includeFormerInput,
-            }),
-        )
-        .query(async ({ ctx, input }) => {
-            const conditions = [
-                inSchool(writtenTests.userId, ctx.organizationId, {
-                    currentOnly: !input.includeFormer,
-                }),
-                isNotNull(writtenTests.competition),
-            ];
-            if (input.year !== undefined) {
-                conditions.push(eq(writtenTests.seasonYear, input.year));
-            }
-
-            const [mostRecent] = await db
-                .select({ competition: writtenTests.competition })
-                .from(writtenTests)
-                .where(and(...conditions))
-                .orderBy(desc(writtenTests.takenAt))
-                .limit(1);
-            return mostRecent?.competition ?? null;
-        }),
+        .input(seasonInput)
+        .query(({ ctx, input }) =>
+            mostRecentWrittenCompetition(
+                schoolTests(ctx.organizationId, input),
+            ),
+        ),
 
     /**
      * Season years the teacher's students (former ones too) have scores
      * for, newest first.
      */
-    getAvailableYears: teacherProcedure.query(async ({ ctx }) => {
-        const years = await db
-            .selectDistinct({ year: writtenTests.seasonYear })
-            .from(writtenTests)
-            .where(inSchool(writtenTests.userId, ctx.organizationId))
-            .orderBy(desc(writtenTests.seasonYear));
-        return years.map((y) => y.year);
-    }),
+    getAvailableYears: teacherProcedure.query(({ ctx }) =>
+        writtenYears(inSchool(writtenTests.userId, ctx.organizationId)),
+    ),
 
     /**
      * Optimal (best) and expected (average) scores per student, and the
@@ -162,12 +139,7 @@ export const writtenRouter = createTRPCRouter({
      * student's whole participation (src/lib/written/statistics.ts).
      */
     getStatistics: teacherProcedure
-        .input(
-            z.object({
-                year: z.number().int().optional(),
-                includeFormer: includeFormerInput,
-            }),
-        )
+        .input(seasonInput)
         .query(async ({ ctx, input }) => {
             const scores = await schoolScores(
                 ctx.organizationId,
