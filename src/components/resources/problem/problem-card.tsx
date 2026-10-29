@@ -25,25 +25,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { CheckCircle2, XCircle, Download, Code, FileText } from "lucide-react";
 import { type Problem } from "~/server/db/schema/types";
 import type { Submission } from "~/server/db/schema/submission";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatLevel(level: string) {
-    return level.charAt(0).toUpperCase() + level.slice(1);
-}
-
-function levelBadgeClass(level: string) {
-    switch (level) {
-        case "district":
-            return "bg-green-100 text-green-800 hover:bg-green-200";
-        case "region":
-            return "bg-blue-100 text-blue-800 hover:bg-blue-200";
-        case "state":
-            return "bg-purple-100 text-purple-800 hover:bg-purple-200";
-        default:
-            return "bg-gray-100 text-gray-800 hover:bg-gray-200";
-    }
-}
+import {
+    COMPETITION_LEVEL_BADGE_CLASSES,
+    COMPETITION_LEVEL_LABELS,
+} from "~/lib/problems/competition-levels";
 
 // ── Preview modal ─────────────────────────────────────────────────────────────
 
@@ -87,11 +72,17 @@ function ProblemPreviewModal({
                             </Badge>
                             <Badge
                                 variant="outline"
-                                className={levelBadgeClass(
-                                    problem.competitionLevel,
-                                )}
+                                className={
+                                    COMPETITION_LEVEL_BADGE_CLASSES[
+                                        problem.competitionLevel
+                                    ]
+                                }
                             >
-                                {formatLevel(problem.competitionLevel)}
+                                {
+                                    COMPETITION_LEVEL_LABELS[
+                                        problem.competitionLevel
+                                    ]
+                                }
                             </Badge>
                             {problem.programName && (
                                 <Badge
@@ -235,9 +226,9 @@ export function ProblemCard({
                         </Badge>
                         <Badge
                             variant="outline"
-                            className={`text-xs ${levelBadgeClass(problem.competitionLevel)}`}
+                            className={`text-xs ${COMPETITION_LEVEL_BADGE_CLASSES[problem.competitionLevel]}`}
                         >
-                            {formatLevel(problem.competitionLevel)}
+                            {COMPETITION_LEVEL_LABELS[problem.competitionLevel]}
                         </Badge>
                         {problem.programName && (
                             <Badge

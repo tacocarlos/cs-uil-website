@@ -4,6 +4,7 @@ import { getAllCompetitions, getAllMinimalProblems } from "~/lib/api/lunaghs";
 import { fetchJudge0Languages } from "~/lib/problems/execute/judge0";
 import { FALLBACK_LANGUAGES } from "~/components/problem-workspace/languages";
 import { competitionLabel } from "~/lib/written/competitions";
+import { COMPETITION_LEVEL_LABELS } from "~/lib/problems/competition-levels";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { contest, contestSubmission } from "~/server/db/schema/contest";
@@ -141,7 +142,7 @@ export async function programmingSubmissionsCsv(organizationId: string) {
         return [
             problem?.name,
             competition &&
-                `${competition.level.charAt(0).toUpperCase()}${competition.level.slice(1)} ${competition.year}`,
+                `${COMPETITION_LEVEL_LABELS[competition.level]} ${competition.year}`,
         ];
     }
 
