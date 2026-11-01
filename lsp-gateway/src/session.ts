@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import type { Subprocess } from "bun";
 import type { Config } from "./config";
 import { encodeMessage, MessageReader } from "./framing";
-import { projectFiles, serverCommand } from "./servers";
+import { mirroredFiles, projectFiles, serverCommand } from "./servers";
 import {
     CLIENT_WORKSPACE_URI,
     documentToMirror,
@@ -116,7 +116,7 @@ export class Session {
     private async forwardToServer(raw: string): Promise<void> {
         const message = JSON.parse(raw) as { method?: string };
 
-        const mirror = documentToMirror(message);
+        const mirror = documentToMirror(message, mirroredFiles(this.serverId));
         if (mirror)
             await Bun.write(
                 join(this.projectDir, mirror.fileName),

@@ -1,4 +1,3 @@
-import { basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
 /**
@@ -40,11 +39,13 @@ type Message = { method?: string; params?: unknown };
  * Some servers (jdtls in particular) only treat a file as part of the
  * project if it exists on disk.
  *
- * Only top-level files are mirrored, and only by base name, so a malicious
- * URI can't write outside the session directory.
+ * Only the server's own source files (`allowedFiles`, see `mirroredFiles`)
+ * are mirrored, matched exactly, so a malicious URI can't write outside the
+ * session directory or drop in build files the server would act on.
  */
 export function documentToMirror(
     message: Message,
+    allowedFiles: readonly string[],
 ): { fileName: string; text: string } | undefined {
     const params = message.params as
         | {
@@ -55,11 +56,8 @@ export function documentToMirror(
     const uri = params?.textDocument?.uri;
     if (!uri?.startsWith(`${CLIENT_WORKSPACE_URI}/`)) return undefined;
 
-    const relative = uri.slice(CLIENT_WORKSPACE_URI.length + 1);
-    const fileName = basename(decodeURIComponent(relative));
-    if (!fileName || fileName !== relative || fileName.startsWith(".")) {
-        return undefined;
-    }
+    const fileName = uri.slice(CLIENT_WORKSPACE_URI.length + 1);
+    if (!allowedFiles.includes(fileName)) return undefined;
 
     if (message.method === "textDocument/didOpen") {
         const text = params?.textDocument?.text;
