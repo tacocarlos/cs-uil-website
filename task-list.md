@@ -95,6 +95,14 @@ practice on the site. All phases are done in code.
 
 See "Before the next deploy" above, and the refactor list below.
 
+- [ ] **Terms of Service and Privacy Policy pages** (2026-10-31): the
+      sign-in page said "By signing in, you agree to our Terms of Service
+      and Privacy Policy", but `/terms` and `/privacy` don't exist (404).
+      The sentence was removed from `src/app/sign-in/signin.tsx`; write
+      both pages, then restore it below the Google button (in the card's
+      `CardFooter`). The site stores student names, emails, schools, and
+      code, so the privacy policy should cover that.
+
 ## Refactor: single source of truth (audit 2026-10-27)
 
 Already done right (copy their pattern): `lib/written/competitions.ts`,

@@ -27,7 +27,7 @@ export default function SandboxPage() {
     const { run, isRunning } = useRunCode(codeEditor, io);
 
     return (
-        <main className="bg-primary flex h-screen w-full flex-col pt-[10vh]">
+        <main className="bg-primary flex h-dvh w-full flex-col pt-16 md:pt-[10vh]">
             <EditorPane
                 toolbar={
                     <>
