@@ -1,5 +1,5 @@
 import z from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure } from "../../trpc";
 import { db } from "~/server/db";
@@ -150,37 +150,23 @@ export const contestParticipation = {
                 });
             }
 
-            const [[contestRow], [problem], priorSubmissions] =
-                await Promise.all([
-                    db
-                        .select()
-                        .from(contest)
-                        .where(eq(contest.id, contestId))
-                        .limit(1),
-                    db
-                        .select({ maxPoints: contestProblem.maxPoints })
-                        .from(contestProblem)
-                        .where(
-                            and(
-                                eq(contestProblem.contestId, contestId),
-                                eq(contestProblem.apiProblemId, apiProblemId),
-                            ),
-                        )
-                        .limit(1),
-                    db
-                        .select({ accepted: contestSubmission.accepted })
-                        .from(contestSubmission)
-                        .where(
-                            and(
-                                eq(contestSubmission.contestId, contestId),
-                                eq(
-                                    contestSubmission.apiProblemId,
-                                    apiProblemId,
-                                ),
-                                eq(contestSubmission.userId, userId),
-                            ),
+            const [[contestRow], [problem]] = await Promise.all([
+                db
+                    .select()
+                    .from(contest)
+                    .where(eq(contest.id, contestId))
+                    .limit(1),
+                db
+                    .select({ maxPoints: contestProblem.maxPoints })
+                    .from(contestProblem)
+                    .where(
+                        and(
+                            eq(contestProblem.contestId, contestId),
+                            eq(contestProblem.apiProblemId, apiProblemId),
                         ),
-                ]);
+                    )
+                    .limit(1),
+            ]);
 
             if (!contestRow) throw new Error(`Contest ${contestId} not found`);
             const status = effectiveStatus(contestRow, receivedAt);
@@ -205,39 +191,67 @@ export const contestParticipation = {
                 languageId,
             );
 
-            const attemptNumber = priorSubmissions.length + 1;
-            const points = contestPoints({
-                accepted,
-                maxPoints: problem.maxPoints,
-                scoringMode: contestRow.scoringMode,
-                penaltyPoints: contestRow.penaltyPoints,
-                wrongAttempts: priorSubmissions.filter((s) => !s.accepted)
-                    .length,
-            });
+            // Scored and recorded under a lock per student and problem, with
+            // earlier attempts read inside it, so simultaneous submissions
+            // can't both count as the same attempt or both be recorded
+            // after an accepted one.
+            const lockKey = `contest-submission:${contestId}:${userId}:${apiProblemId}`;
+            const { points, attemptNumber } = await db.transaction(
+                async (tx) => {
+                    await tx.execute(
+                        sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`,
+                    );
+                    const priorSubmissions = await tx
+                        .select({ accepted: contestSubmission.accepted })
+                        .from(contestSubmission)
+                        .where(
+                            and(
+                                eq(contestSubmission.contestId, contestId),
+                                eq(
+                                    contestSubmission.apiProblemId,
+                                    apiProblemId,
+                                ),
+                                eq(contestSubmission.userId, userId),
+                            ),
+                        );
 
-            // Once a problem is accepted, later submissions are graded but
-            // not recorded, so they can't change the score.
-            const alreadyAccepted = priorSubmissions.some((s) => s.accepted);
-            if (!alreadyAccepted) {
-                await db.insert(contestSubmission).values({
-                    contestId,
-                    apiProblemId,
-                    userId,
-                    languageId,
-                    submittedCode: code,
-                    accepted,
-                    points,
-                    attemptNumber,
-                    submittedAt: receivedAt,
-                });
-            }
+                    const attemptNumber = priorSubmissions.length + 1;
+                    const points = contestPoints({
+                        accepted,
+                        maxPoints: problem.maxPoints,
+                        scoringMode: contestRow.scoringMode,
+                        penaltyPoints: contestRow.penaltyPoints,
+                        wrongAttempts: priorSubmissions.filter(
+                            (s) => !s.accepted,
+                        ).length,
+                    });
+
+                    // Once a problem is accepted, later submissions are
+                    // graded but not recorded, so they can't change the
+                    // score.
+                    if (!priorSubmissions.some((s) => s.accepted)) {
+                        await tx.insert(contestSubmission).values({
+                            contestId,
+                            apiProblemId,
+                            userId,
+                            languageId,
+                            submittedCode: code,
+                            accepted,
+                            points,
+                            attemptNumber,
+                            submittedAt: receivedAt,
+                        });
+                    }
+                    return { points, attemptNumber };
+                },
+            );
 
             return {
                 accepted,
                 points,
                 attemptNumber,
-                stdout: result.stdout,
-                stderr: result.stderr,
+                // No stdout/stderr: the program ran on the hidden test
+                // input and could have echoed it.
                 compileOutput: result.compile_output,
                 status: result.status,
             };

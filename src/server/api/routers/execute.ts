@@ -66,8 +66,11 @@ export const executeRouter = createTRPCRouter({
                 accepted: z.boolean(),
                 attemptNumber: z.number(),
                 score: z.number(),
-                // No diff or distance: both reveal the hidden expected output.
-                executionResult: judge0ResultSchema,
+                // Verdict only. No stdout/stderr (a program could echo the
+                // hidden input) and no diff or distance (they reveal the
+                // hidden expected output).
+                status: judge0ResultSchema.shape.status,
+                compileOutput: z.string().nullable(),
             }),
         )
         .mutation(async ({ ctx, input }) => {
@@ -120,7 +123,8 @@ export const executeRouter = createTRPCRouter({
                 accepted: graded.accepted,
                 attemptNumber: numSubmissions,
                 score,
-                executionResult: graded.result,
+                status: graded.result.status,
+                compileOutput: graded.result.compile_output,
             };
         }),
 });

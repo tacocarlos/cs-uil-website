@@ -44,46 +44,59 @@ describe("rewriteUris", () => {
 
 describe("documentToMirror", () => {
     const uri = `${CLIENT_WORKSPACE_URI}/Main.java`;
+    const allowed = ["Main.java"];
 
     test("mirrors didOpen", () => {
         expect(
-            documentToMirror({
-                method: "textDocument/didOpen",
-                params: { textDocument: { uri, text: "class Main {}" } },
-            }),
+            documentToMirror(
+                {
+                    method: "textDocument/didOpen",
+                    params: { textDocument: { uri, text: "class Main {}" } },
+                },
+                allowed,
+            ),
         ).toEqual({ fileName: "Main.java", text: "class Main {}" });
     });
 
     test("mirrors full-text didChange", () => {
         expect(
-            documentToMirror({
-                method: "textDocument/didChange",
-                params: {
-                    textDocument: { uri },
-                    contentChanges: [{ text: "v2" }],
+            documentToMirror(
+                {
+                    method: "textDocument/didChange",
+                    params: {
+                        textDocument: { uri },
+                        contentChanges: [{ text: "v2" }],
+                    },
                 },
-            }),
+                allowed,
+            ),
         ).toEqual({ fileName: "Main.java", text: "v2" });
     });
 
     test("ignores incremental didChange", () => {
         expect(
-            documentToMirror({
-                method: "textDocument/didChange",
-                params: {
-                    textDocument: { uri },
-                    contentChanges: [{ text: "x", range: {} }],
+            documentToMirror(
+                {
+                    method: "textDocument/didChange",
+                    params: {
+                        textDocument: { uri },
+                        contentChanges: [{ text: "x", range: {} }],
+                    },
                 },
-            }),
+                allowed,
+            ),
         ).toBeUndefined();
     });
 
     test("ignores other messages", () => {
         expect(
-            documentToMirror({
-                method: "textDocument/hover",
-                params: { textDocument: { uri } },
-            }),
+            documentToMirror(
+                {
+                    method: "textDocument/hover",
+                    params: { textDocument: { uri } },
+                },
+                allowed,
+            ),
         ).toBeUndefined();
     });
 
@@ -94,12 +107,20 @@ describe("documentToMirror", () => {
         `${CLIENT_WORKSPACE_URI}/..%2Fetc%2Fpasswd`,
         `${CLIENT_WORKSPACE_URI}/.bashrc`,
         `${CLIENT_WORKSPACE_URI}/`,
+        `${CLIENT_WORKSPACE_URI}/build.gradle`,
+        `${CLIENT_WORKSPACE_URI}/pom.xml`,
+        `${CLIENT_WORKSPACE_URI}/compile_commands.json`,
+        `${CLIENT_WORKSPACE_URI}/main.py`,
+        `${CLIENT_WORKSPACE_URI}/Main%2Ejava`,
     ])("refuses to write %s", (badUri) => {
         expect(
-            documentToMirror({
-                method: "textDocument/didOpen",
-                params: { textDocument: { uri: badUri, text: "x" } },
-            }),
+            documentToMirror(
+                {
+                    method: "textDocument/didOpen",
+                    params: { textDocument: { uri: badUri, text: "x" } },
+                },
+                allowed,
+            ),
         ).toBeUndefined();
     });
 });
