@@ -64,7 +64,7 @@ export default async function ContestProblemPage({
     }
 
     return (
-        <div className="flex h-screen flex-col pt-[10vh]">
+        <div className="flex h-dvh flex-col pt-16 md:pt-[10vh]">
             <ContestEditor
                 problem={problem}
                 contestProblem={{

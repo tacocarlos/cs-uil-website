@@ -95,7 +95,7 @@ function IOTextarea({
         <TabsContent value={tab} className="h-full flex-1 p-4">
             <Textarea
                 className={cn(
-                    "h-full w-full resize-none border-slate-700 bg-slate-800 font-mono text-sm text-slate-100",
+                    "h-full w-full resize-none border-slate-700 bg-slate-800 font-mono text-base text-slate-100 md:text-sm",
                     className,
                 )}
                 value={value}

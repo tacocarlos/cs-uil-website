@@ -43,7 +43,7 @@ export default function SkillTreePage() {
     const [activePane, setActivePane] = useState<Pane>("apcsa");
 
     return (
-        <div className="flex h-screen flex-col pt-[10vh]">
+        <div className="flex h-dvh flex-col pt-16 md:pt-[10vh]">
             {/* Chrome-style tab bar */}
             <div className="flex items-end border-b border-neutral-400 bg-neutral-300 px-2 pt-2">
                 {PANES.map((pane) => (

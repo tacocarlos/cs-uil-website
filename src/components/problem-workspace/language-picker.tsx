@@ -45,13 +45,16 @@ export function LanguagePicker({ editor }: { editor: CodeEditorState }) {
                     aria-expanded={open}
                     aria-label="Language"
                     disabled={!editor.isReady}
-                    className="w-56 justify-between border-slate-600 bg-slate-700 text-sm font-normal text-slate-300 hover:bg-slate-600 hover:text-white"
+                    className="w-44 justify-between border-slate-600 bg-slate-700 text-sm font-normal text-slate-300 hover:bg-slate-600 hover:text-white sm:w-56"
                 >
                     <span className="truncate">{editor.language.name}</span>
                     <ChevronsUpDownIcon className="size-4 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="start">
+            <PopoverContent
+                className="w-80 max-w-[calc(100vw-2rem)] p-0"
+                align="start"
+            >
                 <Command>
                     <CommandInput placeholder="Search languages…" />
                     {/* Pointless when every language already has LSP. */}

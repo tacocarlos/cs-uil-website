@@ -18,9 +18,14 @@ const DEFAULT_EDITOR_OPTIONS = {
 type EditorOptions = typeof DEFAULT_EDITOR_OPTIONS;
 
 export function useEditorOptions() {
+    // iOS zooms the page when an input under 16px gets focus, so phones
+    // start at 16px.
+    const isPhone = typeof window !== "undefined" && window.innerWidth < 768;
     const [options, setOptions] = usePersistedStateJSON<EditorOptions>(
         "editor-options",
-        DEFAULT_EDITOR_OPTIONS,
+        isPhone
+            ? { ...DEFAULT_EDITOR_OPTIONS, fontSize: 16 }
+            : DEFAULT_EDITOR_OPTIONS,
     );
     const setters = {
         setFontSize: (newFontSize: number) => {

@@ -1,14 +1,35 @@
 import { useEffect, useState } from "react";
 
+/**
+ * localStorage.getItem, or null when storage is unavailable (blocked, or
+ * some in-app browsers) instead of throwing.
+ */
+export function readStorage(key: string): string | null {
+    try {
+        return window.localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+/** localStorage.setItem that ignores unavailable or full storage. */
+export function writeStorage(key: string, value: string) {
+    try {
+        window.localStorage.setItem(key, value);
+    } catch {
+        // Nothing persists, but the editor keeps working.
+    }
+}
+
 /** useState backed by localStorage under `key`. */
 export function usePersistedState(key: string, fallback: string) {
     const [value, setValue] = useState(() => {
         if (typeof window === "undefined") return fallback;
-        return window.localStorage.getItem(key) ?? fallback;
+        return readStorage(key) ?? fallback;
     });
 
     useEffect(() => {
-        window.localStorage.setItem(key, value);
+        writeStorage(key, value);
     }, [key, value]);
 
     return [value, setValue] as const;
@@ -17,7 +38,7 @@ export function usePersistedState(key: string, fallback: string) {
 export function usePersistedStateJSON<T>(key: string, fallback: T) {
     const [value, setValue] = useState<T>(() => {
         if (typeof window === "undefined") return fallback;
-        const stored = window.localStorage.getItem(key);
+        const stored = readStorage(key);
         if (!stored) return fallback;
         try {
             return JSON.parse(stored) as T;
@@ -28,7 +49,7 @@ export function usePersistedStateJSON<T>(key: string, fallback: T) {
     });
 
     useEffect(() => {
-        window.localStorage.setItem(key, JSON.stringify(value));
+        writeStorage(key, JSON.stringify(value));
     }, [key, value]);
 
     return [value, setValue] as const;

@@ -2,7 +2,8 @@ import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;
 
-export function useIsMobile() {
+/** Whether the viewport is below `md`, or undefined until measured. */
+export function useIsMobileOrUnknown() {
     const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
         undefined,
     );
@@ -19,5 +20,9 @@ export function useIsMobile() {
         return () => mql.removeEventListener("change", onChange);
     }, []);
 
-    return !!isMobile;
+    return isMobile;
+}
+
+export function useIsMobile() {
+    return !!useIsMobileOrUnknown();
 }

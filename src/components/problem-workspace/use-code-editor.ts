@@ -5,7 +5,11 @@ import { toast } from "sonner";
 import { DEFAULT_LANGUAGE_ID, findLanguage } from "./languages";
 import { useLsp } from "./lsp/use-lsp";
 import { useLanguages, type LanguageOptions } from "./use-languages";
-import { usePersistedState } from "./use-persisted-state";
+import {
+    readStorage,
+    usePersistedState,
+    writeStorage,
+} from "./use-persisted-state";
 import { useEditorOptions } from "./editor-options";
 
 /**
@@ -48,17 +52,13 @@ export function useCodeEditor(
 
     const codeKey = (id: string) => `${storagePrefix}-code-${id}`;
     const savedCodeOrStarter = (id: string) =>
-        window.localStorage.getItem(codeKey(id)) ??
-        findLanguage(languages, id).starterCode;
+        readStorage(codeKey(id)) ?? findLanguage(languages, id).starterCode;
 
     function onMount(instance: editor.IStandaloneCodeEditor, monaco: Monaco) {
         languageIdRef.current = language.id;
         instance.setValue(savedCodeOrStarter(language.id));
         instance.onDidChangeModelContent(() => {
-            window.localStorage.setItem(
-                codeKey(languageIdRef.current),
-                instance.getValue(),
-            );
+            writeStorage(codeKey(languageIdRef.current), instance.getValue());
         });
         editorRef.current = instance;
         setMounted({ editor: instance, monaco });

@@ -117,7 +117,7 @@ export default function TeacherContestPage() {
 
     if (!contest) {
         return (
-            <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
                 <p className="mt-8 text-center text-red-500">
                     Contest not found.
                 </p>
@@ -141,7 +141,7 @@ export default function TeacherContestPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
             <div className="mx-auto max-w-6xl">
                 {/* ── Header ──────────────────────────────────────────────── */}
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

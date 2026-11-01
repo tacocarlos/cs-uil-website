@@ -157,7 +157,7 @@ export default async function ContestLobbyPage({
 
                 {/* ── Enrollment banner ────────────────────────────────────── */}
                 {canEnroll && (
-                    <div className="mb-6 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
                         <p className="text-sm text-blue-800">
                             You are not enrolled in this contest.
                         </p>
