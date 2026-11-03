@@ -207,7 +207,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
         "px-3 pt-3 pb-1 text-xs font-semibold tracking-wider text-gray-400 uppercase";
 
     return (
-        <div className="mt-2 rounded-xl border bg-white shadow-lg">
+        <div className="mt-2 max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-xl border bg-white shadow-lg">
             <nav className="flex flex-col p-2">
                 {/* Top-level links; the account section comes last */}
                 {NAV_LINKS.map(

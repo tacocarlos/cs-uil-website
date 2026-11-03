@@ -35,8 +35,8 @@ export default async function ContestsPage() {
     const others = visible.filter((c) => !managedIds.has(c.id));
 
     return (
-        <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
-            <div className="mb-8 flex items-center justify-between">
+        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Contests</h1>
                     <p className="mt-1 text-sm text-gray-500">

@@ -131,15 +131,18 @@ export default function ContestEditor({
                         <div className="flex items-center gap-3">
                             <Link
                                 href={`/contest/${contestId}`}
+                                aria-label="Back to contest"
                                 className="flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-slate-200"
                             >
                                 <ArrowLeft className="h-4 w-4" />
-                                Back to contest
+                                <span className="hidden sm:inline">
+                                    Back to contest
+                                </span>
                             </Link>
                             <span className="text-slate-600">|</span>
                             <LanguageSelect editor={codeEditor} />
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             {inProgress && (
                                 <>
                                     {/* Disables Submit once time is up. */}

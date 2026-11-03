@@ -17,7 +17,6 @@
  */
 import { randomUUID } from "node:crypto";
 import { and, inArray, like } from "drizzle-orm";
-import { type Pool } from "pg";
 import { DEV_ACCOUNTS, type DevAccountKind } from "~/lib/auth/dev-accounts";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
 import {
@@ -539,5 +538,5 @@ try {
     if (!process.argv.includes("--remove")) await insertDummyData();
 } finally {
     // drizzle(url) creates a pool; close it so the script exits.
-    await (db.$client as Pool).end();
+    await db.$client.end();
 }

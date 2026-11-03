@@ -133,7 +133,7 @@ export default function NewContestPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold">New Contest</h1>
                 <p className="mt-1 text-sm text-gray-500">
@@ -159,7 +159,7 @@ export default function NewContestPage() {
                         <CardTitle>Problems</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <ProblemSearchList
                                 label="Search problems"
                                 problems={allProblems}

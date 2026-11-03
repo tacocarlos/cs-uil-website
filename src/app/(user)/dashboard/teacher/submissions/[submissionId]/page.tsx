@@ -58,7 +58,7 @@ export default async function SubmissionDetailPage({
     const problemName = apiProblem?.name ?? `Problem #${row.problemId}`;
 
     return (
-        <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
             <div className="mx-auto max-w-4xl">
                 <Link
                     href="/dashboard/teacher"

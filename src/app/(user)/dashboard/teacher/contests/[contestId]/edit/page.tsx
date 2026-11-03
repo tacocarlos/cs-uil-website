@@ -34,7 +34,7 @@ export default function EditContestPage({
 
     if (isNaN(contestId)) {
         return (
-            <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
                 <p className="text-sm text-red-500">Invalid contest ID.</p>
             </div>
         );
@@ -50,7 +50,7 @@ export default function EditContestPage({
 
     if (isError || !data) {
         return (
-            <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
                 <p className="text-sm text-red-500">Contest not found.</p>
                 <Button
                     variant="outline"
@@ -65,7 +65,7 @@ export default function EditContestPage({
 
     if (!data.canManage) {
         return (
-            <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
                 <p className="text-sm text-gray-600">
                     Only the host school&apos;s teachers and site admins can
                     edit this contest.
@@ -94,8 +94,8 @@ export default function EditContestPage({
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
-            <div className="mb-8 flex items-center justify-between">
+        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Edit Contest</h1>
                     <p className="mt-0.5 text-sm text-gray-500">{data.name}</p>
