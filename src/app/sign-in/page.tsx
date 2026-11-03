@@ -7,11 +7,5 @@ export default async function SignIn({
     searchParams: Promise<{ next?: string }>;
 }) {
     const { next } = await searchParams;
-    return (
-        <SignInPage
-            isLoading={false}
-            next={next}
-            showDevLogin={devLoginEnabled()}
-        />
-    );
+    return <SignInPage next={next} showDevLogin={devLoginEnabled()} />;
 }

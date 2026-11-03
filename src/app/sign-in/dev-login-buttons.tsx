@@ -31,7 +31,7 @@ export function DevLoginButtons({ callbackURL }: { callbackURL: string }) {
             <p className="text-center text-xs font-medium text-amber-800">
                 Development only
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {(Object.keys(DEV_ACCOUNTS) as DevAccountKind[]).map((kind) => (
                     <Button
                         key={kind}

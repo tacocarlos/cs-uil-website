@@ -10,8 +10,11 @@ import {
     TableBody,
     TableCell,
 } from "~/components/ui/table";
-import { compareWrittenTotals } from "~/lib/written/leaderboard";
-import { rowClassName } from "../leaderboard";
+import {
+    compareWrittenTotals,
+    formatAccuracy,
+} from "~/lib/written/leaderboard";
+import { rowClassName, StudentDialog } from "../leaderboard";
 import { LeaderboardPagination, usePagination } from "../pagination";
 
 type WrittenLeaderboardEntry = {
@@ -30,10 +33,16 @@ export default function WrittenLeaderboard({
     showSchools,
 }: {
     scores: WrittenLeaderboardEntry[];
-    /** Adds a School column (and school search), for the shared view. */
+    /** Shared view: school search, and schools in the student dialog. */
     showSchools: boolean;
 }) {
     const [searchTerm, setSearchTerm] = useState("");
+    // Kept after closing so the dialog keeps its content while it animates
+    // out.
+    const [selectedEntry, setSelectedEntry] = useState<
+        (WrittenLeaderboardEntry & { rank: number }) | null
+    >(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     // Rank before filtering, so ranks and medals don't change while
     // searching.
@@ -48,7 +57,6 @@ export default function WrittenLeaderboard({
                     entry.schools.some((s) => s.toLowerCase().includes(term)),
             );
     }, [scores, searchTerm]);
-    const columns = showSchools ? 4 : 3;
     const pagination = usePagination(filteredData);
 
     return (
@@ -79,17 +87,13 @@ export default function WrittenLeaderboard({
                     <TableRow>
                         <TableHead className="w-12.5">Rank</TableHead>
                         <TableHead>Student</TableHead>
-                        {showSchools && <TableHead>School</TableHead>}
                         <TableHead className="text-right">Score</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredData.length === 0 ? (
                         <TableRow>
-                            <TableCell
-                                colSpan={columns}
-                                className="h-24 text-center"
-                            >
+                            <TableCell colSpan={3} className="h-24 text-center">
                                 {scores.length === 0
                                     ? "No scores yet."
                                     : "No results found."}
@@ -104,12 +108,18 @@ export default function WrittenLeaderboard({
                                 <TableCell className="font-medium">
                                     {entry.rank}
                                 </TableCell>
-                                <TableCell>{entry.name}</TableCell>
-                                {showSchools && (
-                                    <TableCell className="text-sm">
-                                        {entry.schools.join(", ") || "—"}
-                                    </TableCell>
-                                )}
+                                {/* Wraps, so long names fit in portrait */}
+                                <TableCell className="whitespace-normal">
+                                    <button
+                                        className="hover:text-primary py-1 text-left underline-offset-4 hover:underline"
+                                        onClick={() => {
+                                            setSelectedEntry(entry);
+                                            setDialogOpen(true);
+                                        }}
+                                    >
+                                        {entry.name}
+                                    </button>
+                                </TableCell>
                                 <TableCell className="text-right">
                                     {entry.score}
                                 </TableCell>
@@ -119,6 +129,20 @@ export default function WrittenLeaderboard({
                 </TableBody>
             </Table>
             <LeaderboardPagination pagination={pagination} />
+
+            {selectedEntry && (
+                <StudentDialog
+                    name={selectedEntry.name}
+                    schools={showSchools ? selectedEntry.schools : undefined}
+                    stats={[
+                        ["Rank", selectedEntry.rank],
+                        ["Score", selectedEntry.score],
+                        ["Accuracy", formatAccuracy(selectedEntry.accuracy)],
+                    ]}
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
+                />
+            )}
         </div>
     );
 }

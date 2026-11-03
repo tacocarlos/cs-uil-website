@@ -5,9 +5,13 @@ import {
     ResizablePanelGroup,
 } from "~/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useIsMobileOrUnknown } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
 
-/** Two resizable columns: problem info on the left, editor on the right. */
+/**
+ * Two resizable columns: problem info on the left, editor on the right. On
+ * phones the columns become full-screen tabs, problem first.
+ */
 export function ProblemWorkspace({
     sidebar,
     children,
@@ -15,6 +19,31 @@ export function ProblemWorkspace({
     sidebar: ReactNode;
     children: ReactNode;
 }) {
+    const isMobile = useIsMobileOrUnknown();
+
+    // Wait for the measurement: rendering one layout and then the other
+    // would remount Monaco (and reconnect the LSP).
+    if (isMobile === undefined) return null;
+
+    if (isMobile) {
+        // forceMount keeps both tabs mounted, so Monaco survives tab switches.
+        const pane = "min-h-0 flex-1 data-[state=inactive]:hidden";
+        return (
+            <Tabs defaultValue="problem" className="h-full w-full gap-0">
+                <TabsList className="w-full rounded-none border-b bg-white">
+                    <TabsTrigger value="problem">Problem</TabsTrigger>
+                    <TabsTrigger value="code">Code</TabsTrigger>
+                </TabsList>
+                <TabsContent value="problem" forceMount className={pane}>
+                    {sidebar}
+                </TabsContent>
+                <TabsContent value="code" forceMount className={pane}>
+                    {children}
+                </TabsContent>
+            </Tabs>
+        );
+    }
+
     return (
         <ResizablePanelGroup direction="horizontal" className="h-full w-full">
             <ResizablePanel defaultSize={40} minSize={30}>
@@ -85,7 +114,7 @@ export function EditorPane({
 }) {
     return (
         <div className="flex h-full flex-col bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800 px-4 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-800 px-4 py-2">
                 {toolbar}
             </div>
             <ResizablePanelGroup direction="vertical">

@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import { LeaderboardPagination, usePagination } from "./pagination";
-import { CheckCircle2, ExternalLink } from "lucide-react";
 import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
 import {
     Table,
     TableHeader,
@@ -20,116 +17,59 @@ import {
     DialogHeader,
     DialogTitle,
 } from "~/components/ui/dialog";
-import {
-    COMPETITION_LEVEL_ABBREVIATIONS,
-    type CompetitionLevel,
-} from "~/lib/problems/competition-levels";
 
 type LeaderboardEntry = {
     id: string;
     name: string;
     score: number;
-    solvedProblemIds: number[];
     /** The student's schools (only filled in on the shared leaderboard). */
     schools: string[];
 };
 
-export type ProblemLeaderboardData = {
-    id: number;
-    competitionId: number;
-    name: string;
-};
+type RankedEntry = LeaderboardEntry & { globalRank: number };
 
-export type CompetitionLeaderboardData = {
-    id: number;
-    level: CompetitionLevel;
-    year: number;
-};
+// ── Student dialog ────────────────────────────────────────────────────────────
 
-// ── Solved-problems dialog ────────────────────────────────────────────────────
-function CompetitionBadge({
-    competition,
-}: {
-    competition?: CompetitionLeaderboardData;
-}) {
-    if (competition === undefined) {
-        return "UC2067 ";
-    }
-
-    return (
-        <span>
-            {COMPETITION_LEVEL_ABBREVIATIONS[competition.level]}
-            {competition.year}
-        </span>
-    );
-}
-
-function SolvedProblemsDialog({
-    entry,
-    problems,
+/**
+ * A student's stats (rank, score, ...) and, on the shared leaderboard,
+ * their schools. Shared with the written leaderboard.
+ */
+export function StudentDialog({
+    name,
+    schools,
+    stats,
     open,
     onOpenChange,
-    competitions,
 }: {
-    entry: LeaderboardEntry;
-    problems: ProblemLeaderboardData[];
-    competitions: Map<number, CompetitionLeaderboardData>;
+    name: string;
+    /** Left out on a school's own leaderboard. */
+    schools?: string[];
+    stats: readonly (readonly [label: string, value: string | number])[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-    const solved = useMemo(() => {
-        const idSet = new Set(entry.solvedProblemIds);
-        return problems
-            .filter((p) => idSet.has(p.id))
-            .sort((a, b) => a.name.localeCompare(b.name));
-    }, [entry.solvedProblemIds, problems]);
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[70vh] overflow-y-auto sm:max-w-lg">
+            <DialogContent className="sm:max-w-sm">
                 <DialogHeader>
-                    <DialogTitle>
-                        {entry.name}&apos;s completed problems
-                    </DialogTitle>
+                    <DialogTitle>{name}</DialogTitle>
                 </DialogHeader>
 
-                {solved.length === 0 ? (
-                    <p className="text-muted-foreground py-4 text-center text-sm">
-                        No completed problems.
+                {schools && (
+                    <p className="text-muted-foreground text-sm">
+                        {schools.join(", ") || "No school"}
                     </p>
-                ) : (
-                    <ul className="space-y-2 pt-2">
-                        {solved.map((problem) => (
-                            <li
-                                key={problem.id}
-                                className="flex items-center justify-between gap-4 rounded-md border px-3 py-2"
-                            >
-                                <span className="flex items-center gap-2 text-sm font-medium">
-                                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-                                    <CompetitionBadge
-                                        competition={competitions.get(
-                                            problem.competitionId,
-                                        )}
-                                    />
-                                    {problem.name}
-                                </span>
-                                <Button
-                                    asChild
-                                    size="sm"
-                                    variant="outline"
-                                    className="shrink-0"
-                                >
-                                    <Link
-                                        href={`/resources/past-problem/${problem.id}`}
-                                    >
-                                        <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                                        View
-                                    </Link>
-                                </Button>
-                            </li>
-                        ))}
-                    </ul>
                 )}
+                <dl className="grid auto-cols-fr grid-flow-col gap-2 text-center">
+                    {stats.map(([label, value]) => (
+                        <div key={label} className="rounded-md border py-2">
+                            <dt className="text-muted-foreground text-xs">
+                                {label}
+                            </dt>
+                            <dd className="text-lg font-bold">{value}</dd>
+                        </div>
+                    ))}
+                </dl>
             </DialogContent>
         </Dialog>
     );
@@ -149,20 +89,19 @@ export function rowClassName(rank: number) {
 
 export default function Leaderboard({
     scores,
-    problems,
-    competitions,
     showSchools,
 }: {
     scores: LeaderboardEntry[];
-    problems: ProblemLeaderboardData[];
-    competitions: Map<number, CompetitionLeaderboardData>;
-    /** Adds a School column (and school search), for the shared view. */
+    /** Shared view: school search, and schools in the student dialog. */
     showSchools: boolean;
 }) {
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedEntry, setSelectedEntry] = useState<LeaderboardEntry | null>(
+    // Kept after closing so the dialog keeps its content while it animates
+    // out.
+    const [selectedEntry, setSelectedEntry] = useState<RankedEntry | null>(
         null,
     );
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const filteredAndSortedData = useMemo(() => {
         const sorted = [...scores].sort((a, b) => b.score - a.score);
@@ -177,7 +116,6 @@ export default function Leaderboard({
                     entry.schools.some((s) => s.toLowerCase().includes(term)),
             );
     }, [scores, searchTerm]);
-    const columns = showSchools ? 4 : 3;
     const pagination = usePagination(filteredAndSortedData);
 
     return (
@@ -206,17 +144,13 @@ export default function Leaderboard({
                     <TableRow>
                         <TableHead className="w-12.5">Rank</TableHead>
                         <TableHead>Username</TableHead>
-                        {showSchools && <TableHead>School</TableHead>}
                         <TableHead className="text-right">Score</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredAndSortedData.length === 0 ? (
                         <TableRow>
-                            <TableCell
-                                colSpan={columns}
-                                className="h-24 text-center"
-                            >
+                            <TableCell colSpan={3} className="h-24 text-center">
                                 No results found.
                             </TableCell>
                         </TableRow>
@@ -229,19 +163,18 @@ export default function Leaderboard({
                                 <TableCell className="font-medium">
                                     {entry.globalRank}
                                 </TableCell>
-                                <TableCell>
+                                {/* Wraps, so long names fit in portrait */}
+                                <TableCell className="whitespace-normal">
                                     <button
-                                        className="hover:text-primary text-left underline-offset-4 hover:underline"
-                                        onClick={() => setSelectedEntry(entry)}
+                                        className="hover:text-primary py-1 text-left underline-offset-4 hover:underline"
+                                        onClick={() => {
+                                            setSelectedEntry(entry);
+                                            setDialogOpen(true);
+                                        }}
                                     >
                                         {entry.name}
                                     </button>
                                 </TableCell>
-                                {showSchools && (
-                                    <TableCell className="text-sm">
-                                        {entry.schools.join(", ") || "—"}
-                                    </TableCell>
-                                )}
                                 <TableCell className="text-right">
                                     {entry.score}
                                 </TableCell>
@@ -253,14 +186,15 @@ export default function Leaderboard({
             <LeaderboardPagination pagination={pagination} />
 
             {selectedEntry && (
-                <SolvedProblemsDialog
-                    entry={selectedEntry}
-                    competitions={competitions}
-                    problems={problems}
-                    open={selectedEntry !== null}
-                    onOpenChange={(open) => {
-                        if (!open) setSelectedEntry(null);
-                    }}
+                <StudentDialog
+                    name={selectedEntry.name}
+                    schools={showSchools ? selectedEntry.schools : undefined}
+                    stats={[
+                        ["Rank", selectedEntry.globalRank],
+                        ["Score", selectedEntry.score],
+                    ]}
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
                 />
             )}
         </div>

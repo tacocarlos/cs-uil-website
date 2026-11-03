@@ -9,6 +9,7 @@ import { Countdown } from "~/components/contest/countdown";
 import { RefreshAt } from "~/components/contest/refresh-at";
 import type { Problem } from "~/server/db/schema/types";
 import { isInProgress, type ContestStatus } from "~/lib/contest/status";
+import { JUDGE0_STATUS } from "~/lib/problems/execute/judge0-result";
 import { CodeEditor } from "~/components/problem-workspace/code-editor";
 import {
     LanguageSelect,
@@ -69,11 +70,14 @@ export default function ContestEditor({
     const submitMutation = api.contest.submitCode.useMutation({
         onSuccess: async (data) => {
             await utils.contest.getMyBestPerProblem.invalidate({ contestId });
-            // Mirror run output so the user can see what happened.
-            io.showOutput({
-                stdout: data.stdout,
-                stderr: data.stderr ?? data.compileOutput,
-            });
+            // Program output on the hidden data isn't sent back, but show
+            // why a submission failed to compile or run.
+            const error =
+                data.compileOutput ??
+                (data.status.id !== JUDGE0_STATUS.ACCEPTED
+                    ? data.status.description
+                    : null);
+            if (error) io.showOutput({ stderr: error });
             toast(
                 data.accepted
                     ? `✓ Accepted — ${data.points} / ${maxPoints} pts`
@@ -131,15 +135,18 @@ export default function ContestEditor({
                         <div className="flex items-center gap-3">
                             <Link
                                 href={`/contest/${contestId}`}
+                                aria-label="Back to contest"
                                 className="flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-slate-200"
                             >
                                 <ArrowLeft className="h-4 w-4" />
-                                Back to contest
+                                <span className="hidden sm:inline">
+                                    Back to contest
+                                </span>
                             </Link>
                             <span className="text-slate-600">|</span>
                             <LanguageSelect editor={codeEditor} />
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             {inProgress && (
                                 <>
                                     {/* Disables Submit once time is up. */}

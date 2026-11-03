@@ -8,7 +8,7 @@ import { user as userTable } from "~/server/db/schema/auth";
 import { and, eq } from "drizzle-orm";
 import { getProblemById } from "~/lib/api/lunaghs";
 import { getCurrentMembership } from "~/server/current-membership";
-import { inSchool } from "~/server/organizations";
+import { inSchool, isSchoolTeacher } from "~/server/organizations";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { CodeBlock } from "~/components/code-block";
@@ -20,9 +20,11 @@ export default async function SubmissionDetailPage({
     params: Promise<{ submissionId: string }>;
 }) {
     const { submissionId } = await params;
-    // The layout already checked that this is a teacher of the active school.
+    // The layout checks for a teacher too, but layouts and pages render
+    // independently, so this page doesn't rely on it: students' code is
+    // for their teachers only.
     const { membership } = await getCurrentMembership();
-    if (!membership) notFound();
+    if (!isSchoolTeacher(membership)) notFound();
 
     const [row] = await db
         .select({
@@ -58,7 +60,7 @@ export default async function SubmissionDetailPage({
     const problemName = apiProblem?.name ?? `Problem #${row.problemId}`;
 
     return (
-        <div className="min-h-screen bg-gray-50 px-8 pt-20 pb-8">
+        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
             <div className="mx-auto max-w-4xl">
                 <Link
                     href="/dashboard/teacher"

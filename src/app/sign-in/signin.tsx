@@ -1,12 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "~/components/ui/card";
@@ -17,7 +18,6 @@ import { DevLoginButtons } from "./dev-login-buttons";
 
 type SignInPageProps = {
     error?: string;
-    isLoading: boolean;
     next?: string;
     /** Show the fake dev-account buttons (development only). */
     showDevLogin?: boolean;
@@ -25,14 +25,16 @@ type SignInPageProps = {
 
 export default function SignInPage({
     error,
-    isLoading,
     next,
     showDevLogin = false,
 }: SignInPageProps) {
     const callbackURL = getSafeRedirectUrl(next, "/dashboard");
+    // Stays true while the browser leaves for Google, so a slow redirect
+    // can't be tapped twice.
+    const [isLoading, setIsLoading] = useState(false);
     return (
-        <main className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-            <div className="w-full max-w-1/3 rounded-xl border border-white px-5">
+        <main className="bg-primary flex min-h-dvh items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md rounded-xl border border-white px-5 pb-6">
                 <div className="mb-8 text-center">
                     {/* <Link href="/" className="inline-block">
                         <Image
@@ -72,10 +74,17 @@ export default function SignInPage({
                             variant="outline"
                             className="flex h-12 w-full items-center justify-center gap-2"
                             onClick={async () => {
-                                await signIn.social({
+                                setIsLoading(true);
+                                const { error } = await signIn.social({
                                     provider: "google",
                                     callbackURL,
                                 });
+                                if (error) {
+                                    toast.error(
+                                        `Sign-in failed: ${error.message}`,
+                                    );
+                                    setIsLoading(false);
+                                }
                             }}
                             disabled={isLoading}
                         >
@@ -112,24 +121,6 @@ export default function SignInPage({
                             <DevLoginButtons callbackURL={callbackURL} />
                         )}
                     </CardContent>
-                    <CardFooter className="flex flex-col">
-                        <p className="mt-2 text-center text-xs text-gray-500">
-                            By signing in, you agree to our{" "}
-                            <Link
-                                href="/terms"
-                                className="underline hover:text-blue-600"
-                            >
-                                Terms of Service
-                            </Link>{" "}
-                            and{" "}
-                            <Link
-                                href="/privacy"
-                                className="underline hover:text-blue-600"
-                            >
-                                Privacy Policy
-                            </Link>
-                        </p>
-                    </CardFooter>
                 </Card>
 
                 <div className="mt-6 text-center">

@@ -88,11 +88,6 @@ export default function LeaderboardPage() {
 
     const status = contest.status;
 
-    // Derive the ordered problem-label columns from the contest's problem list
-    const problemColumns = [...contest.problems]
-        .sort((a, b) => a.displayOrder - b.displayOrder)
-        .map((p) => ({ label: p.label, apiProblemId: p.apiProblemId }));
-
     return (
         <>
             {/* Silent auto-refresh every 15 s */}
@@ -120,20 +115,12 @@ export default function LeaderboardPage() {
                     )}
 
                     {/* ── Leaderboard table ────────────────────────────────── */}
-                    <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+                    <div className="text-foreground overflow-hidden rounded-lg border bg-white shadow-sm">
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-16">Rank</TableHead>
                                     <TableHead>Student</TableHead>
-                                    {problemColumns.map((col) => (
-                                        <TableHead
-                                            key={col.apiProblemId}
-                                            className="text-center"
-                                        >
-                                            {col.label}
-                                        </TableHead>
-                                    ))}
                                     <TableHead className="text-right">
                                         Total
                                     </TableHead>
@@ -146,7 +133,7 @@ export default function LeaderboardPage() {
                                 {!leaderboard || leaderboard.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={4 + problemColumns.length}
+                                            colSpan={4}
                                             className="text-muted-foreground py-12 text-center text-sm"
                                         >
                                             No participants yet.
@@ -155,13 +142,11 @@ export default function LeaderboardPage() {
                                 ) : (
                                     leaderboard.map((entry, i) => (
                                         <TableRow key={entry.userId}>
-                                            {/* Rank */}
                                             <TableCell className="w-16 font-medium">
                                                 {i + 1}
                                             </TableCell>
-
-                                            {/* Student name and school */}
-                                            <TableCell>
+                                            {/* Wraps, so long names fit on phones */}
+                                            <TableCell className="whitespace-normal">
                                                 {entry.userName}
                                                 {entry.schoolName && (
                                                     <span className="text-muted-foreground block text-xs">
@@ -169,61 +154,9 @@ export default function LeaderboardPage() {
                                                     </span>
                                                 )}
                                             </TableCell>
-
-                                            {/* Per-problem cells */}
-                                            {problemColumns.map((col) => {
-                                                const prob =
-                                                    entry.problems?.find(
-                                                        (ep) =>
-                                                            ep.apiProblemId ===
-                                                            col.apiProblemId,
-                                                    );
-
-                                                if (!prob) {
-                                                    return (
-                                                        <TableCell
-                                                            key={
-                                                                col.apiProblemId
-                                                            }
-                                                            className="text-muted-foreground text-center"
-                                                        >
-                                                            —
-                                                        </TableCell>
-                                                    );
-                                                }
-
-                                                if (prob.accepted) {
-                                                    return (
-                                                        <TableCell
-                                                            key={
-                                                                col.apiProblemId
-                                                            }
-                                                            className="text-center font-medium text-green-600"
-                                                        >
-                                                            ✓ {prob.points}
-                                                        </TableCell>
-                                                    );
-                                                }
-
-                                                return (
-                                                    <TableCell
-                                                        key={col.apiProblemId}
-                                                        className="text-center text-red-500"
-                                                    >
-                                                        ✗{" "}
-                                                        {prob.attempts > 0
-                                                            ? `${prob.attempts}×`
-                                                            : ""}
-                                                    </TableCell>
-                                                );
-                                            })}
-
-                                            {/* Total points */}
                                             <TableCell className="text-right font-bold">
                                                 {entry.totalPoints}
                                             </TableCell>
-
-                                            {/* Solved count */}
                                             <TableCell className="text-center">
                                                 {entry.solvedCount}
                                             </TableCell>

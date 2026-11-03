@@ -244,7 +244,7 @@ export const contestQueries = {
         }),
 
     // Shows students' names and schools, so signed-in users who may see
-    // (or manage) the contest only.
+    // (or manage) the contest only. Per-problem results are left out.
     getLeaderboard: protectedProcedure
         .input(byContest)
         .query(async ({ ctx, input }) => {
@@ -304,6 +304,13 @@ export const contestQueries = {
             const labels = new Map(
                 problems.map((p) => [p.apiProblemId, p.label]),
             );
-            return buildLeaderboard(submissions, labels);
+            // Totals only: which problems a student solved isn't public.
+            return buildLeaderboard(submissions, labels).map((row) => ({
+                userId: row.userId,
+                userName: row.userName,
+                schoolName: row.schoolName,
+                totalPoints: row.totalPoints,
+                solvedCount: row.solvedCount,
+            }));
         }),
 };
