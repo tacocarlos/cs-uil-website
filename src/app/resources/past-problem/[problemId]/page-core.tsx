@@ -30,7 +30,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
     const storagePrefix = `problem-${problem.id}`;
     const codeEditor = useCodeEditor(storagePrefix);
     const io = useTestIO(storagePrefix, problem.defaultInputFile ?? "");
-    const { run, isRunning } = useRunCode(codeEditor, io);
+    const { run, isRunning } = useRunCode(codeEditor, io, problem.id);
 
     const utils = api.useUtils();
 

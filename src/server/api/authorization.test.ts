@@ -62,6 +62,8 @@ const ACCESS: Record<string, Access> = {
     "problem.getProblemPreview": "public",
     // Practice submissions
     "submission.getProblemSubmissions": "signed-in",
+    // Signed-out visitors get no progress.
+    "submission.getMyProblemProgress": "public",
     "submission.getAcceptedSubmissions": "signed-in",
     "submission.getDeniedSubmissions": "signed-in",
     "submission.getRecentOrgSubmission": "teacher",

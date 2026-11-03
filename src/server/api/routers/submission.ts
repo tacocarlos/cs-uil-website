@@ -3,13 +3,15 @@ import { TRPCError } from "@trpc/server";
 import {
     createTRPCRouter,
     protectedProcedure,
+    publicProcedure,
     teacherProcedure,
 } from "../trpc";
 import { db } from "~/server/db";
-import { submission } from "~/server/db/schema/submission";
+import { problemRun, submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { inSchool } from "~/server/organizations";
+import { type ProblemProgress } from "~/lib/problems/status";
 
 // Student procedures return the signed-in user's own submissions only;
 // teacher procedures see and change only their school's students'.
@@ -30,6 +32,40 @@ export const submissionRouter = createTRPCRouter({
                     ),
                 );
         }),
+
+    /**
+     * The signed-in user's progress on every practice problem they've
+     * submitted to or run code on, keyed by problem ID; problems missing
+     * from it are not attempted. Fetched whole so problem lists can filter
+     * by status. Signed-out visitors get no progress rather than an error,
+     * since problem lists are public.
+     */
+    getMyProblemProgress: publicProcedure.query(async ({ ctx }) => {
+        const progress: Record<number, ProblemProgress> = {};
+        if (!ctx.session) return progress;
+        const userId = ctx.session.user.id;
+        const [latest, runs] = await Promise.all([
+            db
+                .selectDistinctOn([submission.problemId])
+                .from(submission)
+                .where(eq(submission.userId, userId))
+                .orderBy(submission.problemId, desc(submission.timeSubmitted)),
+            db
+                .select({ problemId: problemRun.problemId })
+                .from(problemRun)
+                .where(eq(problemRun.userId, userId)),
+        ]);
+        for (const { problemId } of runs) {
+            progress[problemId] = { submission: null, started: true };
+        }
+        for (const s of latest) {
+            progress[s.problemId] = {
+                submission: s,
+                started: progress[s.problemId]?.started ?? false,
+            };
+        }
+        return progress;
+    }),
 
     /**
      * The 10 latest submissions by the teacher's students, for the

@@ -8,7 +8,7 @@ import {
 } from "~/server/api/trpc";
 import { eq, and } from "drizzle-orm";
 import { diffChars } from "diff";
-import { submission } from "~/server/db/schema/submission";
+import { problemRun, submission } from "~/server/db/schema/submission";
 import { DEFAULT_MAX_POINTS, practicePoints } from "~/lib/problems/scoring";
 import { gradeSubmission } from "~/lib/problems/judge/grade-submission";
 import {
@@ -39,19 +39,32 @@ export const executeRouter = createTRPCRouter({
 
     getLanguages: publicProcedure.query(() => fetchJudge0Languages()),
 
-    // Signed-in only: runs cost Judge0 capacity.
+    // Signed-in only: runs cost Judge0 capacity. Practice pages pass
+    // `problemId` so the problem shows as started; the sandbox and contests
+    // don't.
     runCode: protectedProcedure
         .input(
             z.object({
                 code: z.string(),
                 input: z.string(),
                 languageId: z.string(),
+                problemId: z.number().optional(),
             }),
         )
         .output(judge0ResultSchema)
-        .mutation(({ input }) =>
-            runOnJudge0(input.code, input.languageId, input.input),
-        ),
+        .mutation(async ({ ctx, input }) => {
+            if (input.problemId !== undefined) {
+                // Recorded before running, so code that fails still counts.
+                await db
+                    .insert(problemRun)
+                    .values({ userId: ctx.user.id, problemId: input.problemId })
+                    .onConflictDoUpdate({
+                        target: [problemRun.userId, problemRun.problemId],
+                        set: { lastRunAt: new Date() },
+                    });
+            }
+            return runOnJudge0(input.code, input.languageId, input.input);
+        }),
 
     submitCode: protectedProcedure
         .input(

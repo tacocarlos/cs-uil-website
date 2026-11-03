@@ -22,6 +22,20 @@
             background-position: 100% 50%;
         }
     }
+
+    /* A deeper fade than animate-pulse, for placeholder text. */
+    --animate-text-pulse: text-pulse 1.5s ease-in-out infinite;
+
+    @keyframes text-pulse {
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.15;
+        }
+    }
 }
 :root {
     --background: oklch(1 0 0);

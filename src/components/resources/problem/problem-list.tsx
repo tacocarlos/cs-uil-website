@@ -1,8 +1,14 @@
 "use client";
 
 import { type Problem } from "~/server/db/schema/types";
-import type { Submission } from "~/server/db/schema/submission";
+import { useSession } from "auth-client";
 import { ProblemCard } from "./problem-card";
+import { useProblemProgress } from "./use-problem-progress";
+import {
+    PROBLEM_STATUS_LABELS,
+    PROBLEM_STATUSES,
+    problemStatus,
+} from "~/lib/problems/status";
 import {
     COMPETITION_LEVEL_LABELS,
     COMPETITION_LEVELS,
@@ -39,12 +45,18 @@ export default function ProblemList({
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedYear, setSelectedYear] = useState<string>("all");
     const [selectedLevel, setSelectedLevel] = useState<string>("all");
+    const [selectedStatus, setSelectedStatus] = useState<string>("all");
     const [currentPage, setCurrentPage] = useState(1);
+
+    // Everything is "not attempted" when signed out, so the status filter
+    // is only shown to signed-in users.
+    const { data: session } = useSession();
+    const { data: progress } = useProblemProgress();
 
     // Reset to page 1 whenever any filter changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, selectedYear, selectedLevel]);
+    }, [searchQuery, selectedYear, selectedLevel, selectedStatus]);
 
     const years = useMemo(
         () =>
@@ -66,20 +78,38 @@ export default function ProblemList({
                 const matchesLevel =
                     selectedLevel === "all" ||
                     p.competitionLevel === selectedLevel;
-                return matchesSearch && matchesYear && matchesLevel;
+                const matchesStatus =
+                    !session ||
+                    selectedStatus === "all" ||
+                    problemStatus(progress?.[p.id]) === selectedStatus;
+                return (
+                    matchesSearch &&
+                    matchesYear &&
+                    matchesLevel &&
+                    matchesStatus
+                );
             }),
-        [problems, searchQuery, selectedYear, selectedLevel],
+        [
+            problems,
+            searchQuery,
+            selectedYear,
+            selectedLevel,
+            selectedStatus,
+            session,
+            progress,
+        ],
     );
 
-    // Submissions are not yet loaded from the API; placeholder for future use.
-    const pairs: [Problem, Submission | undefined][] = filteredProblems.map(
-        (p) => [p, undefined],
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredProblems.length / ITEMS_PER_PAGE),
     );
-
-    const totalPages = Math.max(1, Math.ceil(pairs.length / ITEMS_PER_PAGE));
     const safePage = Math.min(currentPage, totalPages);
     const pageStart = (safePage - 1) * ITEMS_PER_PAGE;
-    const visiblePairs = pairs.slice(pageStart, pageStart + ITEMS_PER_PAGE);
+    const visibleProblems = filteredProblems.slice(
+        pageStart,
+        pageStart + ITEMS_PER_PAGE,
+    );
 
     /** Returns page numbers (or "ellipsis" sentinels) for the pagination bar. */
     function getPageNumbers(
@@ -154,12 +184,39 @@ export default function ProblemList({
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {session && (
+                        <div className="flex-1">
+                            <Select
+                                value={selectedStatus}
+                                onValueChange={setSelectedStatus}
+                                disabled={!progress}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Filter by status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All statuses
+                                    </SelectItem>
+                                    {PROBLEM_STATUSES.map((status) => (
+                                        <SelectItem key={status} value={status}>
+                                            {PROBLEM_STATUS_LABELS[status]}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                 </div>
 
                 <p className="text-muted-foreground text-sm">
                     Showing {pageStart + 1}–
-                    {Math.min(pageStart + ITEMS_PER_PAGE, pairs.length)} of{" "}
-                    {filteredProblems.length} problem
+                    {Math.min(
+                        pageStart + ITEMS_PER_PAGE,
+                        filteredProblems.length,
+                    )}{" "}
+                    of {filteredProblems.length} problem
                     {filteredProblems.length !== 1 ? "s" : ""}
                     {filteredProblems.length !== problems.length &&
                         ` (${problems.length} total)`}
@@ -167,15 +224,11 @@ export default function ProblemList({
             </div>
 
             {/* Card grid */}
-            {pairs.length > 0 ? (
+            {filteredProblems.length > 0 ? (
                 <>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {visiblePairs.map(([problem, submission]) => (
-                            <ProblemCard
-                                key={problem.id}
-                                problem={problem}
-                                mostRecentSubmission={submission}
-                            />
+                        {visibleProblems.map((problem) => (
+                            <ProblemCard key={problem.id} problem={problem} />
                         ))}
                     </div>
 

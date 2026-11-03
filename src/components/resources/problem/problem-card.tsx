@@ -22,24 +22,35 @@ import {
     DialogTitle,
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { CheckCircle2, XCircle, Download, Code, FileText } from "lucide-react";
+import {
+    CheckCircle2,
+    CirclePlay,
+    XCircle,
+    Download,
+    Code,
+    FileText,
+} from "lucide-react";
 import { type Problem } from "~/server/db/schema/types";
 import type { Submission } from "~/server/db/schema/submission";
 import {
     COMPETITION_LEVEL_BADGE_CLASSES,
     COMPETITION_LEVEL_LABELS,
 } from "~/lib/problems/competition-levels";
+import { useProblemProgress } from "./use-problem-progress";
 
 // ── Preview modal ─────────────────────────────────────────────────────────────
 
 function ProblemPreviewModal({
     problem,
     mostRecentSubmission,
+    started,
     open,
     onOpenChange,
 }: {
     problem: Problem;
     mostRecentSubmission?: Submission;
+    /** Code has been run on it, whether or not it was submitted. */
+    started: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -95,6 +106,14 @@ function ProblemPreviewModal({
                         </div>
                     </div>
 
+                    {!mostRecentSubmission && started && (
+                        <div className="mt-2">
+                            <span className="flex items-center gap-1.5 text-sm text-amber-600">
+                                <CirclePlay className="h-4 w-4" />
+                                Started, no submission
+                            </span>
+                        </div>
+                    )}
                     {mostRecentSubmission && (
                         <div className="mt-2">
                             {mostRecentSubmission.accepted ? (
@@ -204,14 +223,12 @@ function ProblemPreviewModal({
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
-export function ProblemCard({
-    problem,
-    mostRecentSubmission,
-}: {
-    problem: Problem;
-    mostRecentSubmission?: Submission;
-}) {
+export function ProblemCard({ problem }: { problem: Problem }) {
     const [modalOpen, setModalOpen] = useState(false);
+    const { data, isPending } = useProblemProgress();
+    const progress = data?.[problem.id];
+    const mostRecentSubmission = progress?.submission ?? undefined;
+    const started = progress?.started ?? false;
 
     return (
         <>
@@ -245,7 +262,11 @@ export function ProblemCard({
                 </CardHeader>
 
                 <CardContent className="flex-1 pb-2">
-                    {mostRecentSubmission ? (
+                    {isPending ? (
+                        <p className="text-muted-foreground animate-text-pulse text-sm">
+                            Not attempted
+                        </p>
+                    ) : mostRecentSubmission ? (
                         mostRecentSubmission.accepted ? (
                             <span className="flex items-center gap-1.5 text-sm text-green-600">
                                 <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -258,6 +279,11 @@ export function ProblemCard({
                                 Not yet accepted
                             </span>
                         )
+                    ) : started ? (
+                        <span className="flex items-center gap-1.5 text-sm text-amber-600">
+                            <CirclePlay className="h-4 w-4 shrink-0" />
+                            Started, no submission
+                        </span>
                     ) : (
                         <p className="text-muted-foreground text-sm">
                             Not attempted
@@ -275,6 +301,7 @@ export function ProblemCard({
             <ProblemPreviewModal
                 problem={problem}
                 mostRecentSubmission={mostRecentSubmission}
+                started={started}
                 open={modalOpen}
                 onOpenChange={setModalOpen}
             />

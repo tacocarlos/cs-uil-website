@@ -1,4 +1,4 @@
-import { index } from "drizzle-orm/pg-core";
+import { index, primaryKey } from "drizzle-orm/pg-core";
 import { DEFAULT_MAX_POINTS } from "~/lib/problems/scoring";
 import createTable, { cascadeFk } from "./createTable";
 
@@ -27,3 +27,22 @@ export const submission = createTable(
 );
 
 export type Submission = typeof submission.$inferSelect;
+
+/**
+ * Practice problems a user has run code on, one row per user and problem,
+ * so problem lists can show "started" before any submission. Contest runs
+ * aren't recorded: they belong to their contest.
+ */
+export const problemRun = createTable(
+    "problem_run",
+    (d) => ({
+        userId: d.text().notNull(),
+        problemId: d.integer().notNull(),
+        firstRunAt: d.timestamp().defaultNow().notNull(),
+        lastRunAt: d.timestamp().defaultNow().notNull(),
+    }),
+    (t) => [
+        primaryKey({ columns: [t.userId, t.problemId] }),
+        cascadeFk("problem_run_user_id_fk", t.userId, user.id),
+    ],
+);

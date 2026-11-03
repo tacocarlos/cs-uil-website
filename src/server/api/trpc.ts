@@ -10,6 +10,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { auth } from "auth";
+import { env } from "~/env";
 import { isSiteAdmin } from "~/lib/auth/roles";
 import {
     getActiveMembership,
@@ -99,7 +100,9 @@ export const createTRPCRouter = t.router;
 const timingMiddleware = t.middleware(async ({ next, path }) => {
     const start = Date.now();
 
-    if (t._config.isDev) {
+    // Not t._config.isDev: that's also true in tests, where the delay
+    // only slows things down.
+    if (env.NODE_ENV === "development") {
         // artificial delay in dev
         const waitMs = Math.floor(Math.random() * 400) + 100;
         await new Promise((resolve) => setTimeout(resolve, waitMs));

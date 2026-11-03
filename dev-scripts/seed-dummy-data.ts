@@ -11,10 +11,14 @@
  * production. Dummy users have @seed.local emails and dummy schools have
  * IDs starting with "seed-"; everything else is left alone. The dummy users
  * can't sign in; use the dev accounts for that (they're in Groveton, along
- * with some dummy students).
+ * with some dummy students). The dev student and teacher also get practice
+ * submissions, with IDs starting with "seed-", and runs on a few other
+ * problems, if they've signed in before.
  */
-import { like } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, inArray, like } from "drizzle-orm";
 import { type Pool } from "pg";
+import { DEV_ACCOUNTS, type DevAccountKind } from "~/lib/auth/dev-accounts";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
 import {
     DEFAULT_ORGANIZATION,
@@ -25,7 +29,7 @@ import { type Conference } from "~/lib/schools";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
-import { submission } from "~/server/db/schema/submission";
+import { problemRun, submission } from "~/server/db/schema/submission";
 import { featureRequest } from "~/server/db/schema/feature-request";
 import { ensureDefaultOrganization } from "~/server/organizations";
 import { writtenTests } from "~/server/db/schema/written";
@@ -154,6 +158,30 @@ const PEOPLE: Person[] = [
  */
 const PROBLEM_IDS = [1, 2, 3, 13, 14, 18, 26, 27, 28, 30, 38, 39];
 
+/**
+ * Problems the dev student and teacher have submitted to, so the past
+ * problem list shows every status. All exist on api.lunaghs.dev.
+ */
+const DEV_PROBLEM_IDS = [
+    26, 27, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47,
+    48, 49, 62, 63, 64, 65, 66, 67, 68, 69, 70,
+];
+
+/**
+ * Problems the dev student and teacher have run code on but not submitted,
+ * so they show as started. None are in DEV_PROBLEM_IDS.
+ */
+const DEV_STARTED_PROBLEM_IDS = [71, 72, 74, 75, 76, 77, 78, 79];
+
+/** Dev accounts that get submissions; created on their first dev login. */
+const DEV_SUBMITTERS: DevAccountKind[] = ["student", "teacher"];
+
+/**
+ * Prefix for the dev accounts' seeded submission IDs. Those accounts aren't
+ * dummy users, so their seeded rows are deleted by ID instead.
+ */
+const SUBMISSION_ID_PREFIX = "seed-";
+
 /** Written tests per season, with a representative date for each. */
 const WRITTEN_SEASONS: { year: number; dates: Record<string, string> }[] = [
     {
@@ -266,7 +294,32 @@ function slug(name: string) {
 
 async function removeDummyData() {
     // Memberships, submissions, scores, and feature requests cascade from
-    // users and schools.
+    // users and schools, except the dev accounts' seeded submissions.
+    const devSubmissions = await db
+        .delete(submission)
+        .where(like(submission.id, `${SUBMISSION_ID_PREFIX}%`))
+        .returning({ id: submission.id });
+    // Runs have no ID to mark, so this also clears any real dev account
+    // runs on those problems.
+    const { accounts } = await findDevAccounts();
+    const devRuns =
+        accounts.length === 0
+            ? []
+            : await db
+                  .delete(problemRun)
+                  .where(
+                      and(
+                          inArray(
+                              problemRun.userId,
+                              accounts.map((a) => a.id),
+                          ),
+                          inArray(
+                              problemRun.problemId,
+                              DEV_STARTED_PROBLEM_IDS,
+                          ),
+                      ),
+                  )
+                  .returning({ userId: problemRun.userId });
     const users = await db
         .delete(user)
         .where(like(user.email, `%@${EMAIL_DOMAIN}`))
@@ -276,8 +329,107 @@ async function removeDummyData() {
         .where(like(organization.id, `${SCHOOL_ID_PREFIX}%`))
         .returning({ id: organization.id });
     console.log(
-        `Removed ${users.length} dummy users and ${schools.length} dummy schools.`,
+        `Removed ${users.length} dummy users, ${schools.length} dummy ` +
+            `schools, ${devSubmissions.length} dev account submissions, ` +
+            `and ${devRuns.length} dev account runs.`,
     );
+}
+
+/**
+ * The DEV_SUBMITTERS accounts that exist (they're created on first dev
+ * login), and the emails of those that don't yet.
+ */
+async function findDevAccounts() {
+    const emails = DEV_SUBMITTERS.map((kind) => DEV_ACCOUNTS[kind].email);
+    const accounts = await db
+        .select({ id: user.id, email: user.email })
+        .from(user)
+        .where(inArray(user.email, emails));
+    const missing = emails.filter((e) => !accounts.some((a) => a.email === e));
+    return { accounts, missing };
+}
+
+const DUMMY_CODE =
+    "public class Main {\n    public static void main(String[] args) {\n        // dummy submission\n    }\n}\n";
+
+/**
+ * One to four attempts at a problem over the last 60 days, in order; if
+ * `solved`, the last one is accepted.
+ */
+function attempts(
+    rand: () => number,
+    now: Date,
+    userId: string,
+    problemId: number,
+    solved: boolean,
+): (typeof submission.$inferInsert)[] {
+    const pick = (max: number) => Math.floor(rand() * max);
+    const count = 1 + pick(4);
+    // Spread over the last 60 days.
+    const times = Array.from(
+        { length: count },
+        () => now.getTime() - pick(60 * 24 * 60) * 60_000,
+    ).sort((a, b) => a - b);
+    return times.map((time, i) => {
+        const attempt = i + 1;
+        const accepted = solved && attempt === count;
+        return {
+            problemId,
+            userId,
+            timeSubmitted: new Date(time),
+            points: accepted ? practicePoints(attempt) : 0,
+            maxPoints: DEFAULT_MAX_POINTS,
+            accepted,
+            attemptNumber: attempt,
+            submittedCode: DUMMY_CODE,
+        };
+    });
+}
+
+/**
+ * Gives the dev student and teacher submissions to DEV_PROBLEM_IDS (about
+ * two thirds solved, the rest not yet) and runs on DEV_STARTED_PROBLEM_IDS.
+ * Skips any that haven't signed in yet.
+ */
+async function insertDevActivity(rand: () => number, now: Date) {
+    const pick = (max: number) => Math.floor(rand() * max);
+    const { accounts, missing } = await findDevAccounts();
+    if (missing.length > 0) {
+        console.log(
+            `No submissions or runs for ${missing.join(", ")}: sign in as ` +
+                "them once, then seed again.",
+        );
+    }
+    if (accounts.length === 0) return { submissions: 0, runs: 0 };
+
+    const rows = accounts.flatMap((account) =>
+        DEV_PROBLEM_IDS.flatMap((problemId) =>
+            attempts(rand, now, account.id, problemId, rand() < 0.65),
+        ),
+    );
+    await db.insert(submission).values(
+        rows.map((row) => ({
+            ...row,
+            id: `${SUBMISSION_ID_PREFIX}${randomUUID()}`,
+        })),
+    );
+
+    const runs = accounts.flatMap((account) =>
+        DEV_STARTED_PROBLEM_IDS.map((problemId) => {
+            // First run within the last two weeks, last run since then.
+            const first = now.getTime() - pick(14 * 24 * 60) * 60_000;
+            const last = first + pick(now.getTime() - first);
+            return {
+                userId: account.id,
+                problemId,
+                firstRunAt: new Date(first),
+                lastRunAt: new Date(last),
+            };
+        }),
+    );
+    await db.insert(problemRun).values(runs);
+
+    return { submissions: rows.length, runs: runs.length };
 }
 
 async function insertDummyData() {
@@ -326,25 +478,9 @@ async function insertDummyData() {
     for (const student of students) {
         for (const problemId of PROBLEM_IDS) {
             if (rand() < 0.4) continue;
-            const attempts = 1 + pick(4);
-            const solved = rand() < 0.8;
-            for (let attempt = 1; attempt <= attempts; attempt++) {
-                const accepted = solved && attempt === attempts;
-                submissions.push({
-                    problemId,
-                    userId: student.id,
-                    // Spread over the last 60 days.
-                    timeSubmitted: new Date(
-                        now.getTime() - pick(60 * 24 * 60) * 60_000,
-                    ),
-                    points: accepted ? practicePoints(attempt) : 0,
-                    maxPoints: DEFAULT_MAX_POINTS,
-                    accepted,
-                    attemptNumber: attempt,
-                    submittedCode:
-                        "public class Main {\n    public static void main(String[] args) {\n        // dummy submission\n    }\n}\n",
-                });
-            }
+            submissions.push(
+                ...attempts(rand, now, student.id, problemId, rand() < 0.8),
+            );
         }
     }
     await db.insert(submission).values(submissions);
@@ -378,11 +514,15 @@ async function insertDummyData() {
         })),
     );
 
+    const dev = await insertDevActivity(rand, now);
+
     console.log(
         `Added ${SCHOOLS.length} schools, ${users.length} users ` +
             `(${users.length - students.length} teachers), ` +
             `${submissions.length} submissions, ${scores.length} written scores, ` +
-            `and ${FEATURE_REQUESTS.length} feature requests.`,
+            `${FEATURE_REQUESTS.length} feature requests, ` +
+            `${dev.submissions} dev account submissions, and ` +
+            `${dev.runs} dev account runs.`,
     );
 }
 
