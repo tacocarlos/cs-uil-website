@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-@plugin "tailwindcss-motion";
 @plugin "@tailwindcss/typography";
 
 @theme {
@@ -34,6 +33,28 @@
 
         50% {
             opacity: 0.15;
+        }
+    }
+
+    /* Tilts back and forth with a little overshoot, e.g. on hover. */
+    --animate-seesaw: seesaw 1.6s ease-in-out infinite;
+
+    @keyframes seesaw {
+        0%,
+        100% {
+            rotate: 0deg;
+        }
+
+        25% {
+            rotate: 8deg;
+        }
+
+        50% {
+            rotate: 5deg;
+        }
+
+        75% {
+            rotate: 6deg;
         }
     }
 }

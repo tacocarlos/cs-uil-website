@@ -253,7 +253,6 @@ export default function StaticSkillTree({
         () => layoutDagre(baseNodes, baseEdges, direction),
         [baseNodes, baseEdges, direction],
     );
-    console.dir(edges);
 
     return (
         <div

@@ -37,7 +37,7 @@ export default function ResourcesSummary() {
                         <div
                             // href={resource.link}
                             key={index}
-                            className="hover:motion-text-loop-sidebar-border hover:motion-duration-2000 rounded-lg border-l-4 border-blue-500 bg-gray-400 p-6 text-gray-500 shadow-md transition-shadow hover:shadow-lg"
+                            className="rounded-lg border-l-4 border-blue-500 bg-gray-400 p-6 text-gray-500 shadow-md transition-shadow hover:shadow-lg"
                         >
                             <p className="mb-2 text-lg font-bold">
                                 {resource.title}

@@ -21,7 +21,7 @@ export function ResetCodeButton({ editor }: { editor: CodeEditorState }) {
         <Button
             variant="destructive"
             size="sm"
-            className="hover:motion-preset-seesaw text-sm"
+            className="hover:animate-seesaw text-sm"
             onClick={() => {
                 const confirmed = confirm(
                     "This action will reset your code editor, and ALL PROGRESS WILL BE LOST. Are you sure?",
