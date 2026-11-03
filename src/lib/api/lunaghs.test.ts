@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, test } from "vitest";
 import { CompetitionLevelEnum } from "@tacocarlos/luna-cs-uil";
-import { competitionLevel, getProblemById } from "./lunaghs";
+import { competitionLevel, getProblemById, LUNAGHS_CACHE_TAG } from "./lunaghs";
 
 const problemJson = {
     id: 1,
@@ -59,6 +59,9 @@ describe("getProblemById", () => {
         stubFetch(() => Response.json(problemJson));
         await getProblemById(1);
         expect(requests[0]?.init?.next?.revalidate).toBe(3600);
+        // The teacher dashboard's Refresh Problem Data button revalidates
+        // this tag.
+        expect(requests[0]?.init?.next?.tags).toContain(LUNAGHS_CACHE_TAG);
     });
 
     test("returns null on a 404", async () => {
