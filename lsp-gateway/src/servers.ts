@@ -70,7 +70,23 @@ CompileFlags:
     },
 };
 
+/**
+ * The only files the editor opens, per server: the `fileName`s in the
+ * website's `src/lib/lsp/servers.ts`. Only these are mirrored to disk, so a
+ * client can't write build files (build.gradle, pom.xml,
+ * compile_commands.json…) that a language server would act on.
+ */
+const MIRRORED_FILES: Record<string, readonly string[]> = {
+    java: ["Main.java"],
+    python: ["main.py"],
+    clangd: ["main.c", "main.cpp"],
+};
+
 export const SERVER_IDS = Object.keys(DEFAULT_COMMANDS);
+
+export function mirroredFiles(id: string): readonly string[] {
+    return MIRRORED_FILES[id] ?? [];
+}
 
 export function serverCommand(
     id: string,
