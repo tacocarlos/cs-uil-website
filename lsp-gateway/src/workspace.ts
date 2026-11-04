@@ -33,6 +33,38 @@ export function rewriteUris(value: unknown, from: string, to: string): unknown {
 
 type Message = { method?: string; params?: unknown };
 
+const MAX_TAB_SIZE = 16;
+
+/**
+ * The indentation options of a formatting request, or undefined if it isn't
+ * one or the options are malformed. They end up in a config file (see
+ * `formattingFiles`), so only a small integer and a boolean get through.
+ */
+export function formattingOptions(
+    message: Message,
+): { tabSize: number; insertSpaces: boolean } | undefined {
+    if (
+        message.method !== "textDocument/formatting" &&
+        message.method !== "textDocument/rangeFormatting"
+    ) {
+        return undefined;
+    }
+    const options = (message.params as { options?: unknown } | undefined)
+        ?.options as { tabSize?: unknown; insertSpaces?: unknown } | undefined;
+    const tabSize = options?.tabSize;
+    const insertSpaces = options?.insertSpaces;
+    if (
+        typeof tabSize !== "number" ||
+        !Number.isInteger(tabSize) ||
+        tabSize < 1 ||
+        tabSize > MAX_TAB_SIZE ||
+        typeof insertSpaces !== "boolean"
+    ) {
+        return undefined;
+    }
+    return { tabSize, insertSpaces };
+}
+
 /**
  * If `message` opens or fully replaces a document inside the workspace,
  * returns the file name and new text so the gateway can mirror it to disk.

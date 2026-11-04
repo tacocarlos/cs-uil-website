@@ -19,7 +19,10 @@ import type { CodeEditorState } from "./use-code-editor";
 export function CodeEditor({ editor }: { editor: CodeEditorState }) {
     if (!editor.isReady) {
         return (
-            <div className="flex h-full items-center justify-center bg-[#1e1e1e] text-sm text-slate-400">
+            <div
+                className="flex h-full items-center justify-center text-sm text-slate-400"
+                style={{ backgroundColor: editor.theme.background }}
+            >
                 Loading languages…
             </div>
         );
@@ -27,7 +30,7 @@ export function CodeEditor({ editor }: { editor: CodeEditorState }) {
 
     return (
         <Editor
-            theme="vs-dark"
+            theme={editor.shownThemeId}
             height="100%"
             language={editor.language.monacoLang}
             defaultValue={editor.language.starterCode}

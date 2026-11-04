@@ -17,6 +17,7 @@ import {
     RunButton,
     SubmitButton,
 } from "~/components/problem-workspace/editor-controls";
+import { EditorOptionsMenu } from "~/components/problem-workspace/editor-options-menu";
 import { IOPanel } from "~/components/problem-workspace/io-panel";
 import {
     EditorPane,
@@ -175,6 +176,7 @@ export default function ContestEditor({
                                     Contest {contestStatus}
                                 </Badge>
                             )}
+                            <EditorOptionsMenu editor={codeEditor} />
                             <ResetCodeButton editor={codeEditor} />
                         </div>
                     </>

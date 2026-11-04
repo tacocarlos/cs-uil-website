@@ -8,10 +8,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { Subprocess } from "bun";
+import { clangFormatStyle } from "./servers";
 
 const SECRET = "s".repeat(32);
 const PORT = 31_000 + Math.floor(Math.random() * 1000);
-const BASE = `ws://localhost:${PORT}/lsp/python`;
+const BASE = `ws://localhost:${PORT}/lsp`;
 const workspaceRoot = mkdtempSync(join(tmpdir(), "lsp-gateway-test-"));
 
 let gateway: Subprocess;
@@ -31,8 +32,10 @@ function token(
 }
 
 /** Opens a socket and collects every message it receives. */
-function connect(tok: string) {
-    const ws = new WebSocket(`${BASE}?token=${encodeURIComponent(tok)}`);
+function connect(tok: string, server = "python") {
+    const ws = new WebSocket(
+        `${BASE}/${server}?token=${encodeURIComponent(tok)}`,
+    );
     const received: {
         id?: number;
         method?: string;
@@ -78,6 +81,7 @@ beforeAll(async () => {
             WORKSPACE_ROOT: workspaceRoot,
             MAX_SESSIONS_PER_USER: "1",
             LSP_COMMAND_PYTHON: `${process.execPath} ${fakeServer}`,
+            LSP_COMMAND_CLANGD: `${process.execPath} ${fakeServer}`,
         },
         stdout: "ignore",
         stderr: "inherit",
@@ -173,5 +177,43 @@ describe("gateway", () => {
         await waitFor(() =>
             readdirSync(workspaceRoot).length === 0 ? true : undefined,
         );
+    });
+
+    test("writes clangd's .clang-format from each formatting request", async () => {
+        const { ws, received, opened, closed } = connect(
+            token({ sub: "user-2", srv: "clangd" }),
+            "clangd",
+        );
+        await opened;
+
+        const format = async (id: number, options: object) => {
+            ws.send(
+                JSON.stringify({
+                    jsonrpc: "2.0",
+                    id,
+                    method: "textDocument/formatting",
+                    params: {
+                        textDocument: { uri: "file:///workspace/main.cpp" },
+                        options,
+                    },
+                }),
+            );
+            const reply = await waitFor(() =>
+                received.find((m) => m.id === id),
+            );
+            // The fake server's second edit is the .clang-format it found.
+            return (reply.result as { newText: string }[])[1]?.newText;
+        };
+
+        expect(await format(1, { tabSize: 4, insertSpaces: true })).toBe(
+            clangFormatStyle({ tabSize: 4, insertSpaces: true }),
+        );
+        // Changing the editor's settings changes the file.
+        expect(await format(2, { tabSize: 8, insertSpaces: false })).toBe(
+            clangFormatStyle({ tabSize: 8, insertSpaces: false }),
+        );
+
+        ws.close(1000);
+        await closed;
     });
 });

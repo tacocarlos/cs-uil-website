@@ -92,6 +92,30 @@ describe("connectLsp", () => {
         await client.dispose();
     });
 
+    test("requests formatting for the open document", async () => {
+        const client = await connectLsp({
+            url: `ws://localhost:${PORT}/lsp/python`,
+            token: signLspToken({ sub: "u3", srv: "python" }, SECRET),
+            target: python,
+            onUnexpectedClose: () => undefined,
+        });
+        expect(client.capabilities.documentFormattingProvider).toBe(true);
+
+        client.open("print('hi')\n");
+        const edits = await client.formatting({
+            tabSize: 4,
+            insertSpaces: true,
+        });
+        // The gateway maps the server's URI back to the client's document.
+        expect(edits).toMatchObject([
+            {
+                newText: `${client.documentUri} tabSize=4 insertSpaces=true`,
+            },
+        ]);
+
+        await client.dispose();
+    });
+
     test("rejects (rather than hanging) when the token is refused", async () => {
         expect(
             await rejection(

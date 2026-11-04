@@ -4,10 +4,16 @@ import { dirname, join } from "node:path";
 import type { Subprocess } from "bun";
 import type { Config } from "./config";
 import { encodeMessage, MessageReader } from "./framing";
-import { mirroredFiles, projectFiles, serverCommand } from "./servers";
+import {
+    formattingFiles,
+    mirroredFiles,
+    projectFiles,
+    serverCommand,
+} from "./servers";
 import {
     CLIENT_WORKSPACE_URI,
     documentToMirror,
+    formattingOptions,
     rewriteUris,
     sessionWorkspaceUri,
 } from "./workspace";
@@ -122,6 +128,16 @@ export class Session {
                 join(this.projectDir, mirror.fileName),
                 mirror.text,
             );
+
+        // Some servers (clangd) take indentation from a config file, so
+        // update it to match this request before the server sees it.
+        const options = formattingOptions(message);
+        if (options) {
+            const files = formattingFiles(this.serverId, options);
+            for (const [path, content] of Object.entries(files)) {
+                await Bun.write(join(this.projectDir, path), content);
+            }
+        }
 
         const rewritten = rewriteUris(
             message,

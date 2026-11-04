@@ -4,6 +4,7 @@ import {
     completionEdit,
     completionItems,
     definitionLocations,
+    formattingEdits,
     markerSeverityName,
     toLspPosition,
     toMarkdown,
@@ -30,6 +31,18 @@ describe("positions", () => {
             line: 0,
             character: 0,
         });
+    });
+});
+
+describe("formattingEdits", () => {
+    test("converts each edit's range and text", () => {
+        expect(formattingEdits([{ range, newText: "    " }])).toEqual([
+            { range: toMonacoRange(range), text: "    " },
+        ]);
+    });
+
+    test("treats a null result as no edits", () => {
+        expect(formattingEdits(null)).toEqual([]);
     });
 });
 

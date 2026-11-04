@@ -82,6 +82,40 @@ const MIRRORED_FILES: Record<string, readonly string[]> = {
     clangd: ["main.c", "main.cpp"],
 };
 
+/** LSP FormattingOptions, validated (see `formattingOptions`). */
+export type FormattingOptions = { tabSize: number; insertSpaces: boolean };
+
+/**
+ * clang-format style for the editor's indentation settings. clangd ignores
+ * the indentation in formatting requests and reads `.clang-format` instead
+ * (on every request), so this is how the editor's settings reach it.
+ * Otherwise this is clangd's default style, LLVM.
+ */
+export function clangFormatStyle({
+    tabSize,
+    insertSpaces,
+}: FormattingOptions): string {
+    return `BasedOnStyle: LLVM
+IndentWidth: ${tabSize}
+TabWidth: ${tabSize}
+UseTab: ${insertSpaces ? "Never" : "ForIndentation"}
+# Keeps public:/private: flush with the class, as in LLVM's 2-space style.
+AccessModifierOffset: -${tabSize}
+`;
+}
+
+/**
+ * Files to write into `project/` before forwarding a formatting request, for
+ * servers that take indentation from a config file rather than the request.
+ */
+export function formattingFiles(
+    id: string,
+    options: FormattingOptions,
+): Record<string, string> {
+    if (id === "clangd") return { ".clang-format": clangFormatStyle(options) };
+    return {};
+}
+
 export const SERVER_IDS = Object.keys(DEFAULT_COMMANDS);
 
 export function mirroredFiles(id: string): readonly string[] {
