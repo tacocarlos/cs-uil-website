@@ -15,51 +15,53 @@ export default async function DashboardPage() {
 
     void api.user.getMe.prefetch();
 
-    return (<>
-        <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-            {user && (
-                <div className="w-screen rounded-lg bg-white p-6 shadow-md">
-                    <div className="mb-6 flex items-center gap-4">
-                        {user.image && (
-                            <Image
-                                src={user.image}
-                                alt={user.name || "User"}
-                                width={250}
-                                height={250}
-                                className="h-16 w-16 rounded-full"
-                            />
+    return (
+        <>
+            <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+                {user && (
+                    <div className="w-screen rounded-lg bg-white p-6 shadow-md">
+                        <div className="mb-6 flex items-center gap-4">
+                            {user.image && (
+                                <Image
+                                    src={user.image}
+                                    alt={user.name || "User"}
+                                    width={250}
+                                    height={250}
+                                    className="h-16 w-16 rounded-full"
+                                />
+                            )}
+                            <div>
+                                <h2 className="text-xl font-semibold">
+                                    {user.name}
+                                </h2>
+                                <p className="text-gray-600">{user.email}</p>
+                            </div>
+                        </div>
+                        {!membership && (
+                            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                <p className="text-sm text-blue-900">
+                                    You&apos;re not in a school yet. Ask your
+                                    teacher for your school&apos;s join code to
+                                    appear on its leaderboards.
+                                </p>
+                                <Button asChild size="sm">
+                                    <Link href="/join">Join a school</Link>
+                                </Button>
+                            </div>
                         )}
-                        <div>
-                            <h2 className="text-xl font-semibold">
-                                {user.name}
+                        <MySchools />
+                        <section>
+                            <h2 className="mt-6 mb-4 text-lg font-semibold">
+                                Settings
                             </h2>
-                            <p className="text-gray-600">{user.email}</p>
-                        </div>
+                            <SettingsSection />
+                        </section>
+                        <InProgressProblems />
+                        <SubmittedProblems />
                     </div>
-                    {!membership && (
-                        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                            <p className="text-sm text-blue-900">
-                                You&apos;re not in a school yet. Ask your
-                                teacher for your school&apos;s join code to
-                                appear on its leaderboards.
-                            </p>
-                            <Button asChild size="sm">
-                                <Link href="/join">Join a school</Link>
-                            </Button>
-                        </div>
-                    )}
-                    <MySchools />
-                    <section>
-                        <h2 className="mt-6 mb-4 text-lg font-semibold">
-                            Settings
-                        </h2>
-                        <SettingsSection />
-                    </section>
-                    <InProgressProblems />
-                    <SubmittedProblems />
-                </div>
-            )}
-        </div>
-        <Footer />
-    </>);
+                )}
+            </div>
+            <Footer />
+        </>
+    );
 }

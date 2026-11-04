@@ -26,5 +26,10 @@ export default async function TeacherLayout({
         redirect("/dashboard/student");
     }
 
-    return <div>{children}<Footer /></div>;
+    return (
+        <div>
+            {children}
+            <Footer />
+        </div>
+    );
 }
