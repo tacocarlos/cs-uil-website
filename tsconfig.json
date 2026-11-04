@@ -28,7 +28,8 @@
         "baseUrl": ".",
         "paths": {
             "~/*": ["./src/*"],
-            "@components/*": ["./src/components/*"]
+            "@components/*": ["./src/components/*"],
+            "monaco-themes-json/*": ["./node_modules/monaco-themes/themes/*"]
         }
     },
     "include": [

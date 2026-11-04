@@ -2,8 +2,59 @@ import { describe, expect, test } from "bun:test";
 import {
     CLIENT_WORKSPACE_URI,
     documentToMirror,
+    formattingOptions,
     rewriteUris,
 } from "./workspace";
+
+describe("formattingOptions", () => {
+    const request = (options: unknown, method = "textDocument/formatting") => ({
+        method,
+        params: { textDocument: { uri: "file:///workspace/main.c" }, options },
+    });
+
+    test("reads the indentation from formatting requests", () => {
+        expect(
+            formattingOptions(request({ tabSize: 4, insertSpaces: true })),
+        ).toEqual({ tabSize: 4, insertSpaces: true });
+        expect(
+            formattingOptions(
+                request(
+                    {
+                        tabSize: 2,
+                        insertSpaces: false,
+                        trimFinalNewlines: true,
+                    },
+                    "textDocument/rangeFormatting",
+                ),
+            ),
+        ).toEqual({ tabSize: 2, insertSpaces: false });
+    });
+
+    test("ignores other messages", () => {
+        expect(
+            formattingOptions(
+                request(
+                    { tabSize: 4, insertSpaces: true },
+                    "textDocument/hover",
+                ),
+            ),
+        ).toBeUndefined();
+    });
+
+    // The values are written into a config file.
+    test("rejects anything but a small integer and a boolean", () => {
+        for (const options of [
+            undefined,
+            { tabSize: "4\nIndentWidth: 99", insertSpaces: true },
+            { tabSize: 4.5, insertSpaces: true },
+            { tabSize: 0, insertSpaces: true },
+            { tabSize: 17, insertSpaces: true },
+            { tabSize: 4, insertSpaces: "yes" },
+        ]) {
+            expect(formattingOptions(request(options))).toBeUndefined();
+        }
+    });
+});
 
 const SERVER = "file:///tmp/lsp-sessions/abc";
 

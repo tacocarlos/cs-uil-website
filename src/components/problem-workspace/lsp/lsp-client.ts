@@ -5,9 +5,11 @@ import type {
     LspCompletionResult,
     LspDefinitionResult,
     LspDiagnostic,
+    LspFormattingOptions,
     LspHover,
     LspPosition,
     LspSignatureHelp,
+    LspTextEdit,
     ServerCapabilities,
 } from "./protocol";
 
@@ -121,6 +123,7 @@ export async function connectLsp(options: ConnectOptions): Promise<LspClient> {
                             },
                         },
                         definition: { linkSupport: true },
+                        formatting: {},
                         publishDiagnostics: {},
                     },
                 },
@@ -208,6 +211,14 @@ export class LspClient {
         return this.connection.request<LspDefinitionResult>(
             "textDocument/definition",
             this.at(position),
+        );
+    }
+
+    /** Edits that format the whole document. */
+    formatting(options: LspFormattingOptions) {
+        return this.connection.request<LspTextEdit[] | null>(
+            "textDocument/formatting",
+            { textDocument: { uri: this.documentUri }, options },
         );
     }
 

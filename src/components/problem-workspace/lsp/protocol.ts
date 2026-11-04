@@ -81,7 +81,11 @@ export type ServerCapabilities = {
     signatureHelpProvider?: { triggerCharacters?: string[] };
     hoverProvider?: boolean | object;
     definitionProvider?: boolean | object;
+    documentFormattingProvider?: boolean | object;
 };
+
+/** LSP FormattingOptions; Monaco's FormattingOptions has the same shape. */
+export type LspFormattingOptions = { tabSize: number; insertSpaces: boolean };
 
 export function toMonacoRange(range: LspRange): Monaco.IRange {
     return {
@@ -179,6 +183,16 @@ export function completionEdit(item: LspCompletionItem): {
         return { range: toMonacoRange(range), text: edit.newText };
     }
     return { text: item.insertText ?? item.label };
+}
+
+/** A formatting result as Monaco edits. Null means nothing to change. */
+export function formattingEdits(
+    edits: LspTextEdit[] | null,
+): Monaco.languages.TextEdit[] {
+    return (edits ?? []).map((e) => ({
+        range: toMonacoRange(e.range),
+        text: e.newText,
+    }));
 }
 
 /** Normalizes the three shapes of a definition result to plain locations. */

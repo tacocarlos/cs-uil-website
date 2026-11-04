@@ -6,6 +6,7 @@ import {
     completionEdit,
     completionItems,
     definitionLocations,
+    formattingEdits,
     markerSeverityName,
     toLspPosition,
     toMarkdown,
@@ -19,7 +20,8 @@ const CHANGE_DEBOUNCE_MS = 150;
 
 /**
  * Wires an LSP client to the editor's current model: document sync,
- * diagnostics, completion, hover, signature help, and go-to-definition.
+ * diagnostics, completion, hover, signature help, go-to-definition, and
+ * formatting.
  * Disposing removes everything, leaving plain syntax highlighting.
  */
 export function bindLspToMonaco(
@@ -172,6 +174,30 @@ export function bindLspToMonaco(
                         }));
                 },
             }),
+        );
+    }
+
+    // ── Formatting (Shift+Alt+F / "Format Document") ────────────────────
+    // jdtls and clangd support this; pyright doesn't, so Python skips it.
+    if (caps.documentFormattingProvider) {
+        disposables.push(
+            monaco.languages.registerDocumentFormattingEditProvider(
+                monacoLanguage,
+                {
+                    async provideDocumentFormattingEdits(m, options) {
+                        if (!isOurs(m)) return undefined;
+                        // The edits' ranges must match the text we're
+                        // applying them to.
+                        flushChanges();
+                        return formattingEdits(
+                            await client.formatting({
+                                tabSize: options.tabSize,
+                                insertSpaces: options.insertSpaces,
+                            }),
+                        );
+                    },
+                },
+            ),
         );
     }
 

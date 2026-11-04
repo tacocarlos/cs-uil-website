@@ -2,12 +2,11 @@
 
 import { CodeEditor } from "~/components/problem-workspace/code-editor";
 import {
-    ChangeFontSizeButton,
-    ChangeFontSizeSelector,
     LanguageSelect,
     ResetCodeButton,
     RunButton,
 } from "~/components/problem-workspace/editor-controls";
+import { EditorOptionsMenu } from "~/components/problem-workspace/editor-options-menu";
 import { IOPanel } from "~/components/problem-workspace/io-panel";
 import { EditorPane } from "~/components/problem-workspace/layout";
 import { useCodeEditor } from "~/components/problem-workspace/use-code-editor";
@@ -38,7 +37,7 @@ export default function SandboxPage() {
                             <span className="text-slate-600">|</span>
                             <LanguageSelect editor={codeEditor} />
                         </div>
-                        <ChangeFontSizeSelector editor={codeEditor} />
+                        <EditorOptionsMenu editor={codeEditor} />
                         <ResetCodeButton editor={codeEditor} />
                     </>
                 }

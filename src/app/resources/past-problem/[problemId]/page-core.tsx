@@ -6,12 +6,12 @@ import { api } from "~/trpc/react";
 import type { Problem } from "~/server/db/schema/types";
 import { CodeEditor } from "~/components/problem-workspace/code-editor";
 import {
-    ChangeFontSizeSelector,
     LanguageSelect,
     ResetCodeButton,
     RunButton,
     SubmitButton,
 } from "~/components/problem-workspace/editor-controls";
+import { EditorOptionsMenu } from "~/components/problem-workspace/editor-options-menu";
 import { IOPanel } from "~/components/problem-workspace/io-panel";
 import {
     EditorPane,
@@ -91,7 +91,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
                     toolbar={
                         <>
                             <LanguageSelect editor={codeEditor} />
-                            <ChangeFontSizeSelector editor={codeEditor} />
+                            <EditorOptionsMenu editor={codeEditor} />
                             <ResetCodeButton editor={codeEditor} />
                         </>
                     }
