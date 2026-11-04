@@ -7,6 +7,7 @@ import { MySchools } from "./my-schools";
 import { api } from "~/trpc/server";
 import InProgressProblems from "./in-progress";
 import SubmittedProblems from "./submitted-problems";
+import Footer from "~/components/global/Footer";
 
 export default async function DashboardPage() {
     const { session, membership } = await requireSession("/dashboard/student");
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
 
     void api.user.getMe.prefetch();
 
-    return (
+    return (<>
         <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
             {user && (
                 <div className="w-screen rounded-lg bg-white p-6 shadow-md">
@@ -59,5 +60,6 @@ export default async function DashboardPage() {
                 </div>
             )}
         </div>
-    );
+        <Footer />
+    </>);
 }

@@ -4,6 +4,8 @@ import { isSiteAdmin } from "~/lib/auth/roles";
 import { currentPathname, requireSession } from "~/server/current-membership";
 import { isSchoolTeacher } from "~/server/organizations";
 
+import Footer from "~/components/global/Footer";
+
 /**
  * Teacher pages are for owners and admins of the user's active school. The
  * contest pages are also open to site admins, who manage every contest
@@ -24,5 +26,5 @@ export default async function TeacherLayout({
         redirect("/dashboard/student");
     }
 
-    return <div>{children}</div>;
+    return <div>{children}<Footer /></div>;
 }
