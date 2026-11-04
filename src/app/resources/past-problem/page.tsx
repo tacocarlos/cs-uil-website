@@ -1,6 +1,7 @@
 import ProblemList from "~/components/resources/problem/problem-list";
 import ProblemFAQ from "./[problemId]/problem-notes";
 import { getAllAppProblems } from "~/lib/api/lunaghs";
+import Footer from "~/components/global/Footer";
 
 export default async function Page() {
     const pastProblems = await getAllAppProblems();
@@ -14,6 +15,7 @@ export default async function Page() {
                     className="bg-secondary rounded-2xl border-2 p-10"
                 />
             </section>
+            <Footer />
         </>
     );
 }
