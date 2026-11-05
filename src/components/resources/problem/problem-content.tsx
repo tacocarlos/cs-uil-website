@@ -82,12 +82,7 @@ ${problem.sampleOutput}
                         Download Input File
                     </Button>
                 )}
-                <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-1 bg-green-900 text-white hover:bg-blue-400 hover:text-black"
-                >
+                <Button asChild size="sm" className="flex items-center gap-1">
                     <Link href={`/resources/past-problem/${problem.id}`}>
                         {/* <Code className="mr-1 h-4 w-4" /> */}
                         Attempt Problem

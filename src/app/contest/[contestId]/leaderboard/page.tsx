@@ -70,7 +70,7 @@ export default function LeaderboardPage() {
 
     if (contestLoading || lbLoading) {
         return (
-            <div className="bg-primary flex min-h-screen items-center justify-center pt-20">
+            <div className="flex min-h-screen items-center justify-center pt-20">
                 <p className="text-muted-foreground text-sm">Loading…</p>
             </div>
         );
@@ -78,8 +78,8 @@ export default function LeaderboardPage() {
 
     if (!contest) {
         return (
-            <div className="bg-primary min-h-screen px-6 pt-20 pb-12">
-                <p className="mt-8 text-center text-red-500">
+            <div className="min-h-screen px-6 pt-20 pb-12">
+                <p className="text-destructive mt-8 text-center">
                     Contest not found.
                 </p>
             </div>
@@ -93,8 +93,8 @@ export default function LeaderboardPage() {
             {/* Silent auto-refresh every 15 s */}
             <LeaderboardRefresher />
 
-            <div className="bg-primary min-h-screen px-6 pt-20 pb-12">
-                <div className="text-primary-foreground mx-auto max-w-6xl">
+            <div className="min-h-screen px-6 pt-20 pb-12">
+                <div className="mx-auto max-w-6xl">
                     {/* ── Header ──────────────────────────────────────────── */}
                     <div className="mb-6 flex items-center gap-3">
                         <Button asChild variant="ghost" size="sm">
@@ -108,14 +108,14 @@ export default function LeaderboardPage() {
 
                     {/* ── Frozen banner ────────────────────────────────────── */}
                     {status === "frozen" && (
-                        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        <div className="border-warning/40 bg-warning/10 text-warning mb-6 rounded-lg border px-4 py-3 text-sm">
                             ⚠️ Leaderboard is frozen — standings may not reflect
                             final results.
                         </div>
                     )}
 
                     {/* ── Leaderboard table ────────────────────────────────── */}
-                    <div className="text-foreground overflow-hidden rounded-lg border bg-white shadow-sm">
+                    <div className="bg-card text-card-foreground overflow-hidden rounded-lg border shadow-sm">
                         <Table>
                             <TableHeader>
                                 <TableRow>

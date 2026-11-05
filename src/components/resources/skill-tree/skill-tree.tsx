@@ -69,21 +69,28 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
         boxSizing: "content-box",
         padding: 5,
         borderRadius: 10,
-        border: "1px solid #d1d5db",
+        border: "1px solid var(--border)",
         display: "flex",
         flexDirection: "column",
         gap: 6,
         boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-        color: "#111827",
     } as const;
+    // Completed topics keep their unit's pastel (with dark text, in either
+    // mode); the rest use the theme so they suit light and dark mode.
     function determineStyle() {
         if (topic.completed === true) {
-            return { background: colorForUnit(topicIndex) };
+            return { background: colorForUnit(topicIndex), color: "#111827" };
         } else if (topic.unlocked === true) {
-            return { background: "#ffffff", color: "#000000" };
+            return {
+                background: "var(--card)",
+                color: "var(--card-foreground)",
+            };
         }
 
-        return { background: "#000000", fontSize: 0, color: "#ffffff" };
+        return {
+            background: "var(--muted)",
+            color: "var(--muted-foreground)",
+        };
     }
 
     const topicStatus = determineStatus(topic);
@@ -110,7 +117,7 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
                 <div
                     className={
                         topic.unlocked === true
-                            ? "animate-background bg-gradient-to-r from-green-300 via-blue-600 to-red-300 bg-[length:_400%_400%] p-1 ease-in-out [animation-duration:_4s]"
+                            ? "animate-background from-primary via-info to-primary bg-gradient-to-r bg-[length:_400%_400%] p-1 ease-in-out [animation-duration:_4s]"
                             : ""
                     }
                 >
@@ -134,8 +141,8 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
                         <span
                             style={{
                                 fontSize: 12,
-                                background: "rgba(17,24,39,0.1)",
-                                color: "#111827",
+                                background:
+                                    "color-mix(in oklch, currentColor 10%, transparent)",
                                 padding: "2px 8px",
                                 borderRadius: 999,
                                 lineHeight: 1.4,
@@ -149,7 +156,10 @@ function TopicNode({ data }: NodeProps<TopicNode>) {
                     <div
                         style={{
                             fontSize: topicStatus !== "locked" ? 12 : 0,
-                            color: "#374151",
+                            color:
+                                topicStatus === "completed"
+                                    ? "#374151"
+                                    : "var(--muted-foreground)",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             display: "-webkit-box",
@@ -238,12 +248,12 @@ export default function StaticSkillTree({
                 target: e.target,
                 type: "smoothstep",
                 animated: false,
-                style: { stroke: "#9ca3af" },
+                style: { stroke: "var(--muted-foreground)" },
                 markerEnd: {
                     type: MarkerType.ArrowClosed,
                     width: 18,
                     height: 18,
-                    color: "#9ca3af",
+                    color: "var(--muted-foreground)",
                 },
             })),
         [preReqData],

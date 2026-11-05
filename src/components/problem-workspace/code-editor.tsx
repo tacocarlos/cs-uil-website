@@ -1,4 +1,5 @@
 import { Editor } from "@monaco-editor/react";
+import { cn } from "~/lib/utils";
 import type { CodeEditorState } from "./use-code-editor";
 
 // const EDITOR_OPTIONS = {
@@ -20,7 +21,14 @@ export function CodeEditor({ editor }: { editor: CodeEditorState }) {
     if (!editor.isReady) {
         return (
             <div
-                className="flex h-full items-center justify-center text-sm text-slate-400"
+                // The editor theme's own background, so the colors stay
+                // fixed: Monaco themes don't follow the site's theme.
+                className={cn(
+                    "flex h-full items-center justify-center text-sm",
+                    editor.theme.kind === "dark"
+                        ? "text-slate-400"
+                        : "text-slate-500",
+                )}
                 style={{ backgroundColor: editor.theme.background }}
             >
                 Loading languages…

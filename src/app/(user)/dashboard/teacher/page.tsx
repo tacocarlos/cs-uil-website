@@ -17,7 +17,7 @@ export default async function TeacherDashboardPage() {
     if (!membership) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <h1 className="text-2xl font-bold">Teacher Dashboard</h1>
                 <div className="flex flex-wrap items-center gap-3">

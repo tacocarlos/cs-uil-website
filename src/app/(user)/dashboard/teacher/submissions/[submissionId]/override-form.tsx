@@ -56,7 +56,7 @@ export function OverrideForm({ submission }: { submission: SubmissionRow }) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <ShieldAlert className="h-5 w-5 text-amber-500" />
+                    <ShieldAlert className="text-warning h-5 w-5" />
                     Override Judgement
                 </CardTitle>
             </CardHeader>

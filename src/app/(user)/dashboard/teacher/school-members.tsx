@@ -78,7 +78,7 @@ export function SchoolMembersCard() {
                     <div className="flex flex-wrap items-center gap-2">
                         {code ? (
                             <>
-                                <code className="rounded bg-gray-100 px-3 py-1.5 font-mono text-lg tracking-widest">
+                                <code className="bg-muted rounded px-3 py-1.5 font-mono text-lg tracking-widest">
                                     {formatJoinCode(code)}
                                 </code>
                                 <Button

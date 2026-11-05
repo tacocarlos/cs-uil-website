@@ -11,7 +11,7 @@ export function CodeBlock({
     return (
         <pre
             className={cn(
-                "overflow-x-auto rounded-md bg-slate-900 p-4 font-mono text-sm whitespace-pre-wrap text-slate-100",
+                "bg-muted text-foreground overflow-x-auto rounded-md border p-4 font-mono text-sm whitespace-pre-wrap",
                 className,
             )}
         >

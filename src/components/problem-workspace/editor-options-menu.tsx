@@ -35,7 +35,7 @@ export function EditorOptionsMenu({ editor }: { editor: CodeEditorState }) {
                     variant="outline"
                     size="sm"
                     aria-label="Editor options"
-                    className="border-slate-600 bg-slate-700 text-sm text-white hover:bg-slate-600 hover:text-white"
+                    className="text-sm"
                 >
                     <SlidersHorizontalIcon className="size-4" />
                     <span className="hidden sm:inline">Editor Options</span>

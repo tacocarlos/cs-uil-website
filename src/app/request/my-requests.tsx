@@ -71,7 +71,7 @@ export function MyRequests() {
                                     {request.message}
                                 </p>
                                 {request.adminResponse && (
-                                    <div className="rounded-md bg-gray-100 p-3 text-sm">
+                                    <div className="bg-muted rounded-md p-3 text-sm">
                                         <p className="text-muted-foreground mb-1 text-xs font-semibold uppercase">
                                             Response
                                         </p>

@@ -33,8 +33,8 @@ export default function SignInPage({
     // can't be tapped twice.
     const [isLoading, setIsLoading] = useState(false);
     return (
-        <main className="bg-primary flex min-h-dvh items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md rounded-xl border border-white px-5 pb-6">
+        <div className="flex min-h-dvh items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md px-5 pb-6">
                 <div className="mb-8 text-center">
                     {/* <Link href="/" className="inline-block">
                         <Image
@@ -45,10 +45,10 @@ export default function SignInPage({
                             className="mx-auto"
                         />
                     </Link> */}
-                    <h2 className="text-primary-foreground mt-6 text-3xl font-bold tracking-tight">
+                    <h2 className="mt-6 text-3xl font-bold tracking-tight">
                         Sign in to CS UIL
                     </h2>
-                    <p className="text-primary-foreground mt-2 text-sm">
+                    <p className="text-muted-foreground mt-2 text-sm">
                         Access your account to track progress and participate in
                         competitions
                     </p>
@@ -65,7 +65,7 @@ export default function SignInPage({
                     </CardHeader>
                     <CardContent className="grid gap-4">
                         {error && (
-                            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                            <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-3 text-sm">
                                 {error}
                             </div>
                         )}
@@ -89,7 +89,7 @@ export default function SignInPage({
                             disabled={isLoading}
                         >
                             {isLoading ? (
-                                <div className="h-5 w-5 animate-spin rounded-full border-t-2 border-b-2 border-blue-500" />
+                                <div className="border-info h-5 w-5 animate-spin rounded-full border-t-2 border-b-2" />
                             ) : (
                                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                                     <path
@@ -126,12 +126,12 @@ export default function SignInPage({
                 <div className="mt-6 text-center">
                     <Link
                         href="/"
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        className="text-info text-sm underline-offset-4 hover:underline"
                     >
                         Return to home page
                     </Link>
                 </div>
             </div>
-        </main>
+        </div>
     );
 }

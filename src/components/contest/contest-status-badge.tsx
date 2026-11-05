@@ -3,11 +3,11 @@ import { cn } from "~/lib/utils";
 import type { ContestStatus } from "~/lib/contest/status";
 
 const STATUS_COLORS: Record<ContestStatus, string> = {
-    draft: "bg-gray-100 text-gray-800",
-    scheduled: "bg-blue-100 text-blue-800",
-    active: "bg-green-100 text-green-800",
-    frozen: "bg-amber-100 text-amber-800",
-    ended: "bg-slate-100 text-slate-600",
+    draft: "bg-muted text-foreground",
+    scheduled: "bg-info/15 text-info",
+    active: "bg-success/15 text-success",
+    frozen: "bg-warning/15 text-warning",
+    ended: "bg-muted text-muted-foreground",
 };
 
 /** Wording for contest managers. */

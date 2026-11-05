@@ -98,7 +98,7 @@ function ProblemPreviewModal({
                             {problem.programName && (
                                 <Badge
                                     variant="outline"
-                                    className="bg-amber-100 text-amber-800"
+                                    className="bg-warning/15 text-warning border-transparent"
                                 >
                                     {problem.programName}
                                 </Badge>
@@ -108,7 +108,7 @@ function ProblemPreviewModal({
 
                     {!mostRecentSubmission && started && (
                         <div className="mt-2">
-                            <span className="flex items-center gap-1.5 text-sm text-amber-600">
+                            <span className="text-warning flex items-center gap-1.5 text-sm">
                                 <CirclePlay className="h-4 w-4" />
                                 Started, no submission
                             </span>
@@ -117,14 +117,14 @@ function ProblemPreviewModal({
                     {mostRecentSubmission && (
                         <div className="mt-2">
                             {mostRecentSubmission.accepted ? (
-                                <span className="flex items-center gap-1.5 text-sm text-green-600">
+                                <span className="text-success flex items-center gap-1.5 text-sm">
                                     <CheckCircle2 className="h-4 w-4" />
                                     Accepted &mdash;{" "}
                                     {mostRecentSubmission.points}/
                                     {mostRecentSubmission.maxPoints} pts
                                 </span>
                             ) : (
-                                <span className="flex items-center gap-1.5 text-sm text-red-600">
+                                <span className="text-destructive flex items-center gap-1.5 text-sm">
                                     <XCircle className="h-4 w-4" />
                                     Not yet accepted
                                 </span>
@@ -250,7 +250,7 @@ export function ProblemCard({ problem }: { problem: Problem }) {
                         {problem.programName && (
                             <Badge
                                 variant="outline"
-                                className="bg-amber-100 text-xs text-amber-800"
+                                className="bg-warning/15 text-warning border-transparent text-xs"
                             >
                                 {problem.programName}
                             </Badge>
@@ -268,19 +268,19 @@ export function ProblemCard({ problem }: { problem: Problem }) {
                         </p>
                     ) : mostRecentSubmission ? (
                         mostRecentSubmission.accepted ? (
-                            <span className="flex items-center gap-1.5 text-sm text-green-600">
+                            <span className="text-success flex items-center gap-1.5 text-sm">
                                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                                 Accepted &mdash; {mostRecentSubmission.points}/
                                 {mostRecentSubmission.maxPoints} pts
                             </span>
                         ) : (
-                            <span className="flex items-center gap-1.5 text-sm text-red-500">
+                            <span className="text-destructive flex items-center gap-1.5 text-sm">
                                 <XCircle className="h-4 w-4 shrink-0" />
                                 Not yet accepted
                             </span>
                         )
                     ) : started ? (
-                        <span className="flex items-center gap-1.5 text-sm text-amber-600">
+                        <span className="text-warning flex items-center gap-1.5 text-sm">
                             <CirclePlay className="h-4 w-4 shrink-0" />
                             Started, no submission
                         </span>

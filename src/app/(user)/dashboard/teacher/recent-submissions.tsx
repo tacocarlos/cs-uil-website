@@ -89,11 +89,11 @@ export function RecentOrgSubmissions() {
                                     </TableCell>
                                     <TableCell>
                                         {s.accepted ? (
-                                            <Badge className="bg-green-100 text-green-800">
+                                            <Badge className="bg-success/15 text-success">
                                                 Accepted
                                             </Badge>
                                         ) : (
-                                            <Badge className="bg-red-100 text-red-800">
+                                            <Badge className="bg-destructive/15 text-destructive">
                                                 Denied
                                             </Badge>
                                         )}

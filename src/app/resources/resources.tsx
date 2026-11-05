@@ -238,3 +238,13 @@ export const CSYoutubeChannels: CourseResourceCardProps[] = [
         tags: ["videos"],
     },
 ];
+
+export const Tools: CourseResourceCardProps[] = [
+    {
+        title: "TI-84 Plus CE Calculator",
+        description:
+            "An online TI-84 Plus CE emulator that runs in your browser.",
+        href: "/calculator",
+        tags: ["calculator"],
+    },
+];

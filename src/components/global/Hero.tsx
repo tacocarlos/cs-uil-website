@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const Hero = () => {
     return (
-        <section className="bg-primary text-primary-foreground relative flex h-[45vh] items-center justify-center overflow-hidden">
+        <section className="bg-primary text-primary-foreground relative flex h-[45vh] items-center justify-center overflow-hidden pt-16">
             <div className="z-10 container mx-auto px-4 text-center">
                 <h1 className="mb-4 text-4xl font-bold md:text-6xl">
                     CS UIL 2025-2026
@@ -13,7 +13,7 @@ const Hero = () => {
                 </p>
                 <Link
                     href="/resources"
-                    className="border-primary-foreground bg-accent text-secondary-foreground hover:bg-primary hover:text-primary-foreground rounded-lg border-2 px-8 py-3 transition-colors"
+                    className="bg-highlight text-highlight-foreground hover:bg-highlight/90 rounded-lg px-8 py-3 font-medium shadow-md transition-colors"
                 >
                     View Resources
                 </Link>

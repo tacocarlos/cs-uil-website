@@ -100,7 +100,7 @@ export function ProblemsCard({
             </CardHeader>
             <CardContent className="space-y-4">
                 {problems.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-gray-500">
+                    <p className="text-muted-foreground py-4 text-center text-sm">
                         No problems added yet.
                     </p>
                 ) : (
@@ -112,7 +112,7 @@ export function ProblemsCard({
                                 <ContestProblemRow
                                     key={row.id}
                                     title={
-                                        <span className="text-gray-600">
+                                        <span className="text-muted-foreground">
                                             #{row.apiProblemId}
                                         </span>
                                     }
@@ -139,7 +139,7 @@ export function ProblemsCard({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-7 w-7 shrink-0 text-red-500 hover:text-red-700"
+                                                className="text-destructive hover:text-destructive/80 h-7 w-7 shrink-0"
                                                 disabled={busy}
                                                 onClick={() =>
                                                     handleRemove(row)
@@ -173,9 +173,9 @@ export function ProblemsCard({
                         listClassName="h-48"
                         renderAction={() =>
                             addProblem.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                                <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
                             ) : (
-                                <Plus className="h-4 w-4 shrink-0 text-green-600" />
+                                <Plus className="text-success h-4 w-4 shrink-0" />
                             )
                         }
                     />

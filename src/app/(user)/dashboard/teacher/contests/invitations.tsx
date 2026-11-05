@@ -41,7 +41,7 @@ export function ContestInvitations() {
                 contest from your students; anyone already enrolled keeps their
                 results.
             </p>
-            <div className="rounded-lg border bg-white">
+            <div className="bg-card text-card-foreground rounded-lg border">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -68,7 +68,7 @@ export function ContestInvitations() {
                                             Declined
                                         </Badge>
                                     ) : (
-                                        <Badge className="bg-green-100 text-green-800">
+                                        <Badge className="bg-success/15 text-success">
                                             Taking part
                                         </Badge>
                                     )}

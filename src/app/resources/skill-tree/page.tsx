@@ -45,7 +45,7 @@ export default function SkillTreePage() {
     return (
         <div className="flex h-dvh flex-col pt-16 md:pt-[10vh]">
             {/* Chrome-style tab bar */}
-            <div className="flex items-end border-b border-neutral-400 bg-neutral-300 px-2 pt-2">
+            <div className="bg-muted flex items-end border-b px-2 pt-2">
                 {PANES.map((pane) => (
                     <button
                         key={pane.id}
@@ -54,8 +54,8 @@ export default function SkillTreePage() {
                             "relative -mb-px rounded-t-lg px-5 py-1.5 text-sm font-medium transition-colors select-none",
                             "max-w-xs min-w-36 truncate text-center",
                             activePane === pane.id
-                                ? "z-10 border border-neutral-400 border-b-white bg-white text-neutral-900"
-                                : "border border-transparent bg-neutral-200 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800",
+                                ? "border-b-background bg-background text-foreground z-10 border"
+                                : "text-muted-foreground hover:bg-background/50 hover:text-foreground border border-transparent",
                         )}
                     >
                         {pane.label}
@@ -64,7 +64,7 @@ export default function SkillTreePage() {
             </div>
 
             {/* Active tree — only one mounted at a time so ReactFlow fitView works */}
-            <div className="flex-1 bg-white p-4">
+            <div className="bg-background flex-1 p-4">
                 {PANES.find((p) => p.id === activePane)?.component}
             </div>
         </div>

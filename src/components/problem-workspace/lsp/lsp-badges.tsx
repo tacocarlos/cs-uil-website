@@ -10,7 +10,7 @@ export function LspSupportedBadge() {
         <Badge
             variant="outline"
             title={`Supports ${LSP_FEATURES}`}
-            className="border-green-600/40 bg-green-50 px-1.5 text-[10px] text-green-700"
+            className="border-success/40 bg-success/10 text-success px-1.5 text-[10px]"
         >
             LSP supported
         </Badge>
@@ -23,23 +23,23 @@ const LSP_STATUS_DISPLAY: Record<
 > = {
     off: {
         label: "LSP off: sign in to enable, or the LSP server isn't configured",
-        dotClassName: "border border-slate-400",
+        dotClassName: "border border-muted-foreground",
     },
     connecting: {
         label: "LSP starting… (Java can take a few seconds)",
-        dotClassName: "animate-pulse bg-amber-400",
+        dotClassName: "animate-pulse bg-warning",
     },
     ready: {
         label: `LSP connected: ${LSP_FEATURES} on`,
-        dotClassName: "bg-green-500",
+        dotClassName: "bg-success",
     },
     paused: {
         label: "LSP paused while idle: resumes when you type or click into the editor",
-        dotClassName: "border border-amber-400",
+        dotClassName: "border border-warning",
     },
     unavailable: {
         label: "LSP unavailable: syntax highlighting only",
-        dotClassName: "bg-red-500",
+        dotClassName: "bg-destructive",
     },
 };
 
@@ -52,7 +52,7 @@ export function LspStatusBadge({ status }: { status: LspStatus }) {
             role="status"
             title={label}
             aria-label={label}
-            className="gap-1.5 border-slate-600 text-slate-300"
+            className="text-muted-foreground gap-1.5"
         >
             LSP Status:
             <span

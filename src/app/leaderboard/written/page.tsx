@@ -103,7 +103,7 @@ export default async function WrittenLeaderboardPage({
     }));
 
     return (
-        <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
+        <div className="flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
             <LeaderboardKindTabs path="/leaderboard/written" />
             <LeaderboardScopeTabs
                 path="/leaderboard/written"
@@ -121,6 +121,6 @@ export default async function WrittenLeaderboardPage({
                 scores={scores}
                 showSchools={scope === "global"}
             />
-        </main>
+        </div>
     );
 }

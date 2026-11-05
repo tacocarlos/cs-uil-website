@@ -97,7 +97,7 @@ export function WrittenStatistics() {
                         pagination.setPage(0);
                     }}
                 >
-                    <SelectTrigger className="w-48 bg-white">
+                    <SelectTrigger className="w-48">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -121,7 +121,7 @@ export function WrittenStatistics() {
             {isPending || !stats ? (
                 <Skeleton className="h-64 w-full" />
             ) : stats.students.length === 0 ? (
-                <p className="text-muted-foreground rounded-xl bg-white p-8 text-center text-sm">
+                <p className="text-muted-foreground bg-card rounded-xl border p-8 text-center text-sm">
                     No written scores for this period yet.
                 </p>
             ) : (
@@ -139,7 +139,7 @@ export function WrittenStatistics() {
                         />
                     </div>
 
-                    <div className="rounded-xl bg-white p-4 shadow-sm">
+                    <div className="bg-card text-card-foreground rounded-xl border p-4 shadow-sm">
                         <p className="text-muted-foreground mb-3 text-sm">
                             Optimal is each student&apos;s best score{" "}
                             {periodLabel}; expected is their average.

@@ -53,7 +53,7 @@ export function SchoolFilterControls({ filter }: { filter: SchoolFilter }) {
                     })
                 }
             >
-                <SelectTrigger className="w-40 bg-white">
+                <SelectTrigger className="w-40">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -71,7 +71,7 @@ export function SchoolFilterControls({ filter }: { filter: SchoolFilter }) {
                 value={filter.region?.toString() ?? ANY}
                 onValueChange={(value) => update({ region: value })}
             >
-                <SelectTrigger className="w-40 bg-white">
+                <SelectTrigger className="w-40">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -90,7 +90,7 @@ export function SchoolFilterControls({ filter }: { filter: SchoolFilter }) {
                 value={filter.district?.toString() ?? ANY}
                 onValueChange={(value) => update({ district: value })}
             >
-                <SelectTrigger className="w-44 bg-white">
+                <SelectTrigger className="w-44">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

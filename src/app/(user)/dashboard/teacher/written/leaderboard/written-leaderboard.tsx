@@ -127,7 +127,7 @@ export default function WrittenLeaderboard() {
     const [pdfPending, setPdfPending] = useState(false);
 
     return (
-        <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-sm">
+        <div className="bg-card text-card-foreground w-full max-w-md rounded-xl border p-4 shadow-sm">
             <div className="mb-4 space-y-4">
                 <div>
                     <label className="mb-2 block text-sm font-medium">

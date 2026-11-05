@@ -27,8 +27,8 @@ export function DevLoginButtons({ callbackURL }: { callbackURL: string }) {
     }
 
     return (
-        <div className="grid gap-2 rounded-md border border-dashed border-amber-400 bg-amber-50 p-3">
-            <p className="text-center text-xs font-medium text-amber-800">
+        <div className="border-warning/50 bg-warning/10 grid gap-2 rounded-md border border-dashed p-3">
+            <p className="text-warning text-center text-xs font-medium">
                 Development only
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

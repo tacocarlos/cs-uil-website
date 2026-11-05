@@ -74,22 +74,26 @@ const HEALTH_COLOR: Record<
     HealthState,
     { dot: string; text: string; ring: string }
 > = {
-    healthy: {
-        dot: "bg-green-500",
-        text: "text-green-700",
-        ring: "text-green-500",
-    },
+    healthy: { dot: "bg-success", text: "text-success", ring: "text-success" },
     "no-workers": {
-        dot: "bg-amber-500",
-        text: "text-amber-700",
-        ring: "text-amber-500",
+        dot: "bg-warning",
+        text: "text-warning",
+        ring: "text-warning",
     },
-    error: { dot: "bg-red-500", text: "text-red-700", ring: "text-red-500" },
-    offline: { dot: "bg-red-500", text: "text-red-700", ring: "text-red-500" },
+    error: {
+        dot: "bg-destructive",
+        text: "text-destructive",
+        ring: "text-destructive",
+    },
+    offline: {
+        dot: "bg-destructive",
+        text: "text-destructive",
+        ring: "text-destructive",
+    },
     unknown: {
-        dot: "bg-gray-400",
-        text: "text-gray-600",
-        ring: "text-gray-400",
+        dot: "bg-muted-foreground",
+        text: "text-muted-foreground",
+        ring: "text-muted-foreground",
     },
 };
 
@@ -215,15 +219,15 @@ export function Judge0StatusCard() {
                 <div className="mb-4 grid grid-cols-4 gap-3 text-center">
                     {(
                         [
-                            ["Working", totals.working, "text-blue-600"],
-                            ["Idle", totals.idle, "text-green-600"],
-                            ["Paused", totals.paused, "text-amber-600"],
-                            ["Failed", totals.failed, "text-red-600"],
+                            ["Working", totals.working, "text-info"],
+                            ["Idle", totals.idle, "text-success"],
+                            ["Paused", totals.paused, "text-warning"],
+                            ["Failed", totals.failed, "text-destructive"],
                         ] as const
                     ).map(([label, value, color]) => (
                         <div
                             key={label}
-                            className="rounded-md border bg-gray-50 py-2"
+                            className="bg-muted/50 rounded-md border py-2"
                         >
                             <p className={`text-xl font-bold ${color}`}>
                                 {noData ? "—" : value}
@@ -239,19 +243,19 @@ export function Judge0StatusCard() {
                 <div className="text-muted-foreground flex items-center justify-between text-xs">
                     <span>
                         Queue:{" "}
-                        <span className="font-medium text-gray-700">
+                        <span className="text-foreground font-medium">
                             {noData ? "—" : `${totals.size} pending`}
                         </span>
                     </span>
                     {status.stats && (
                         <span>
                             Today:{" "}
-                            <span className="font-medium text-gray-700">
+                            <span className="text-foreground font-medium">
                                 {status.stats.submissions.today}
                             </span>
                             {" · "}
                             Total:{" "}
-                            <span className="font-medium text-gray-700">
+                            <span className="text-foreground font-medium">
                                 {status.stats.submissions.total.toLocaleString()}
                             </span>
                         </span>

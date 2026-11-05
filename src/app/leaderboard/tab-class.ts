@@ -5,6 +5,8 @@ export function tabClass(active: boolean, size: string): string {
     return cn(
         "rounded-md text-sm",
         size,
-        active ? "bg-white text-black" : "text-white hover:bg-white/20",
+        active
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:bg-background/50 hover:text-foreground",
     );
 }

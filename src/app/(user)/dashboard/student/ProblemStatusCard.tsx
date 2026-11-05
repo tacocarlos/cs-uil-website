@@ -58,15 +58,15 @@ export function ProblemStatusCard({
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             {isAccepted ? (
-                                <CheckCircle2 className="h-6 w-6 text-green-500" />
+                                <CheckCircle2 className="text-success h-6 w-6" />
                             ) : (
-                                <XCircle className="h-6 w-6 text-red-500" />
+                                <XCircle className="text-destructive h-6 w-6" />
                             )}
                             <span
                                 className={`text-lg font-bold ${
                                     isAccepted
-                                        ? "text-green-600"
-                                        : "text-red-600"
+                                        ? "text-success"
+                                        : "text-destructive"
                                 }`}
                             >
                                 {isAccepted ? "Accepted" : "Needs Improvement"}

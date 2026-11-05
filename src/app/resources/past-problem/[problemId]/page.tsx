@@ -20,9 +20,5 @@ export default async function Page({
         redirect("/resources/past-problem/");
     }
 
-    return (
-        <main>
-            <PageCore problem={problem} />
-        </main>
-    );
+    return <PageCore problem={problem} />;
 }

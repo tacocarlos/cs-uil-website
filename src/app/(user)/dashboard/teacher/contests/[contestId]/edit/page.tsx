@@ -34,24 +34,24 @@ export default function EditContestPage({
 
     if (isNaN(contestId)) {
         return (
-            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
-                <p className="text-sm text-red-500">Invalid contest ID.</p>
+            <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
+                <p className="text-destructive text-sm">Invalid contest ID.</p>
             </div>
         );
     }
 
     if (isLoading || sessionPending) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gray-50 pt-20">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            <div className="flex min-h-screen items-center justify-center pt-20">
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
             </div>
         );
     }
 
     if (isError || !data) {
         return (
-            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
-                <p className="text-sm text-red-500">Contest not found.</p>
+            <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
+                <p className="text-destructive text-sm">Contest not found.</p>
                 <Button
                     variant="outline"
                     className="mt-4"
@@ -65,8 +65,8 @@ export default function EditContestPage({
 
     if (!data.canManage) {
         return (
-            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
-                <p className="text-sm text-gray-600">
+            <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
+                <p className="text-muted-foreground text-sm">
                     Only the host school&apos;s teachers and site admins can
                     edit this contest.
                 </p>
@@ -94,11 +94,13 @@ export default function EditContestPage({
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Edit Contest</h1>
-                    <p className="mt-0.5 text-sm text-gray-500">{data.name}</p>
+                    <p className="text-muted-foreground mt-0.5 text-sm">
+                        {data.name}
+                    </p>
                 </div>
                 <Button
                     variant="outline"
@@ -118,7 +120,7 @@ export default function EditContestPage({
                 <div className="flex justify-end">
                     <Button
                         variant="outline"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-destructive hover:text-destructive/80"
                         disabled={deleteContest.isPending}
                         onClick={handleDelete}
                     >

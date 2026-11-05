@@ -32,19 +32,19 @@ export function IOPanel({
         stderr: "Errors",
     };
     return (
-        <div className="flex h-full flex-col bg-slate-900">
+        <div className="bg-background flex h-full flex-col">
             <Tabs
                 value={io.tab}
                 onValueChange={(tab) => io.setTab(tab as IOTab)}
                 className="flex h-full flex-col overflow-y-auto"
             >
-                <div className="flex w-full items-center justify-between border-b border-slate-700 bg-slate-800 px-4">
+                <div className="bg-card flex w-full items-center justify-between border-b px-4">
                     <TabsList className="justify-start border-none bg-transparent">
                         {(Object.keys(tabLabels) as IOTab[]).map((tab) => (
                             <TabsTrigger
                                 key={tab}
                                 value={tab}
-                                className="text-slate-300 data-[state=active]:bg-slate-700 data-[state=active]:text-white"
+                                className="text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground dark:data-[state=active]:bg-muted"
                             >
                                 {tabLabels[tab]}
                             </TabsTrigger>
@@ -70,7 +70,7 @@ export function IOPanel({
                     tab="stderr"
                     value={io.stderr}
                     placeholder="Errors will appear here..."
-                    className="text-red-400"
+                    className="text-destructive"
                 />
             </Tabs>
         </div>
@@ -95,7 +95,7 @@ function IOTextarea({
         <TabsContent value={tab} className="h-full flex-1 p-4">
             <Textarea
                 className={cn(
-                    "h-full w-full resize-none border-slate-700 bg-slate-800 font-mono text-base text-slate-100 md:text-sm",
+                    "bg-card h-full w-full resize-none font-mono text-base md:text-sm",
                     className,
                 )}
                 value={value}
@@ -114,7 +114,7 @@ function ResetInputDialog({ onConfirm }: { onConfirm: () => void }) {
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 text-xs text-slate-300 hover:bg-slate-700 hover:text-white"
+                    className="text-muted-foreground h-8 text-xs"
                 >
                     Reset to Default
                 </Button>

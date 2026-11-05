@@ -30,7 +30,7 @@ export function ProblemWorkspace({
         const pane = "min-h-0 flex-1 data-[state=inactive]:hidden";
         return (
             <Tabs defaultValue="problem" className="h-full w-full gap-0">
-                <TabsList className="w-full rounded-none border-b bg-white">
+                <TabsList className="w-full rounded-none border-b">
                     <TabsTrigger value="problem">Problem</TabsTrigger>
                     <TabsTrigger value="code">Code</TabsTrigger>
                 </TabsList>
@@ -49,7 +49,7 @@ export function ProblemWorkspace({
             <ResizablePanel defaultSize={40} minSize={30}>
                 {sidebar}
             </ResizablePanel>
-            <ResizableHandle className="w-1 bg-slate-300 hover:bg-slate-400" />
+            <ResizableHandle className="bg-border hover:bg-ring w-1" />
             <ResizablePanel defaultSize={60} minSize={40}>
                 {children}
             </ResizablePanel>
@@ -67,17 +67,17 @@ export type SidebarTab = {
 /** Tabbed left column. The first tab is selected by default. */
 export function ProblemSidebar({ tabs }: { tabs: SidebarTab[] }) {
     return (
-        <div className="flex h-full flex-col bg-white">
+        <div className="bg-background flex h-full flex-col">
             <Tabs
                 defaultValue={tabs[0]?.value}
                 className="flex h-full flex-col"
             >
-                <TabsList className="w-full justify-start rounded-none border-b bg-white px-4">
+                <TabsList className="bg-background w-full justify-start rounded-none border-b px-4">
                     {tabs.map((tab) => (
                         <TabsTrigger
                             key={tab.value}
                             value={tab.value}
-                            className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent"
+                            className="data-[state=active]:border-b-info data-[state=active]:border-b-2 data-[state=active]:bg-transparent dark:data-[state=active]:bg-transparent"
                         >
                             {tab.label}
                         </TabsTrigger>
@@ -113,20 +113,20 @@ export function EditorPane({
     footer: ReactNode;
 }) {
     return (
-        <div className="flex h-full flex-col bg-slate-900">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-800 px-4 py-2">
+        <div className="bg-background flex h-full flex-col">
+            <div className="bg-card flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2">
                 {toolbar}
             </div>
             <ResizablePanelGroup direction="vertical">
                 <ResizablePanel defaultSize={70} minSize={30}>
                     {editor}
                 </ResizablePanel>
-                <ResizableHandle className="h-1 bg-slate-700 hover:bg-slate-600" />
+                <ResizableHandle className="bg-border hover:bg-ring h-1" />
                 <ResizablePanel defaultSize={30} minSize={20}>
                     {io}
                 </ResizablePanel>
             </ResizablePanelGroup>
-            <div className="flex items-center justify-between border-t border-slate-700 bg-slate-800 px-4 py-3">
+            <div className="bg-card flex items-center justify-between border-t px-4 py-3">
                 {footer}
             </div>
         </div>

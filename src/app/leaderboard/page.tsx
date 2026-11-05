@@ -69,7 +69,7 @@ export default async function LeaderboardPage({
     }));
 
     return (
-        <main className="bg-primary flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
+        <div className="flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
             <LeaderboardKindTabs path="/leaderboard" />
             <LeaderboardScopeTabs
                 path="/leaderboard"
@@ -78,6 +78,6 @@ export default async function LeaderboardPage({
                 hasSchool={membership !== null}
             />
             <Leaderboard scores={scores} showSchools={scope === "global"} />
-        </main>
+        </div>
     );
 }

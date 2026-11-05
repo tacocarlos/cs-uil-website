@@ -17,9 +17,9 @@ export default async function DashboardPage() {
 
     return (
         <>
-            <div className="bg-primary flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+            <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
                 {user && (
-                    <div className="w-screen rounded-lg bg-white p-6 shadow-md">
+                    <div className="bg-card text-card-foreground w-screen rounded-lg border p-6 shadow-md">
                         <div className="mb-6 flex items-center gap-4">
                             {user.image && (
                                 <Image
@@ -34,12 +34,14 @@ export default async function DashboardPage() {
                                 <h2 className="text-xl font-semibold">
                                     {user.name}
                                 </h2>
-                                <p className="text-gray-600">{user.email}</p>
+                                <p className="text-muted-foreground">
+                                    {user.email}
+                                </p>
                             </div>
                         </div>
                         {!membership && (
-                            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                                <p className="text-sm text-blue-900">
+                            <div className="border-info/30 bg-info/10 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+                                <p className="text-sm">
                                     You&apos;re not in a school yet. Ask your
                                     teacher for your school&apos;s join code to
                                     appear on its leaderboards.

@@ -8,11 +8,11 @@ export default async function Page() {
 
     return (
         <>
-            <section className="bg-primary-50 px-4 py-16">
+            <section className="px-4 py-16">
                 <ProblemFAQ />
                 <ProblemList
                     problems={pastProblems}
-                    className="bg-secondary rounded-2xl border-2 p-10"
+                    className="bg-card text-card-foreground rounded-2xl border p-10 shadow-sm"
                 />
             </section>
             <Footer />

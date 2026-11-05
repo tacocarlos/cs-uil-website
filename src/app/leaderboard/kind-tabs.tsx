@@ -9,7 +9,7 @@ const KINDS = [
 /** Switches between the programming and written leaderboards. */
 export function LeaderboardKindTabs({ path }: { path: string }) {
     return (
-        <nav className="mb-3 flex rounded-lg bg-white/10 p-1">
+        <nav className="bg-muted mb-3 flex rounded-lg p-1">
             {KINDS.map((kind) => (
                 <Link
                     key={kind.path}

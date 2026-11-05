@@ -35,11 +35,11 @@ export default async function ContestsPage() {
     const others = visible.filter((c) => !managedIds.has(c.id));
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Contests</h1>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="text-muted-foreground mt-1 text-sm">
                         {siteAdmin
                             ? "As a site admin you manage every contest, and can create global contests or host one at any school."
                             : "Contests your school hosts. You can invite other schools to them."}
@@ -60,14 +60,14 @@ export default async function ContestsPage() {
                     {siteAdmin ? "All contests" : "Your school's contests"}
                 </h2>
                 {managed.length === 0 ? (
-                    <div className="rounded-lg border bg-white py-12 text-center">
-                        <p className="text-sm text-gray-500">
+                    <div className="bg-card text-card-foreground rounded-lg border py-12 text-center">
+                        <p className="text-muted-foreground text-sm">
                             No contests yet. Create your first one to get
                             started.
                         </p>
                     </div>
                 ) : (
-                    <div className="rounded-lg border bg-white">
+                    <div className="bg-card text-card-foreground rounded-lg border">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -161,7 +161,7 @@ export default async function ContestsPage() {
                         students can join. Follow your own students&apos;
                         submissions in each.
                     </p>
-                    <div className="rounded-lg border bg-white">
+                    <div className="bg-card text-card-foreground rounded-lg border">
                         <Table>
                             <TableHeader>
                                 <TableRow>

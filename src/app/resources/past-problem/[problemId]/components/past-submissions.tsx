@@ -18,7 +18,7 @@ function SubmissionInformation({ submission }: { submission: Submission }) {
             <header>ID: {submission.id}</header>
             {submission.accepted ? (
                 <span className="flex">
-                    <Check className="text-green-600" />
+                    <Check className="text-success" />
                     <p>
                         {" "}
                         {submission.points}/{submission.maxPoints} points
@@ -26,12 +26,12 @@ function SubmissionInformation({ submission }: { submission: Submission }) {
                 </span>
             ) : (
                 <span className="flex">
-                    <X className="text-red-600" />
+                    <X className="text-destructive" />
                     <p>Not Accepted</p>
                 </span>
             )}
             <section className="space-y-2">
-                <header className="text-primary text-xl font-semibold">
+                <header className="text-xl font-semibold">
                     Submitted Code
                 </header>
                 <CodeBlock
@@ -68,9 +68,9 @@ export default function PastSubmissions({
                         return (
                             <SelectItem key={s.id} value={s.id}>
                                 {s.accepted ? (
-                                    <Check className="text-green-600" />
+                                    <Check className="text-success" />
                                 ) : (
-                                    <X className="text-red-600" />
+                                    <X className="text-destructive" />
                                 )}
                                 #{submissions.length - idx}:{" "}
                                 {format(s.timeSubmitted, "PPPPpppp")}

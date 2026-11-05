@@ -113,7 +113,7 @@ export default function ContestEditor({
                         {
                             value: "problem-statement",
                             label: "Description",
-                            className: "prose prose-slate max-w-none",
+                            className: "prose max-w-none",
                             content: <ProblemStatement problem={problem} />,
                         },
                         {
@@ -137,14 +137,14 @@ export default function ContestEditor({
                             <Link
                                 href={`/contest/${contestId}`}
                                 aria-label="Back to contest"
-                                className="flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-slate-200"
+                                className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
                             >
                                 <ArrowLeft className="h-4 w-4" />
                                 <span className="hidden sm:inline">
                                     Back to contest
                                 </span>
                             </Link>
-                            <span className="text-slate-600">|</span>
+                            <span className="text-border">|</span>
                             <LanguageSelect editor={codeEditor} />
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
@@ -152,7 +152,7 @@ export default function ContestEditor({
                                 <>
                                     {/* Disables Submit once time is up. */}
                                     <RefreshAt inMs={msUntilEnd} />
-                                    <span className="text-sm text-slate-400">
+                                    <span className="text-muted-foreground text-sm">
                                         Ends{" "}
                                         <Countdown
                                             inMs={msUntilEnd}
@@ -164,14 +164,14 @@ export default function ContestEditor({
                                 </>
                             )}
                             {myBest?.accepted && (
-                                <Badge className="bg-green-600 text-white hover:bg-green-600">
+                                <Badge className="bg-success text-success-foreground">
                                     Accepted — {myBest.points} / {maxPoints} pts
                                 </Badge>
                             )}
                             {!isActive && (
                                 <Badge
                                     variant="outline"
-                                    className="border-amber-500 text-amber-400"
+                                    className="border-warning text-warning"
                                 >
                                     Contest {contestStatus}
                                 </Badge>
@@ -209,37 +209,37 @@ function ContestProgress({
 }) {
     return (
         <>
-            <h3 className="mb-4 text-base font-semibold text-slate-700">
+            <h3 className="mb-4 text-base font-semibold">
                 My Contest Progress
             </h3>
             {!best ? (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <XCircle className="h-4 w-4 text-slate-400" />
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                    <XCircle className="h-4 w-4" />
                     No submissions yet.
                 </div>
             ) : best.accepted ? (
-                <div className="rounded-md border border-green-200 bg-green-50 p-4">
-                    <div className="flex items-center gap-2 text-green-700">
+                <div className="border-success/30 bg-success/10 text-success rounded-md border p-4">
+                    <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-5 w-5" />
                         <span className="font-semibold">Accepted</span>
                     </div>
-                    <p className="mt-2 text-sm text-green-600">
+                    <p className="mt-2 text-sm">
                         Score:{" "}
                         <span className="font-semibold">
                             {best.points} / {maxPoints} pts
                         </span>
                     </p>
-                    <p className="text-sm text-green-600">
+                    <p className="text-sm">
                         Accepted on attempt #{best.attemptNumber}
                     </p>
                 </div>
             ) : (
-                <div className="rounded-md border border-red-200 bg-red-50 p-4">
-                    <div className="flex items-center gap-2 text-red-700">
+                <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-4">
+                    <div className="flex items-center gap-2">
                         <XCircle className="h-5 w-5" />
                         <span className="font-semibold">Not yet accepted</span>
                     </div>
-                    <p className="mt-2 text-sm text-red-600">
+                    <p className="mt-2 text-sm">
                         {best.attemptNumber}{" "}
                         {best.attemptNumber === 1 ? "attempt" : "attempts"} so
                         far
