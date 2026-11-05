@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
     return (
-        <footer className="bg-secondary text-secondary-foreground px-4 py-8">
+        <footer className="bg-muted/40 text-foreground border-t px-4 py-8">
             <div className="container mx-auto">
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
                     <div>
@@ -16,7 +16,7 @@ export default function Footer() {
                             <li>
                                 <Link
                                     href="/timeline"
-                                    className="hover:text-accent-foreground"
+                                    className="hover:text-info hover:underline"
                                 >
                                     Event Timeline
                                 </Link>
@@ -24,7 +24,7 @@ export default function Footer() {
                             <li>
                                 <Link
                                     href="/website-source"
-                                    className="hover:text-accent-foreground"
+                                    className="hover:text-info hover:underline"
                                 >
                                     Website Source Code
                                 </Link>
@@ -32,7 +32,7 @@ export default function Footer() {
                             <li>
                                 <Link
                                     href="/request"
-                                    className="hover:text-accent-foreground"
+                                    className="hover:text-info hover:underline"
                                 >
                                     Request a Feature
                                 </Link>
@@ -41,12 +41,12 @@ export default function Footer() {
                     </div>
                     <div>
                         <h3 className="mb-4 text-lg font-bold">Contact</h3>
-                        <ul className="space-y-2 text-gray-400">
-                            <li className="text-secondary-foreground">
+                        <ul className="space-y-2">
+                            <li>
                                 Email:{" "}
                                 <a
                                     href="mailto:cluna@grovetonisd.net"
-                                    className="hover:text-accent-foreground"
+                                    className="hover:text-info hover:underline"
                                 >
                                     cluna@grovetonisd.net
                                 </a>
@@ -54,7 +54,7 @@ export default function Footer() {
                         </ul>
                     </div>
                 </div>
-                <div className="mt-8 border-t border-gray-700 pt-8 text-center text-gray-400">
+                <div className="text-muted-foreground mt-8 border-t pt-8 text-center">
                     <p>© 2025-2026 Carlos Luna</p>
                 </div>
             </div>

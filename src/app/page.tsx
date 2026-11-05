@@ -5,7 +5,7 @@ import Timeline, { DefaultTimelineData } from "~/components/timeline/Timeline";
 
 export default function Home() {
     return (
-        <main className="from-primary to-secondary min-h-screen bg-gradient-to-b">
+        <div className="min-h-screen">
             <Hero />
 
             {/* Competition Timeline */}
@@ -17,6 +17,6 @@ export default function Home() {
             {/* Resources Preview */}
             {/*<ResourcesSummary />*/}
             <Footer />
-        </main>
+        </div>
     );
 }

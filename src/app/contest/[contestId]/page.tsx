@@ -45,8 +45,8 @@ export default async function ContestLobbyPage({
 
     if (!contest) {
         return (
-            <div className="bg-primary min-h-screen pt-20">
-                <p className="mt-12 text-center text-red-500">
+            <div className="min-h-screen pt-20">
+                <p className="text-destructive mt-12 text-center">
                     Contest not found.
                 </p>
             </div>
@@ -79,12 +79,12 @@ export default async function ContestLobbyPage({
     );
 
     return (
-        <div className="bg-primary min-h-screen pt-20">
+        <div className="min-h-screen pt-20">
             {/* Shows the problems as soon as the contest starts, and the
                 final status when it ends. */}
             {status === "scheduled" && <RefreshAt inMs={msUntilStart} />}
             {isInProgress(status) && <RefreshAt inMs={msUntilEnd} />}
-            <div className="text-primary-foreground mx-auto max-w-4xl px-6 pb-12">
+            <div className="mx-auto max-w-4xl px-6 pb-12">
                 {/* ── Contest header card ──────────────────────────────────── */}
                 <Card className="mb-6">
                     <CardHeader>
@@ -157,8 +157,8 @@ export default async function ContestLobbyPage({
 
                 {/* ── Enrollment banner ────────────────────────────────────── */}
                 {canEnroll && (
-                    <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-                        <p className="text-sm text-blue-800">
+                    <div className="border-info/30 bg-info/10 mb-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-3">
+                        <p className="text-sm">
                             You are not enrolled in this contest.
                         </p>
                         <EnrollButton contestId={contestId} />
@@ -199,14 +199,14 @@ export default async function ContestLobbyPage({
                                         );
                                     } else if (best?.accepted) {
                                         statusCell = (
-                                            <span className="flex items-center gap-1 text-sm font-medium text-green-600">
+                                            <span className="text-success flex items-center gap-1 text-sm font-medium">
                                                 <CheckCircle className="h-4 w-4" />
                                                 Accepted
                                             </span>
                                         );
                                     } else if (best) {
                                         statusCell = (
-                                            <span className="flex items-center gap-1 text-sm text-red-600">
+                                            <span className="text-destructive flex items-center gap-1 text-sm">
                                                 <XCircle className="h-4 w-4" />
                                                 {best.attemptNumber} attempt
                                                 {best.attemptNumber !== 1

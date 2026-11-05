@@ -63,7 +63,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
     if (session === null) return null;
 
     return (
-        <div className="bg-primary flex h-dvh w-full flex-col pt-16 md:pt-[10vh]">
+        <div className="flex h-dvh w-full flex-col pt-16 md:pt-[10vh]">
             <ProblemWorkspace
                 sidebar={
                     <ProblemSidebar
@@ -71,7 +71,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
                             {
                                 value: "problem-statement",
                                 label: "Description",
-                                className: "prose prose-slate max-w-none",
+                                className: "prose max-w-none",
                                 content: <ProblemStatement problem={problem} />,
                             },
                             {

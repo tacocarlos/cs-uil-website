@@ -63,7 +63,7 @@ export function WrittenFilterControls({
                     })
                 }
             >
-                <SelectTrigger className="w-44 bg-white" aria-label="Season">
+                <SelectTrigger className="w-44" aria-label="Season">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -84,10 +84,7 @@ export function WrittenFilterControls({
                     update({ competition: value === ALL ? undefined : value })
                 }
             >
-                <SelectTrigger
-                    className="w-44 bg-white"
-                    aria-label="Competition"
-                >
+                <SelectTrigger className="w-44" aria-label="Competition">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

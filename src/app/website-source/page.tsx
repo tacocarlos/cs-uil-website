@@ -26,9 +26,9 @@ export default async function WebsiteSourcePage() {
     ]);
 
     return (
-        <main className="bg-primary min-h-screen">
+        <div className="min-h-screen">
             {/* ── Header ─────────────────────────────────────────────── */}
-            <section className="text-primary-foreground px-4 py-16 text-center">
+            <section className="bg-primary text-primary-foreground px-4 py-16 text-center">
                 <h1 className="mb-4 text-4xl font-bold md:text-5xl">
                     Website Source Code
                 </h1>
@@ -73,7 +73,7 @@ export default async function WebsiteSourcePage() {
             </section>
 
             {/* ── README and recent commits ──────────────────────────── */}
-            <section className="bg-secondary-50 px-4 py-12">
+            <section className="px-4 py-12">
                 <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_22rem]">
                     <Card className="min-w-0">
                         <CardHeader>
@@ -143,7 +143,7 @@ export default async function WebsiteSourcePage() {
             </section>
 
             <Footer />
-        </main>
+        </div>
     );
 }
 

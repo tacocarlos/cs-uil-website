@@ -28,7 +28,7 @@ export default async function JoinPage({
 
     return (
         <div className="flex min-h-screen items-center justify-center px-4 pt-24 pb-12">
-            <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-md">
+            <div className="bg-card text-card-foreground w-full max-w-sm rounded-xl border p-6 shadow-md">
                 <h1 className="mb-2 text-2xl font-bold">Join your school</h1>
                 <p className="text-muted-foreground mb-6 text-sm">
                     Enter the join code from your teacher.

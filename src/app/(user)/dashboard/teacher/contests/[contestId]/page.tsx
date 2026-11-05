@@ -109,7 +109,7 @@ export default function TeacherContestPage() {
 
     if (contestLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gray-50 pt-20">
+            <div className="flex min-h-screen items-center justify-center pt-20">
                 <p className="text-muted-foreground text-sm">Loading…</p>
             </div>
         );
@@ -117,8 +117,8 @@ export default function TeacherContestPage() {
 
     if (!contest) {
         return (
-            <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
-                <p className="mt-8 text-center text-red-500">
+            <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
+                <p className="text-destructive mt-8 text-center">
                     Contest not found.
                 </p>
             </div>
@@ -141,7 +141,7 @@ export default function TeacherContestPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
             <div className="mx-auto max-w-6xl">
                 {/* ── Header ──────────────────────────────────────────────── */}
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -311,11 +311,11 @@ export default function TeacherContestPage() {
                                             </TableCell>
                                             <TableCell>
                                                 {s.accepted ? (
-                                                    <Badge className="bg-green-100 text-green-800">
+                                                    <Badge className="bg-success/15 text-success">
                                                         Accepted
                                                     </Badge>
                                                 ) : (
-                                                    <Badge className="bg-red-100 text-red-800">
+                                                    <Badge className="bg-destructive/15 text-destructive">
                                                         Denied
                                                     </Badge>
                                                 )}

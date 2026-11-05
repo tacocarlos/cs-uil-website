@@ -60,7 +60,7 @@ export default function WrittenLeaderboard({
     const pagination = usePagination(filteredData);
 
     return (
-        <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-4">
+        <div className="bg-card text-card-foreground mx-auto w-full max-w-2xl rounded-xl border p-4 shadow-sm">
             <h2 className="mb-4 text-center text-2xl font-bold">
                 Written Leaderboard
             </h2>
@@ -111,7 +111,7 @@ export default function WrittenLeaderboard({
                                 {/* Wraps, so long names fit in portrait */}
                                 <TableCell className="whitespace-normal">
                                     <button
-                                        className="hover:text-primary py-1 text-left underline-offset-4 hover:underline"
+                                        className="hover:text-info py-1 text-left underline-offset-4 hover:underline"
                                         onClick={() => {
                                             setSelectedEntry(entry);
                                             setDialogOpen(true);

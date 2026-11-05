@@ -51,7 +51,7 @@ export function ProblemSearchList({
             />
 
             {isLoading ? (
-                <div className="flex items-center justify-center rounded-md border py-8 text-sm text-gray-500">
+                <div className="text-muted-foreground flex items-center justify-center rounded-md border py-8 text-sm">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Loading problems…
                 </div>
@@ -63,7 +63,7 @@ export function ProblemSearchList({
                     )}
                 >
                     {visible.length === 0 ? (
-                        <p className="py-6 text-center text-sm text-gray-500">
+                        <p className="text-muted-foreground py-6 text-center text-sm">
                             {problems.length === 0
                                 ? "No problems available"
                                 : "No matching problems"}
@@ -74,13 +74,14 @@ export function ProblemSearchList({
                                 <li
                                     key={p.id}
                                     className={cn(
-                                        "flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-gray-50",
-                                        selectedId === p.id && "bg-blue-50",
+                                        "hover:bg-muted/50 flex cursor-pointer items-center justify-between px-3 py-2 text-sm",
+                                        selectedId === p.id &&
+                                            "bg-secondary text-secondary-foreground hover:bg-secondary",
                                     )}
                                     onClick={() => onSelect(p)}
                                 >
                                     <span className="min-w-0 truncate">
-                                        <span className="mr-2 text-xs text-gray-400">
+                                        <span className="text-muted-foreground mr-2 text-xs">
                                             #{p.id}
                                         </span>
                                         {p.name}

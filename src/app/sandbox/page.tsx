@@ -26,15 +26,13 @@ export default function SandboxPage() {
     const { run, isRunning } = useRunCode(codeEditor, io);
 
     return (
-        <main className="bg-primary flex h-dvh w-full flex-col pt-16 md:pt-[10vh]">
+        <div className="flex h-dvh w-full flex-col pt-16 md:pt-[10vh]">
             <EditorPane
                 toolbar={
                     <>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-sm font-semibold text-slate-200">
-                                Sandbox
-                            </h1>
-                            <span className="text-slate-600">|</span>
+                            <h1 className="text-sm font-semibold">Sandbox</h1>
+                            <span className="text-border">|</span>
                             <LanguageSelect editor={codeEditor} />
                         </div>
                         <EditorOptionsMenu editor={codeEditor} />
@@ -52,12 +50,12 @@ export default function SandboxPage() {
                 footer={
                     <>
                         <RunButton onRun={run} isRunning={isRunning} />
-                        <p className="text-xs text-slate-400">
+                        <p className="text-muted-foreground text-xs">
                             Saved in this browser only
                         </p>
                     </>
                 }
             />
-        </main>
+        </div>
     );
 }

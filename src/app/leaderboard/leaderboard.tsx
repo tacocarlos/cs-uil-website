@@ -79,11 +79,12 @@ export function StudentDialog({
 
 export function rowClassName(rank: number) {
     // Medals for the top 3; a faint shared tint marks the rest of the
-    // top 6 without looking like an award.
-    if (rank === 1) return "bg-yellow-400 hover:bg-yellow-200";
-    if (rank === 2) return "bg-slate-400 hover:bg-slate-200";
-    if (rank === 3) return "bg-orange-400 hover:bg-orange-200";
-    if (rank <= 6) return "bg-sky-100 hover:bg-sky-50";
+    // top 6 without looking like an award. Medal colors aren't theme
+    // colors, so they're translucent to suit both light and dark mode.
+    if (rank === 1) return "bg-yellow-400/40 hover:bg-yellow-400/25";
+    if (rank === 2) return "bg-slate-400/40 hover:bg-slate-400/25";
+    if (rank === 3) return "bg-orange-400/40 hover:bg-orange-400/25";
+    if (rank <= 6) return "bg-info/10 hover:bg-info/5";
     return "";
 }
 
@@ -119,7 +120,7 @@ export default function Leaderboard({
     const pagination = usePagination(filteredAndSortedData);
 
     return (
-        <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-4">
+        <div className="bg-card text-card-foreground mx-auto w-full max-w-2xl rounded-xl border p-4 shadow-sm">
             <h2 className="mb-4 text-center text-2xl font-bold">Leaderboard</h2>
 
             <div className="mb-4">
@@ -166,7 +167,7 @@ export default function Leaderboard({
                                 {/* Wraps, so long names fit in portrait */}
                                 <TableCell className="whitespace-normal">
                                     <button
-                                        className="hover:text-primary py-1 text-left underline-offset-4 hover:underline"
+                                        className="hover:text-info py-1 text-left underline-offset-4 hover:underline"
                                         onClick={() => {
                                             setSelectedEntry(entry);
                                             setDialogOpen(true);

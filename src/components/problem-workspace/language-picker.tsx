@@ -45,7 +45,7 @@ export function LanguagePicker({ editor }: { editor: CodeEditorState }) {
                     aria-expanded={open}
                     aria-label="Language"
                     disabled={!editor.isReady}
-                    className="w-44 justify-between border-slate-600 bg-slate-700 text-sm font-normal text-slate-300 hover:bg-slate-600 hover:text-white sm:w-56"
+                    className="w-44 justify-between text-sm font-normal sm:w-56"
                 >
                     <span className="truncate">{editor.language.name}</span>
                     <ChevronsUpDownIcon className="size-4 opacity-50" />

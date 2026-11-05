@@ -41,12 +41,7 @@ export function RunButton({
     isRunning: boolean;
 }) {
     return (
-        <Button
-            variant="outline"
-            onClick={onRun}
-            disabled={isRunning}
-            className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600"
-        >
+        <Button variant="outline" onClick={onRun} disabled={isRunning}>
             {isRunning ? "Running..." : "Run"}
         </Button>
     );
@@ -67,7 +62,7 @@ export function SubmitButton({
             onClick={onSubmit}
             disabled={isSubmitting || disabledReason !== undefined}
             title={disabledReason}
-            className="bg-green-600 text-white hover:bg-green-700 disabled:bg-slate-600"
+            className="bg-success text-success-foreground hover:bg-success/90"
         >
             {isSubmitting ? "Submitting..." : (disabledReason ?? "Submit")}
         </Button>

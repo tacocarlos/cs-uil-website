@@ -68,7 +68,7 @@ function ContestCard({
                         className="shrink-0 text-xs"
                     />
                     {enrolled && (
-                        <span className="flex items-center gap-1 text-xs font-medium text-green-600">
+                        <span className="text-success flex items-center gap-1 text-xs font-medium">
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Enrolled
                         </span>
@@ -178,12 +178,12 @@ function Section({
             </h2>
             {compact ? (
                 // Compact list for ended contests
-                <div className="text-foreground divide-y rounded-lg border bg-white">
+                <div className="bg-card text-card-foreground divide-y rounded-lg border">
                     {contests.map((c) => (
                         <Link
                             key={c.id}
                             href={`/contest/${c.id}`}
-                            className="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50"
+                            className="hover:bg-muted/50 flex items-center justify-between px-4 py-3 text-sm"
                         >
                             <span className="font-medium">{c.name}</span>
                             <span className="text-muted-foreground flex items-center gap-3">
@@ -241,9 +241,9 @@ export default async function StudentContestsPage() {
     const nextStart = Math.min(...upcoming.map((c) => c.startsAt.getTime()));
 
     return (
-        <div className="bg-primary min-h-screen pt-20">
+        <div className="min-h-screen pt-20">
             {upcoming.length > 0 && <RefreshAt inMs={nextStart - Date.now()} />}
-            <div className="text-primary-foreground mx-auto max-w-5xl px-6 pb-16">
+            <div className="mx-auto max-w-5xl px-6 pb-16">
                 {/* ── Header ─────────────────────────────────────────────── */}
                 <div className="mb-10">
                     <h1 className="text-3xl font-bold">Contests</h1>

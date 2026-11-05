@@ -22,9 +22,9 @@ export default async function Timeline({
     );
 
     return (
-        <section className="bg-secondary-50 px-4 py-16">
+        <section className="px-4 py-16">
             <div className="container mx-auto">
-                <h2 className="text-primary-foreground mb-12 text-center text-3xl font-bold">
+                <h2 className="mb-12 text-center text-3xl font-bold">
                     {timelineTitle}
                 </h2>
                 <Accordion

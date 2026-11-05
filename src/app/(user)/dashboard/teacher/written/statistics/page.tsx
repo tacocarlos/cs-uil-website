@@ -5,7 +5,7 @@ import { WrittenStatistics } from "./written-statistics";
 /** Written test statistics for the teacher's school (teachers only). */
 export default function WrittenStatisticsPage() {
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-24 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-24 pb-8 sm:px-8">
             <div className="mx-auto max-w-3xl">
                 <Link
                     href="/dashboard/teacher"

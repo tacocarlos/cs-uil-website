@@ -83,7 +83,7 @@ export function HostPicker({
                                 <li key={school.id}>
                                     <button
                                         type="button"
-                                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                                        className="hover:bg-muted/50 w-full px-3 py-2 text-left text-sm"
                                         onClick={() => {
                                             onChange({
                                                 id: school.id,

@@ -133,10 +133,10 @@ export default function NewContestPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold">New Contest</h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="text-muted-foreground mt-1 text-sm">
                     Fill in the details below, then pick problems.
                 </p>
             </div>
@@ -174,7 +174,7 @@ export default function NewContestPage() {
                                     <button
                                         type="button"
                                         title="Add to contest"
-                                        className="ml-2 shrink-0 rounded p-0.5 text-green-600 hover:bg-green-50"
+                                        className="text-success hover:bg-success/10 ml-2 shrink-0 rounded p-0.5"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleAddProblem(p);
@@ -214,7 +214,7 @@ export default function NewContestPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-7 w-7 shrink-0 text-red-500 hover:text-red-700"
+                                                    className="text-destructive hover:text-destructive/80 h-7 w-7 shrink-0"
                                                     onClick={() =>
                                                         handleRemoveProblem(idx)
                                                     }

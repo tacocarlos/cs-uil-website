@@ -18,10 +18,10 @@ export function ContestProblemRow({
     actions: ReactNode;
 }) {
     return (
-        <div className="flex items-center gap-2 rounded-md border bg-white p-2">
+        <div className="bg-card flex items-center gap-2 rounded-md border p-2">
             <span className="min-w-0 flex-1 truncate text-sm">{title}</span>
             <div className="flex shrink-0 items-center gap-1">
-                <Label className="text-xs text-gray-500">Label</Label>
+                <Label className="text-muted-foreground text-xs">Label</Label>
                 <Input
                     className="h-7 w-14 px-1 text-center text-xs"
                     value={label}
@@ -29,7 +29,7 @@ export function ContestProblemRow({
                 />
             </div>
             <div className="flex shrink-0 items-center gap-1">
-                <Label className="text-xs text-gray-500">Pts</Label>
+                <Label className="text-muted-foreground text-xs">Pts</Label>
                 <Input
                     className="h-7 w-16 px-1 text-center text-xs"
                     type="number"

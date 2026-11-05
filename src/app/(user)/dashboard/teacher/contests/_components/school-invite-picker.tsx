@@ -44,7 +44,7 @@ export function SchoolInvitePicker({
                             <button
                                 type="button"
                                 aria-label={`Remove ${school.name}`}
-                                className="rounded-sm hover:bg-gray-300"
+                                className="hover:bg-muted rounded-sm"
                                 onClick={() =>
                                     onChange(
                                         value.filter((s) => s.id !== school.id),
@@ -72,7 +72,7 @@ export function SchoolInvitePicker({
                         <li key={school.id}>
                             <button
                                 type="button"
-                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50"
+                                className="hover:bg-muted/50 flex w-full items-center justify-between px-3 py-2 text-left text-sm"
                                 onClick={() => {
                                     onChange([
                                         ...value,

@@ -38,7 +38,7 @@ export function LeaderboardScopeTabs({
             </nav>
             {scope === "global" && (
                 <>
-                    <p className="mb-2 text-xs text-white/80">
+                    <p className="text-muted-foreground mb-2 text-xs">
                         Only students who chose to share their scores with other
                         schools appear here.
                     </p>

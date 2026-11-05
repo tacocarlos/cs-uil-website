@@ -233,7 +233,9 @@ function DeleteSchool({
 
     return (
         <section className="space-y-2">
-            <h3 className="text-sm font-medium text-red-700">Delete school</h3>
+            <h3 className="text-destructive text-sm font-medium">
+                Delete school
+            </h3>
             <p className="text-muted-foreground text-sm">
                 Removes everyone from the school and deletes the contests it
                 hosted, with their results. Students keep their accounts,

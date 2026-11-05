@@ -7,7 +7,7 @@ export default async function RequestPage() {
     await requireSession("/request");
 
     return (
-        <main className="min-h-screen bg-gray-50 px-4 pt-24 pb-12">
+        <div className="min-h-screen px-4 pt-24 pb-12">
             <div className="mx-auto max-w-2xl space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold">Request a feature</h1>
@@ -19,6 +19,6 @@ export default async function RequestPage() {
                 <RequestForm />
                 <MyRequests />
             </div>
-        </main>
+        </div>
     );
 }

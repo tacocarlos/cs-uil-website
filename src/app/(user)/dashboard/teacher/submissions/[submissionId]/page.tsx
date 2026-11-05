@@ -60,7 +60,7 @@ export default async function SubmissionDetailPage({
     const problemName = apiProblem?.name ?? `Problem #${row.problemId}`;
 
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-20 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
             <div className="mx-auto max-w-4xl">
                 <Link
                     href="/dashboard/teacher"
@@ -117,11 +117,11 @@ export default async function SubmissionDetailPage({
                             <div className="flex items-center gap-2">
                                 <span className="font-medium">Status: </span>
                                 {row.accepted === true ? (
-                                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                    <Badge className="bg-success/15 text-success">
                                         Accepted
                                     </Badge>
                                 ) : (
-                                    <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                                    <Badge className="bg-destructive/15 text-destructive">
                                         Rejected
                                     </Badge>
                                 )}

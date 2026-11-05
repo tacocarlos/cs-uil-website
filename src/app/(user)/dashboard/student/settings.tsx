@@ -26,7 +26,7 @@ export default function SettingsSection() {
     if (leaderboardVisibility === undefined) return null;
 
     if (userDataPending && lvMutation.isPending) {
-        return <Skeleton className="h-24 w-full bg-gray-200" />;
+        return <Skeleton className="h-24 w-full" />;
     }
 
     return (

@@ -19,18 +19,18 @@ export function ProblemPreview({
     onAdd: (problem: ShortProblem) => void;
 }) {
     return (
-        <div className="flex h-full flex-col overflow-hidden rounded-md border bg-white">
+        <div className="bg-card text-card-foreground flex h-full flex-col overflow-hidden rounded-md border">
             {problem ? (
                 <>
                     <div className="shrink-0 border-b px-4 pt-3 pb-2">
-                        <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                             #{problem.id} &middot; No. {problem.number}
                         </p>
                         <h3 className="mt-0.5 text-sm leading-snug font-semibold">
                             {problem.name}
                         </h3>
                         {isAdded && (
-                            <p className="mt-1 text-xs font-medium text-green-600">
+                            <p className="text-success mt-1 text-xs font-medium">
                                 ✓ Already added to this contest
                             </p>
                         )}
@@ -50,7 +50,7 @@ export function ProblemPreview({
                     </div>
                 </>
             ) : (
-                <div className="flex h-full items-center justify-center p-6 text-center text-sm text-gray-400">
+                <div className="text-muted-foreground flex h-full items-center justify-center p-6 text-center text-sm">
                     Click a problem on the left to preview it here.
                 </div>
             )}
@@ -75,7 +75,7 @@ function PreviewTabs({ problemId }: { problemId: number }) {
 
             {isLoading ? (
                 <div className="flex flex-1 items-center justify-center">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
                 </div>
             ) : (
                 <>
@@ -122,7 +122,9 @@ function PreviewTabs({ problemId }: { problemId: number }) {
 function SampleBlock({ title, text }: { title: string; text: string }) {
     return (
         <div>
-            <p className="mb-1 text-xs font-medium text-gray-500">{title}</p>
+            <p className="text-muted-foreground mb-1 text-xs font-medium">
+                {title}
+            </p>
             <pre className="bg-muted overflow-x-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
                 {text}
             </pre>

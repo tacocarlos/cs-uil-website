@@ -10,7 +10,7 @@ import WrittenLeaderboard from "./written-leaderboard";
  */
 export default function WrittenLeaderboardPage() {
     return (
-        <div className="min-h-screen bg-gray-50 px-4 pt-24 pb-8 sm:px-8">
+        <div className="min-h-screen px-4 pt-24 pb-8 sm:px-8">
             <div className="mx-auto max-w-md">
                 <Link
                     href="/dashboard/teacher"
