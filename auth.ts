@@ -1,10 +1,11 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { organization } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 import { env } from "~/env";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
 import { isBlockedAuthPath } from "~/lib/auth/organization-endpoints";
+import { accessControl, adminPluginRoles } from "~/lib/auth/permissions";
 import { isSiteAdmin } from "~/lib/auth/roles";
 import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
@@ -66,6 +67,17 @@ export const auth = betterAuth({
                 member: { modelName: "uil_member" },
                 invitation: { modelName: "uil_invitation" },
             },
+        }),
+        // User management for site admins: banning (which also signs the
+        // user out everywhere), impersonation, roles. Uses the same `role`
+        // column as the rest of the site, so its roles are ours.
+        admin({
+            ac: accessControl,
+            roles: adminPluginRoles,
+            adminRoles: ["site-admin"],
+            defaultRole: "student",
+            bannedUserMessage:
+                "Your account has been suspended. Contact your teacher or a site admin if you think this is a mistake.",
         }),
     ],
     // Refuse the organization plugin's endpoints the site doesn't use (see

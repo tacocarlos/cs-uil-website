@@ -24,6 +24,10 @@ type Access =
     | "site-admin";
 
 const ACCESS: Record<string, Access> = {
+    // Site-wide user management
+    "admin.listUsers": "site-admin",
+    "admin.banUser": "site-admin",
+    "admin.unbanUser": "site-admin",
     // Contests
     "contest.getAll": "public",
     "contest.getById": "public",

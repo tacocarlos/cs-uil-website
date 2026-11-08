@@ -24,6 +24,12 @@ export const user = createTable("user", {
      * applies when showScoresInLeaderboard is on.
      */
     showInGlobalLeaderboard: boolean().notNull().default(false),
+    // Admin plugin (auth.ts). A ban past its expiry is lifted the next time
+    // the user signs in, so `banned` can be stale; see isBanActive.
+    banned: boolean("banned").default(false),
+    banReason: text("ban_reason"),
+    /** When the ban ends; null for a ban with no end. */
+    banExpires: timestamp("ban_expires"),
 });
 export type User = typeof user.$inferSelect;
 
@@ -40,6 +46,8 @@ export const session = createTable(
         userId: text("user_id").notNull(),
         /** School the user is currently acting in (organization plugin). */
         activeOrganizationId: text("active_organization_id"),
+        /** Site admin impersonating this session's user (admin plugin). */
+        impersonatedBy: text("impersonated_by"),
     },
     (t) => [cascadeFk("session_user_id_fk", t.userId, user.id)],
 );

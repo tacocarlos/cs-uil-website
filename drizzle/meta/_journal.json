@@ -78,6 +78,13 @@
       "when": 1793718427696,
       "tag": "0010_problem_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793908459283,
+      "tag": "0011_admin_plugin",
+      "breakpoints": true
     }
   ]
 }
