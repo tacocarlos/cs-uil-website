@@ -11,6 +11,9 @@ export default function AdminPage() {
                     <h1 className="text-2xl font-bold">Site admin</h1>
                     <div className="flex gap-2">
                         <Button asChild variant="outline">
+                            <Link href="/admin/users">Users</Link>
+                        </Button>
+                        <Button asChild variant="outline">
                             <Link href="/admin/requests">Feature requests</Link>
                         </Button>
                         <Button asChild variant="outline">
