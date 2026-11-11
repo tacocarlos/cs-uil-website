@@ -65,6 +65,27 @@ export function BanStatus({ user }: { user: ListedUser }) {
     );
 }
 
+/** How long ago the user last did something, and what it was. */
+export function LatestActionCell({
+    action,
+}: {
+    action: ListedUser["latestAction"];
+}) {
+    if (!action) {
+        return (
+            <span className="text-muted-foreground text-sm">Not recorded</span>
+        );
+    }
+    return (
+        <div title={format(action.at, DATE_TIME)}>
+            <div className="text-sm">
+                {formatDistanceToNow(action.at, { addSuffix: true })}
+            </div>
+            <div className="text-muted-foreground text-xs">{action.label}</div>
+        </div>
+    );
+}
+
 /** A user's details, with a form to ban them or lift their ban. */
 export function UserDialog({
     user,
@@ -84,7 +105,7 @@ export function UserDialog({
             <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{user.name}</DialogTitle>
-                    <DialogDescription>{user.email}</DialogDescription>
+                    <DialogDescription>{user.accountLabel}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6">
                     <section className="space-y-3 text-sm">
@@ -92,6 +113,14 @@ export function UserDialog({
                         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
                             <dt className="text-muted-foreground">Joined</dt>
                             <dd>{format(user.createdAt, DATE_TIME)}</dd>
+                            <dt className="text-muted-foreground">
+                                Last active
+                            </dt>
+                            <dd>
+                                {user.latestAction
+                                    ? `${user.latestAction.label}, ${format(user.latestAction.at, DATE_TIME)} (${formatDistanceToNow(user.latestAction.at, { addSuffix: true })})`
+                                    : "Not recorded since tracking began"}
+                            </dd>
                             <dt className="text-muted-foreground">User ID</dt>
                             <dd className="font-mono text-xs leading-5 break-all">
                                 {user.id}

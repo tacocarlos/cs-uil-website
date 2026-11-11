@@ -14,11 +14,11 @@ import { ensureDefaultOrganization } from "~/server/organizations";
 /**
  * Creates the dev account on first use and makes sure it has the right
  * role, then returns its credentials for the client to sign in with (via
- * better-auth's normal email sign-in, so cookies are set as usual).
+ * better-auth's normal username sign-in, so cookies are set as usual).
  */
 export async function prepareDevAccount(
     kind: DevAccountKind,
-): Promise<{ email: string; password: string }> {
+): Promise<{ username: string; password: string }> {
     if (!devLoginEnabled()) {
         throw new Error("Dev login is disabled");
     }
@@ -36,16 +36,22 @@ export async function prepareDevAccount(
             body: {
                 name: account.name,
                 email: account.email,
+                username: account.username,
                 password: DEV_PASSWORD,
             },
         });
     }
 
     // Role can't be set at sign-up (it's not user input), so set it here,
-    // along with the matching role in the default school.
+    // along with the matching role in the default school. The username is
+    // set too, for dev accounts made before username sign-in existed.
     const [updated] = await db
         .update(user)
-        .set({ role: account.role })
+        .set({
+            role: account.role,
+            username: account.username,
+            displayUsername: account.username,
+        })
         .where(eq(user.email, account.email))
         .returning({ id: user.id });
     if (!updated) throw new Error(`Dev account ${account.email} is missing`);
@@ -66,5 +72,5 @@ export async function prepareDevAccount(
             set: { role },
         });
 
-    return { email: account.email, password: DEV_PASSWORD };
+    return { username: account.username, password: DEV_PASSWORD };
 }

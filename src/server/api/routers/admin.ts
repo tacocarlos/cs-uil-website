@@ -16,9 +16,12 @@ import {
 } from "drizzle-orm";
 import { auth } from "auth";
 import { MAX_BAN_SECONDS } from "~/lib/auth/bans";
+import { latestAction } from "~/lib/analytics";
 import { TEACHER_ROLES } from "~/lib/auth/organizations";
 import { createTRPCRouter, siteAdminProcedure } from "../trpc";
+import { accountLabelSql } from "~/server/accounts";
 import { db } from "~/server/db";
+import { authEvent } from "~/server/db/schema/analytics";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
 
@@ -36,7 +39,7 @@ export const USER_FILTER_ROLES = [
 ] as const;
 
 /** `text` contains `query`, case-insensitively and literally. */
-function contains(column: typeof user.name | typeof user.email, query: string) {
+function contains(column: typeof user.name | SQL, query: string) {
     return ilike(column, `%${query.replace(/[\\%_]/g, "\\$&")}%`);
 }
 
@@ -48,6 +51,42 @@ function hasMembership(where?: SQL) {
             .from(member)
             .where(and(eq(member.userId, user.id), where)),
     );
+}
+
+/** The schools (current and former) of each of `userIds`, by name. */
+async function schoolsOfUsers(userIds: string[]) {
+    if (!userIds.length) return [];
+    return db
+        .select({
+            userId: member.userId,
+            id: organization.id,
+            name: organization.name,
+            role: member.role,
+            formerAt: member.formerAt,
+        })
+        .from(member)
+        .innerJoin(organization, eq(organization.id, member.organizationId))
+        .where(inArray(member.userId, userIds))
+        .orderBy(asc(organization.name));
+}
+
+/** Each of `userIds`' latest sign-up, sign-in, or sign-out, if any. */
+async function lastAuthEvents(userIds: string[]) {
+    if (!userIds.length) return [];
+    return db
+        .selectDistinctOn([authEvent.userId], {
+            userId: authEvent.userId,
+            type: authEvent.type,
+            method: authEvent.method,
+            at: authEvent.createdAt,
+        })
+        .from(authEvent)
+        .where(inArray(authEvent.userId, userIds))
+        .orderBy(
+            authEvent.userId,
+            desc(authEvent.createdAt),
+            desc(authEvent.id),
+        );
 }
 
 /** Runs a better-auth call, reporting its refusals as tRPC errors. */
@@ -100,7 +139,9 @@ export const adminRouter = createTRPCRouter({
                 query
                     ? or(
                           contains(user.name, query),
-                          contains(user.email, query),
+                          // Email, or "@username" (not the placeholder
+                          // email) for username accounts.
+                          contains(accountLabelSql, query),
                       )
                     : undefined,
                 role ? roleFilter[role] : undefined,
@@ -113,12 +154,14 @@ export const adminRouter = createTRPCRouter({
                         id: user.id,
                         name: user.name,
                         email: user.email,
+                        accountLabel: accountLabelSql,
                         image: user.image,
                         role: user.role,
                         createdAt: user.createdAt,
                         banned: user.banned,
                         banReason: user.banReason,
                         banExpires: user.banExpires,
+                        lastActiveAt: user.lastActiveAt,
                     })
                     .from(user)
                     .where(where)
@@ -128,33 +171,20 @@ export const adminRouter = createTRPCRouter({
                 db.select({ n: count() }).from(user).where(where),
             ]);
 
-            const schools = users.length
-                ? await db
-                      .select({
-                          userId: member.userId,
-                          id: organization.id,
-                          name: organization.name,
-                          role: member.role,
-                          formerAt: member.formerAt,
-                      })
-                      .from(member)
-                      .innerJoin(
-                          organization,
-                          eq(organization.id, member.organizationId),
-                      )
-                      .where(
-                          inArray(
-                              member.userId,
-                              users.map((u) => u.id),
-                          ),
-                      )
-                      .orderBy(asc(organization.name))
-                : [];
+            const userIds = users.map((u) => u.id);
+            const [schools, lastEvents] = await Promise.all([
+                schoolsOfUsers(userIds),
+                lastAuthEvents(userIds),
+            ]);
 
             return {
                 users: users.map((u) => ({
                     ...u,
                     schools: schools.filter((s) => s.userId === u.id),
+                    latestAction: latestAction(
+                        u.lastActiveAt,
+                        lastEvents.find((e) => e.userId === u.id) ?? null,
+                    ),
                 })),
                 total: total?.n ?? 0,
                 pageSize: USERS_PER_PAGE,

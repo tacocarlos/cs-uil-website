@@ -15,7 +15,7 @@ export function DevLoginButtons({ callbackURL }: { callbackURL: string }) {
         setPending(kind);
         try {
             const credentials = await prepareDevAccount(kind);
-            const { error } = await signIn.email({
+            const { error } = await signIn.username({
                 ...credentials,
                 callbackURL,
             });

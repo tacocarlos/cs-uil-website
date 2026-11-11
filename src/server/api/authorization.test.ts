@@ -28,6 +28,10 @@ const ACCESS: Record<string, Access> = {
     "admin.listUsers": "site-admin",
     "admin.banUser": "site-admin",
     "admin.unbanUser": "site-admin",
+    // Site analytics
+    "analytics.summary": "site-admin",
+    "analytics.daily": "site-admin",
+    "analytics.retention": "site-admin",
     // Contests
     "contest.getAll": "public",
     "contest.getById": "public",
@@ -60,6 +64,16 @@ const ACCESS: Record<string, Access> = {
     "featureRequest.respond": "site-admin",
     // Returns null (no LSP) when signed out rather than rejecting.
     "lsp.getSession": "public",
+    // PrairieLearn practice tests: site admins turn them on for a school;
+    // its teachers connect a course and link students
+    "prairielearn.getStatus": "teacher",
+    "prairielearn.connect": "teacher",
+    "prairielearn.disconnect": "teacher",
+    "prairielearn.sync": "teacher",
+    "prairielearn.listUsers": "teacher",
+    "prairielearn.setLink": "teacher",
+    "prairielearn.getAccess": "site-admin",
+    "prairielearn.setEnabled": "site-admin",
     // Problem content
     "problem.getMinimalProblems": "public",
     "problem.getProblemById": "public",

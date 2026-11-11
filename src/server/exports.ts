@@ -9,6 +9,7 @@ import { fetchJudge0Languages } from "~/lib/problems/execute/judge0";
 import { FALLBACK_LANGUAGES } from "~/components/problem-workspace/languages";
 import { competitionLabel } from "~/lib/written/competitions";
 import { COMPETITION_LEVEL_LABELS } from "~/lib/problems/competition-levels";
+import { accountLabelSql } from "~/server/accounts";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { contest, contestSubmission } from "~/server/db/schema/contest";
@@ -38,7 +39,8 @@ const studentColumns: CsvColumn<{
     formerAt: Date | null;
 }>[] = [
     { header: "Student", value: (r) => r.name },
-    { header: "Email", value: (r) => r.email },
+    // An email, or "@username" for accounts made with a username.
+    { header: "Email or username", value: (r) => r.email },
     { header: "Former student", value: (r) => r.formerAt !== null },
 ];
 
@@ -51,7 +53,7 @@ export async function writtenScoresCsv(organizationId: string) {
     const rows = await db
         .select({
             name: user.name,
-            email: user.email,
+            email: accountLabelSql,
             formerAt: member.formerAt,
             competition: writtenTests.competition,
             seasonYear: writtenTests.seasonYear,
@@ -102,7 +104,7 @@ export async function programmingSubmissionsCsv(organizationId: string) {
             db
                 .select({
                     name: user.name,
-                    email: user.email,
+                    email: accountLabelSql,
                     formerAt: member.formerAt,
                     problemId: submission.problemId,
                     submittedAt: submission.timeSubmitted,
@@ -117,7 +119,7 @@ export async function programmingSubmissionsCsv(organizationId: string) {
             db
                 .select({
                     name: user.name,
-                    email: user.email,
+                    email: accountLabelSql,
                     formerAt: member.formerAt,
                     contestName: contest.name,
                     problemId: contestSubmission.apiProblemId,

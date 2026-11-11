@@ -10,8 +10,17 @@ export const env = createEnv({
         DATABASE_URL: z.url(),
         BETTER_AUTH_URL: z.url(),
         BETTER_AUTH_SECRET: z.string(),
-        GOOGLE_CLIENT_ID: z.string(),
-        GOOGLE_CLIENT_SECRET: z.string(),
+
+        // OAuth sign-in. Each provider is on when both of its variables are
+        // set and off when both are unset; setting only one stops startup
+        // (src/lib/auth/oauth-providers.ts).
+        GOOGLE_CLIENT_ID: z.string().optional(),
+        GOOGLE_CLIENT_SECRET: z.string().optional(),
+        GITHUB_CLIENT_ID: z.string().optional(),
+        GITHUB_CLIENT_SECRET: z.string().optional(),
+        MICROSOFT_CLIENT_ID: z.string().optional(),
+        MICROSOFT_CLIENT_SECRET: z.string().optional(),
+
         NODE_ENV: z
             .enum(["development", "test", "production"])
             .default("development"),
@@ -50,6 +59,10 @@ export const env = createEnv({
         NEXT_PUBLIC_BASE_URL: process.env.BASE_URL,
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+        GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+        GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+        MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID,
+        MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET,
         NODE_ENV: process.env.NODE_ENV,
         JUDGE_URL: process.env.JUDGE_URL,
         LSP_GATEWAY_URL: process.env.LSP_GATEWAY_URL,

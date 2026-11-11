@@ -14,6 +14,9 @@ export default function AdminPage() {
                             <Link href="/admin/users">Users</Link>
                         </Button>
                         <Button asChild variant="outline">
+                            <Link href="/admin/analytics">Analytics</Link>
+                        </Button>
+                        <Button asChild variant="outline">
                             <Link href="/admin/requests">Feature requests</Link>
                         </Button>
                         <Button asChild variant="outline">

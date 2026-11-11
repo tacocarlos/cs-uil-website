@@ -24,8 +24,6 @@ jobs:
             DATABASE_URL: postgres://ci:ci@localhost:5432/ci
             BETTER_AUTH_URL: http://localhost:3000
             BETTER_AUTH_SECRET: ci-placeholder-secret-not-used-anywhere
-            GOOGLE_CLIENT_ID: ci
-            GOOGLE_CLIENT_SECRET: ci
             JUDGE_URL: http://localhost:2358
             BASE_URL: http://localhost:3000
 
