@@ -24,6 +24,7 @@ import { accessControl, adminPluginRoles } from "~/lib/auth/permissions";
 import { isSiteAdmin } from "~/lib/auth/roles";
 import { recordActivity, recordAuthEvent } from "~/server/analytics";
 import { db } from "~/server/db";
+import { oauth } from "~/server/oauth";
 import * as authSchema from "~/server/db/schema/auth";
 import * as orgSchema from "~/server/db/schema/organization";
 import { schoolsOf } from "~/server/organizations";
@@ -211,21 +212,16 @@ export const auth = betterAuth({
         minPasswordLength: PASSWORD_MIN_LENGTH,
         maxPasswordLength: PASSWORD_MAX_LENGTH,
     },
+    // Only the providers configured in the env (src/server/oauth.ts); the
+    // others have no endpoints and no button on the sign-in page.
     socialProviders: {
-        google: {
-            prompt: "select_account",
-            clientId: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-        },
-        github: {
-            clientId: env.GITHUB_CLIENT_ID,
-            clientSecret: env.GITHUB_CLIENT_SECRET,
-        },
-        microsoft: {
-            prompt: "select_account",
-            clientId: env.MICROSOFT_CLIENT_ID,
-            clientSecret: env.MICROSOFT_CLIENT_SECRET,
-        },
+        ...(oauth.google && {
+            google: { prompt: "select_account", ...oauth.google },
+        }),
+        ...(oauth.github && { github: oauth.github }),
+        ...(oauth.microsoft && {
+            microsoft: { prompt: "select_account", ...oauth.microsoft },
+        }),
     },
     user: {
         modelName: "uil_user",

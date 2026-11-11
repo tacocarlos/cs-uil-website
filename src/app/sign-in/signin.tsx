@@ -13,6 +13,11 @@ import {
 } from "~/components/ui/card";
 import Image from "next/image";
 import { signIn } from "auth-client";
+import {
+    joinWithOr,
+    OAUTH_PROVIDER_LABELS,
+    type OAuthProvider,
+} from "~/lib/auth/oauth-providers";
 import { getSafeRedirectUrl } from "~/lib/auth/redirect-utils";
 import { DevLoginButtons } from "./dev-login-buttons";
 import { LastUsedBadge } from "./last-used-badge";
@@ -25,28 +30,29 @@ type SignInPageProps = {
     showDevLogin?: boolean;
     /** How this browser last signed in (src/lib/auth/last-login.ts). */
     lastMethod?: string | null;
+    /** The OAuth providers configured on the server, in display order. */
+    providers: OAuthProvider[];
 };
 
-type Provider = "google" | "github" | "microsoft";
-
-const PROVIDERS: { id: Provider; label: string; icon: ReactNode }[] = [
-    { id: "google", label: "Google", icon: <GoogleIcon /> },
-    { id: "github", label: "GitHub", icon: <GitHubIcon /> },
-    { id: "microsoft", label: "Microsoft", icon: <MicrosoftIcon /> },
-];
+const PROVIDER_ICONS: Record<OAuthProvider, ReactNode> = {
+    google: <GoogleIcon />,
+    github: <GitHubIcon />,
+    microsoft: <MicrosoftIcon />,
+};
 
 export default function SignInPage({
     error,
     next,
     showDevLogin = false,
     lastMethod = null,
+    providers,
 }: SignInPageProps) {
     const callbackURL = getSafeRedirectUrl(next, "/dashboard");
     // The provider being signed in with. Stays set while the browser leaves
     // for it, so a slow redirect can't be tapped twice.
-    const [pending, setPending] = useState<Provider | null>(null);
+    const [pending, setPending] = useState<OAuthProvider | null>(null);
 
-    async function signInWith(provider: Provider) {
+    async function signInWith(provider: OAuthProvider) {
         setPending(provider);
         const { error } = await signIn.social({ provider, callbackURL });
         if (error) {
@@ -83,8 +89,13 @@ export default function SignInPage({
                             Welcome back
                         </CardTitle>
                         <CardDescription className="text-center">
-                            Sign in with Google, GitHub, Microsoft, or a
-                            username
+                            Sign in with{" "}
+                            {joinWithOr([
+                                ...providers.map(
+                                    (p) => OAUTH_PROVIDER_LABELS[p],
+                                ),
+                                "a username",
+                            ])}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
@@ -94,7 +105,7 @@ export default function SignInPage({
                             </div>
                         )}
 
-                        {PROVIDERS.map(({ id, label, icon }) => (
+                        {providers.map((id) => (
                             <Button
                                 key={id}
                                 variant="outline"
@@ -105,25 +116,28 @@ export default function SignInPage({
                                 {pending === id ? (
                                     <div className="border-info h-5 w-5 animate-spin rounded-full border-t-2 border-b-2" />
                                 ) : (
-                                    icon
+                                    PROVIDER_ICONS[id]
                                 )}
                                 <span>
                                     {pending === id
                                         ? "Signing in..."
-                                        : `Sign in with ${label}`}
+                                        : `Sign in with ${OAUTH_PROVIDER_LABELS[id]}`}
                                 </span>
                                 {lastMethod === id && <LastUsedBadge />}
                             </Button>
                         ))}
-                        <div className="flex items-center gap-3">
-                            <div className="bg-border h-px flex-1" />
-                            <span className="text-muted-foreground text-xs uppercase">
-                                or use a username
-                            </span>
-                            <div className="bg-border h-px flex-1" />
-                        </div>
+                        {providers.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                <div className="bg-border h-px flex-1" />
+                                <span className="text-muted-foreground text-xs uppercase">
+                                    or use a username
+                                </span>
+                                <div className="bg-border h-px flex-1" />
+                            </div>
+                        )}
                         <UsernameForm
                             callbackURL={callbackURL}
+                            providers={providers}
                             disabled={pending !== null}
                             lastUsed={lastMethod === "username"}
                         />
