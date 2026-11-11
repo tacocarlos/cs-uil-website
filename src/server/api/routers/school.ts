@@ -25,6 +25,7 @@ import {
     siteAdminProcedure,
     teacherProcedure,
 } from "../trpc";
+import { accountLabelSql, userByAccount } from "~/server/accounts";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
 import { member, organization } from "~/server/db/schema/organization";
@@ -141,7 +142,7 @@ export const schoolRouter = createTRPCRouter({
                 joinedAt: member.createdAt,
                 formerAt: member.formerAt,
                 name: user.name,
-                email: user.email,
+                email: accountLabelSql,
             })
             .from(member)
             .innerJoin(user, eq(member.userId, user.id))
@@ -371,7 +372,8 @@ export const schoolRouter = createTRPCRouter({
         .input(
             z.object({
                 organizationId: z.string(),
-                email: z.string().trim().email(),
+                /** Their email, or their username for username accounts. */
+                account: z.string().trim().min(1).max(320),
             }),
         )
         .mutation(async ({ input }) => {
@@ -384,19 +386,14 @@ export const schoolRouter = createTRPCRouter({
                 db
                     .select({ id: user.id, name: user.name })
                     .from(user)
-                    .where(
-                        eq(
-                            sql`lower(${user.email})`,
-                            input.email.toLowerCase(),
-                        ),
-                    )
+                    .where(userByAccount(input.account))
                     .limit(1),
             ]);
             const school = requireSchool(found);
             if (!teacher) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: `No account uses ${input.email}. Ask them to sign in once, then try again.`,
+                    message: `No account uses ${input.account}. Ask them to sign in once, then try again.`,
                 });
             }
 
@@ -426,7 +423,7 @@ export const schoolRouter = createTRPCRouter({
                     userId: member.userId,
                     role: member.role,
                     name: user.name,
-                    email: user.email,
+                    email: accountLabelSql,
                 })
                 .from(member)
                 .innerJoin(user, eq(member.userId, user.id))

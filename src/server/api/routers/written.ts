@@ -1,6 +1,7 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, teacherProcedure } from "../trpc";
+import { accountLabelSql } from "~/server/accounts";
 import { db } from "~/server/db";
 import { writtenTests } from "~/server/db/schema/written";
 import { user } from "~/server/db/schema/auth";
@@ -207,7 +208,7 @@ export const writtenRouter = createTRPCRouter({
             .select({
                 id: user.id,
                 name: user.name,
-                email: user.email,
+                email: accountLabelSql,
             })
             .from(user)
             .where(inSchool(user.id, ctx.organizationId, { currentOnly: true }))

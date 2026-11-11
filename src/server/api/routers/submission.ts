@@ -6,6 +6,7 @@ import {
     publicProcedure,
     teacherProcedure,
 } from "../trpc";
+import { accountLabelSql } from "~/server/accounts";
 import { db } from "~/server/db";
 import { problemRun, submission } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
@@ -84,7 +85,7 @@ export const submissionRouter = createTRPCRouter({
                     maxPoints: submission.maxPoints,
                     accepted: submission.accepted,
                     userName: userTable.name,
-                    userEmail: userTable.email,
+                    userEmail: accountLabelSql,
                     attemptNum: submission.attemptNumber,
                 })
                 .from(submission)

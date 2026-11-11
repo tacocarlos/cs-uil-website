@@ -15,7 +15,10 @@ import {
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 
-/** Makes an existing account a teacher of the given school, by email. */
+/**
+ * Makes an existing account a teacher of the given school, by email (or
+ * username, for username accounts).
+ */
 export function AddTeacherDialog({
     school,
 }: {
@@ -43,7 +46,10 @@ export function AddTeacherDialog({
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
-                        add.mutate({ organizationId: school.id, email });
+                        add.mutate({
+                            organizationId: school.id,
+                            account: email,
+                        });
                     }}
                 >
                     <DialogHeader>
@@ -57,12 +63,13 @@ export function AddTeacherDialog({
                         </DialogDescription>
                     </DialogHeader>
                     <Input
-                        type="email"
                         className="my-4"
+                        autoCapitalize="none"
+                        spellCheck={false}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="teacher@school.org"
-                        aria-label="Teacher's email"
+                        placeholder="teacher@school.org or username"
+                        aria-label="Teacher's email or username"
                     />
                     <DialogFooter>
                         <Button

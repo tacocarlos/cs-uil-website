@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { accountLabel } from "~/lib/auth/usernames";
 import { requireSession } from "~/server/current-membership";
 import { Button } from "~/components/ui/button";
 import SettingsSection from "./settings";
@@ -35,7 +36,7 @@ export default async function DashboardPage() {
                                     {user.name}
                                 </h2>
                                 <p className="text-muted-foreground">
-                                    {user.email}
+                                    {accountLabel(user)}
                                 </p>
                             </div>
                         </div>
