@@ -9,6 +9,7 @@ import { lspRouter } from "./routers/lsp";
 import { schoolRouter } from "./routers/school";
 import { featureRequestRouter } from "./routers/feature-request";
 import { adminRouter } from "./routers/admin";
+import { analyticsRouter } from "./routers/analytics";
 import { prairielearnRouter } from "./routers/prairielearn";
 
 /**
@@ -27,6 +28,7 @@ export const appRouter = createTRPCRouter({
     school: schoolRouter,
     featureRequest: featureRequestRouter,
     admin: adminRouter,
+    analytics: analyticsRouter,
     prairielearn: prairielearnRouter,
 });
 

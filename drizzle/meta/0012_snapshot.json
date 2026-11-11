@@ -1,9 +1,167 @@
 {
-  "id": "3fdf3807-c68f-4607-a680-aab6dacd3d76",
+  "id": "5408b5ab-d216-44fd-9a0f-9aa683fb49cc",
   "prevId": "060986bd-dd19-4399-b9b1-a36f4194a4c1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.uil_auth_event": {
+      "name": "uil_auth_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "auth_event_type_created_idx": {
+          "name": "auth_event_type_created_idx",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "createdAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "auth_event_user_idx": {
+          "name": "auth_event_user_idx",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "auth_event_user_id_fk": {
+          "name": "auth_event_user_id_fk",
+          "tableFrom": "uil_auth_event",
+          "tableTo": "uil_user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.uil_user_activity": {
+      "name": "uil_user_activity",
+      "schema": "",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "user_activity_day_idx": {
+          "name": "user_activity_day_idx",
+          "columns": [
+            {
+              "expression": "day",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "user_activity_user_id_fk": {
+          "name": "user_activity_user_id_fk",
+          "tableFrom": "uil_user_activity",
+          "tableTo": "uil_user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_activity_pk": {
+          "name": "user_activity_pk",
+          "columns": [
+            "userId",
+            "day"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.uil_account": {
       "name": "uil_account",
       "schema": "",
@@ -293,6 +451,12 @@
         },
         "ban_expires": {
           "name": "ban_expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_active_at": {
+          "name": "last_active_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
@@ -1442,358 +1606,6 @@
           "value": "\"uil_organization\".\"region\" BETWEEN 1 AND 4"
         }
       },
-      "isRLSEnabled": false
-    },
-    "public.uil_prairielearn_assessment": {
-      "name": "uil_prairielearn_assessment",
-      "schema": "",
-      "columns": {
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "assessment_id": {
-          "name": "assessment_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "level": {
-          "name": "level",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "prairielearn_assessment_organization_id_fk": {
-          "name": "prairielearn_assessment_organization_id_fk",
-          "tableFrom": "uil_prairielearn_assessment",
-          "tableTo": "uil_prairielearn_course",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "organization_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "prairielearn_assessment_pk": {
-          "name": "prairielearn_assessment_pk",
-          "columns": [
-            "organization_id",
-            "assessment_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.uil_prairielearn_attempt": {
-      "name": "uil_prairielearn_attempt",
-      "schema": "",
-      "columns": {
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "assessment_instance_id": {
-          "name": "assessment_instance_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "assessment_id": {
-          "name": "assessment_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prairielearn_user_id": {
-          "name": "prairielearn_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "points": {
-          "name": "points",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "max_points": {
-          "name": "max_points",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "score_perc": {
-          "name": "score_perc",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "started_at": {
-          "name": "started_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "open": {
-          "name": "open",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "prairielearn_attempt_assessment_idx": {
-          "name": "prairielearn_attempt_assessment_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "assessment_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "prairielearn_attempt_assessment_fk": {
-          "name": "prairielearn_attempt_assessment_fk",
-          "tableFrom": "uil_prairielearn_attempt",
-          "tableTo": "uil_prairielearn_assessment",
-          "columnsFrom": [
-            "organization_id",
-            "assessment_id"
-          ],
-          "columnsTo": [
-            "organization_id",
-            "assessment_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "prairielearn_attempt_user_fk": {
-          "name": "prairielearn_attempt_user_fk",
-          "tableFrom": "uil_prairielearn_attempt",
-          "tableTo": "uil_prairielearn_user",
-          "columnsFrom": [
-            "organization_id",
-            "prairielearn_user_id"
-          ],
-          "columnsTo": [
-            "organization_id",
-            "prairielearn_user_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "prairielearn_attempt_pk": {
-          "name": "prairielearn_attempt_pk",
-          "columns": [
-            "organization_id",
-            "assessment_instance_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.uil_prairielearn_course": {
-      "name": "uil_prairielearn_course",
-      "schema": "",
-      "columns": {
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "course_instance_id": {
-          "name": "course_instance_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "synced_at": {
-          "name": "synced_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sync_error": {
-          "name": "sync_error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "prairielearn_course_organization_id_fk": {
-          "name": "prairielearn_course_organization_id_fk",
-          "tableFrom": "uil_prairielearn_course",
-          "tableTo": "uil_organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.uil_prairielearn_user": {
-      "name": "uil_prairielearn_user",
-      "schema": "",
-      "columns": {
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prairielearn_user_id": {
-          "name": "prairielearn_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "uid": {
-          "name": "uid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "linked_by_teacher": {
-          "name": "linked_by_teacher",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        }
-      },
-      "indexes": {
-        "prairielearn_user_user_idx": {
-          "name": "prairielearn_user_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "prairielearn_user_organization_id_fk": {
-          "name": "prairielearn_user_organization_id_fk",
-          "tableFrom": "uil_prairielearn_user",
-          "tableTo": "uil_prairielearn_course",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "organization_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "prairielearn_user_user_id_fk": {
-          "name": "prairielearn_user_user_id_fk",
-          "tableFrom": "uil_prairielearn_user",
-          "tableTo": "uil_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "prairielearn_user_pk": {
-          "name": "prairielearn_user_pk",
-          "columns": [
-            "organization_id",
-            "prairielearn_user_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.uil_problem_run": {

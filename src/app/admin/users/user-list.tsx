@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { Search } from "lucide-react";
 import { useDebouncedValue } from "~/hooks/use-debounced-value";
 import { Button } from "~/components/ui/button";
@@ -26,7 +25,12 @@ import {
 } from "~/components/ui/table";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { SchoolFilter, type SchoolOption } from "./school-filter";
-import { BanStatus, RoleBadges, UserDialog } from "./user-dialog";
+import {
+    BanStatus,
+    LatestActionCell,
+    RoleBadges,
+    UserDialog,
+} from "./user-dialog";
 
 export type ListedUser = RouterOutputs["admin"]["listUsers"]["users"][number];
 
@@ -82,7 +86,7 @@ export function UserList() {
                         <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                         <Input
                             type="search"
-                            placeholder="Search by name or email"
+                            placeholder="Search by name, email, or username"
                             aria-label="Search users by name or email"
                             className="pl-9"
                             value={search}
@@ -149,7 +153,7 @@ export function UserList() {
                                     <TableHead>User</TableHead>
                                     <TableHead>Role</TableHead>
                                     <TableHead>Schools</TableHead>
-                                    <TableHead>Joined</TableHead>
+                                    <TableHead>Last active</TableHead>
                                     <TableHead>Status</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -179,7 +183,7 @@ export function UserList() {
                                                 {u.name}
                                             </div>
                                             <div className="text-muted-foreground text-xs">
-                                                {u.email}
+                                                {u.accountLabel}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -197,7 +201,9 @@ export function UserList() {
                                             )}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap">
-                                            {format(u.createdAt, "MMM d, yyyy")}
+                                            <LatestActionCell
+                                                action={u.latestAction}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             <BanStatus user={u} />

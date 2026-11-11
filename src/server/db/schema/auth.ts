@@ -5,7 +5,15 @@ import createTable, { cascadeFk } from "./createTable";
 export const user = createTable("user", {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
+    /**
+     * Unique. Accounts made with a username instead of Google get a
+     * placeholder here (see src/lib/auth/usernames.ts), never a real address.
+     */
     email: text("email").notNull().unique(),
+    // Username plugin (auth.ts): sign-in name, stored lowercase, and as
+    // typed. Null for Google accounts.
+    username: text("username").unique(),
+    displayUsername: text("display_username"),
     emailVerified: boolean("email_verified")
         .$defaultFn(() => false)
         .notNull(),
@@ -30,6 +38,11 @@ export const user = createTable("user", {
     banReason: text("ban_reason"),
     /** When the ban ends; null for a ban with no end. */
     banExpires: timestamp("ban_expires"),
+    /**
+     * Last time the user loaded a page while signed in, to within a few
+     * minutes (see src/server/analytics.ts). Null until they next do.
+     */
+    lastActiveAt: timestamp("last_active_at"),
 });
 export type User = typeof user.$inferSelect;
 

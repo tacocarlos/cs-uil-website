@@ -15,6 +15,13 @@ const config = {
                 port: "",
                 pathname: "**",
             },
+            // allow GitHub user profile images
+            {
+                protocol: "https",
+                hostname: "avatars.githubusercontent.com",
+                port: "",
+                pathname: "/u/**",
+            },
         ],
     },
 };

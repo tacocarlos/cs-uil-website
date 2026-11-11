@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { ChevronLeft } from "lucide-react";
+import { accountLabelSql } from "~/server/accounts";
 import { db } from "~/server/db";
 import { submission as submissionTable } from "~/server/db/schema/submission";
 import { user as userTable } from "~/server/db/schema/auth";
@@ -39,7 +40,7 @@ export default async function SubmissionDetailPage({
             submittedCode: submissionTable.submittedCode,
             isStudentVisible: submissionTable.isStudentVisible,
             userName: userTable.name,
-            userEmail: userTable.email,
+            userEmail: accountLabelSql,
             userImage: userTable.image,
         })
         .from(submissionTable)
