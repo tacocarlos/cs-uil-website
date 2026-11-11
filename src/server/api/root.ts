@@ -9,6 +9,7 @@ import { lspRouter } from "./routers/lsp";
 import { schoolRouter } from "./routers/school";
 import { featureRequestRouter } from "./routers/feature-request";
 import { adminRouter } from "./routers/admin";
+import { prairielearnRouter } from "./routers/prairielearn";
 
 /**
  * This is the primary router for your server.
@@ -26,6 +27,7 @@ export const appRouter = createTRPCRouter({
     school: schoolRouter,
     featureRequest: featureRequestRouter,
     admin: adminRouter,
+    prairielearn: prairielearnRouter,
 });
 
 // export type definition of API

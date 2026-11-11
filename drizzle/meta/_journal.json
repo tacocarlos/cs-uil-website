@@ -85,6 +85,27 @@
       "when": 1793908459283,
       "tag": "0011_admin_plugin",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794409388060,
+      "tag": "0012_prairielearn",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794409829059,
+      "tag": "0013_prairielearn_uil_scoring",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794410857859,
+      "tag": "0014_prairielearn_teacher_connections",
+      "breakpoints": true
     }
   ]
 }

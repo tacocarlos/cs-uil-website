@@ -38,13 +38,17 @@ export function StudentDialog({
     name,
     schools,
     stats,
+    note,
     open,
     onOpenChange,
 }: {
     name: string;
     /** Left out on a school's own leaderboard. */
     schools?: string[];
+    /** Short values; tiles wrap onto more rows when there are many. */
     stats: readonly (readonly [label: string, value: string | number])[];
+    /** A line below the stats, for details too long for a tile. */
+    note?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -60,7 +64,7 @@ export function StudentDialog({
                         {schools.join(", ") || "No school"}
                     </p>
                 )}
-                <dl className="grid auto-cols-fr grid-flow-col gap-2 text-center">
+                <dl className="grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] gap-2 text-center">
                     {stats.map(([label, value]) => (
                         <div key={label} className="rounded-md border py-2">
                             <dt className="text-muted-foreground text-xs">
@@ -70,6 +74,11 @@ export function StudentDialog({
                         </div>
                     ))}
                 </dl>
+                {note && (
+                    <p className="text-muted-foreground text-center text-sm">
+                        {note}
+                    </p>
+                )}
             </DialogContent>
         </Dialog>
     );
