@@ -14,9 +14,13 @@
  * with some dummy students). The dev student and teacher also get practice
  * submissions, with IDs starting with "seed-", and runs on a few other
  * problems, if they've signed in before.
+ *
+ * Groveton also gets the PrairieLearn practice-test leaderboard, turned on
+ * and connected to a course with the made-up ID "seed" (never synced, and
+ * with no token), unless a teacher has connected it to a real course.
  */
 import { randomUUID } from "node:crypto";
-import { and, inArray, like } from "drizzle-orm";
+import { and, eq, inArray, like } from "drizzle-orm";
 import { DEV_ACCOUNTS, type DevAccountKind } from "~/lib/auth/dev-accounts";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
 import {
@@ -24,6 +28,7 @@ import {
     type MemberRole,
 } from "~/lib/auth/organizations";
 import { DEFAULT_MAX_POINTS, practicePoints } from "~/lib/problems/scoring";
+import { type UilTally } from "~/lib/prairielearn/practice-tests";
 import { type Conference } from "~/lib/schools";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
@@ -32,6 +37,12 @@ import { problemRun, submission } from "~/server/db/schema/submission";
 import { featureRequest } from "~/server/db/schema/feature-request";
 import { ensureDefaultOrganization } from "~/server/organizations";
 import { writtenTests } from "~/server/db/schema/written";
+import {
+    prairielearnAssessment,
+    prairielearnAttempt,
+    prairielearnCourse,
+    prairielearnUser,
+} from "~/server/db/schema/prairielearn";
 
 const EMAIL_DOMAIN = "seed.local";
 const SCHOOL_ID_PREFIX = "seed-";
@@ -272,6 +283,101 @@ const FEATURE_REQUESTS: (Omit<FeatureRequest, "userId"> & {
     },
 ];
 
+// ── PrairieLearn practice tests ───────────────────────────────────────────────
+// Groveton's course. Not a real course instance ID, so it's never synced
+// (see isRealCourseInstanceId in src/server/prairielearn/sync.ts).
+
+const SEED_COURSE_INSTANCE_ID = "seed";
+
+/** In PrairieLearn's order, as "<Level> Practice Test" titles give them. */
+const PRACTICE_LEVELS = [
+    "Invitational A",
+    "Invitational B",
+    "District",
+    "Region",
+    "State",
+];
+
+/** Questions per practice test (each +6 right, -2 wrong, 0 blank). */
+const PRACTICE_QUESTIONS = 15;
+
+/**
+ * Users in Groveton's PrairieLearn course. `skill` is the chance of
+ * answering a question right; `guesses` the chance of answering one they
+ * don't know rather than leaving it blank.
+ */
+type PrairieLearnPerson = {
+    /** Shown in PrairieLearn; for linked users, their account's name. */
+    name: string;
+    /** Through the LMS (a pseudonymous UID) or with an email (Google). */
+    via: "lms" | "email";
+    /** The account linked to, by name (or "dev-student"); none if unlinked. */
+    linkedTo?: string;
+    /** Linked by a teacher rather than by matching email. */
+    byTeacher?: boolean;
+    skill: number;
+    guesses: number;
+    /** One of their attempts is still in progress (not ranked). */
+    taking?: boolean;
+};
+
+const PRAIRIELEARN_PEOPLE: PrairieLearnPerson[] = [
+    // Linked by matching email.
+    {
+        name: "Ada Lovelace",
+        via: "email",
+        linkedTo: "Ada Lovelace",
+        skill: 0.85,
+        guesses: 0.3,
+    },
+    // Hidden from other students; teachers see a "Hidden" badge.
+    {
+        name: "Alan Turing",
+        via: "lms",
+        linkedTo: "Alan Turing",
+        byTeacher: true,
+        skill: 0.9,
+        guesses: 0.2,
+    },
+    // Former student: linked, but never on the leaderboard.
+    {
+        name: "Grace Hopper",
+        via: "email",
+        linkedTo: "Grace Hopper",
+        skill: 0.8,
+        guesses: 0.5,
+    },
+    // Uses PrairieLearn both ways; both users count as one student.
+    {
+        name: "Hasan Piker",
+        via: "lms",
+        linkedTo: "Hasan Piker",
+        byTeacher: true,
+        skill: 0.55,
+        guesses: 0.9,
+        taking: true,
+    },
+    {
+        name: "Hasan Piker",
+        via: "email",
+        linkedTo: "Hasan Piker",
+        skill: 0.55,
+        guesses: 0.9,
+    },
+    // Guesses at everything, so often scores below zero.
+    {
+        name: "Dev Student",
+        via: "lms",
+        linkedTo: "dev-student",
+        byTeacher: true,
+        skill: 0.15,
+        guesses: 1,
+    },
+    // Not linked yet: on the teacher's linking page, not the leaderboard.
+    { name: "Mystery Student", via: "lms", skill: 0.6, guesses: 0.4 },
+    { name: "Ada L.", via: "email", skill: 0.85, guesses: 0.3 },
+];
+
 /** Small seeded PRNG, so every run produces the same data. */
 function random(seed: number) {
     return () => {
@@ -319,6 +425,11 @@ async function removeDummyData() {
                       ),
                   )
                   .returning({ userId: problemRun.userId });
+    // Users, attempts, and practice tests cascade from the course.
+    const courses = await db
+        .delete(prairielearnCourse)
+        .where(eq(prairielearnCourse.courseInstanceId, SEED_COURSE_INSTANCE_ID))
+        .returning({ id: prairielearnCourse.organizationId });
     const users = await db
         .delete(user)
         .where(like(user.email, `%@${EMAIL_DOMAIN}`))
@@ -330,7 +441,8 @@ async function removeDummyData() {
     console.log(
         `Removed ${users.length} dummy users, ${schools.length} dummy ` +
             `schools, ${devSubmissions.length} dev account submissions, ` +
-            `and ${devRuns.length} dev account runs.`,
+            `${devRuns.length} dev account runs, and ` +
+            `${courses.length} PrairieLearn courses.`,
     );
 }
 
@@ -431,6 +543,131 @@ async function insertDevActivity(rand: () => number, now: Date) {
     return { submissions: rows.length, runs: runs.length };
 }
 
+/**
+ * Turns the practice-test leaderboard on for Groveton, connected to a
+ * made-up course with PRAIRIELEARN_PEOPLE's attempts at each practice test
+ * over the last few weeks. Skipped if a teacher has connected Groveton to a
+ * real course. Returns how many attempts.
+ */
+async function insertPrairieLearnData(
+    rand: () => number,
+    now: Date,
+): Promise<number> {
+    const [existing] = await db
+        .select({ id: prairielearnCourse.courseInstanceId })
+        .from(prairielearnCourse)
+        .where(eq(prairielearnCourse.organizationId, GROVETON));
+    if (existing?.id) {
+        console.log(
+            `No PrairieLearn data: Groveton is connected to course instance ` +
+                `${existing.id}. Disconnect it from the teacher dashboard, ` +
+                "then seed again.",
+        );
+        return 0;
+    }
+    // Turned on but not connected: replaced by the seeded connection.
+    await db
+        .delete(prairielearnCourse)
+        .where(eq(prairielearnCourse.organizationId, GROVETON));
+
+    const { accounts } = await findDevAccounts();
+    const devStudent = accounts.find(
+        (a) => a.email === DEV_ACCOUNTS.student.email,
+    );
+    const devTeacher = accounts.find(
+        (a) => a.email === DEV_ACCOUNTS.teacher.email,
+    );
+    const accountId = (name: string | undefined) =>
+        name === "dev-student" ? devStudent?.id : name && `seed-${slug(name)}`;
+
+    await db.insert(prairielearnCourse).values({
+        organizationId: GROVETON,
+        createdAt: now,
+        // A reserved name that can't resolve, so it's plainly not real.
+        serverUrl: "https://prairielearn.invalid",
+        courseInstanceId: SEED_COURSE_INSTANCE_ID,
+        name: "Computer Science UIL: Seed",
+        connectedBy: devTeacher?.id ?? null,
+        connectedAt: now,
+        syncedAt: now,
+    });
+    const tests = PRACTICE_LEVELS.map((level, i) => ({
+        organizationId: GROVETON,
+        assessmentId: `seed-${slug(level)}`,
+        level,
+        position: i + 1,
+    }));
+    await db.insert(prairielearnAssessment).values(tests);
+
+    const people = PRAIRIELEARN_PEOPLE.map((p, i) => ({
+        ...p,
+        prairielearnUserId: `seed-${i + 1}`,
+        userId: accountId(p.linkedTo),
+    })).filter((p) => p.linkedTo === undefined || p.userId !== undefined);
+    if (!devStudent) {
+        console.log(
+            `No PrairieLearn user for ${DEV_ACCOUNTS.student.email}: sign ` +
+                "in as them once, then seed again.",
+        );
+    }
+    await db.insert(prairielearnUser).values(
+        people.map((p) => ({
+            organizationId: GROVETON,
+            prairielearnUserId: p.prairielearnUserId,
+            uid:
+                p.via === "lms"
+                    ? `${randomUUID().replaceAll("-", "")}::ciid=seed`
+                    : `${slug(p.name)}@${EMAIL_DOMAIN}`,
+            name: p.name,
+            userId: p.userId ?? null,
+            linkedByTeacher: p.byTeacher ?? false,
+        })),
+    );
+
+    // Everyone takes some tests, some more than once, over four weeks.
+    const attempts: (typeof prairielearnAttempt.$inferInsert)[] = [];
+    let instance = 0;
+    for (const person of people) {
+        for (const test of tests) {
+            const taking = person.taking === true && test === tests.at(-1);
+            // 0 to 3 attempts; at least one at the test being taken.
+            const count = Math.max(Math.floor(rand() * 4), taking ? 1 : 0);
+            for (let i = 0; i < count; i++) {
+                const tally: UilTally = { correct: 0, wrong: 0, skipped: 0 };
+                for (let q = 0; q < PRACTICE_QUESTIONS; q++) {
+                    if (rand() < person.skill) tally.correct++;
+                    else if (rand() < person.guesses) tally.wrong++;
+                    else tally.skipped++;
+                }
+                // The last attempt at the test being taken is in progress.
+                const open = taking && i === count - 1;
+                const points = tally.correct * 6;
+                attempts.push({
+                    organizationId: GROVETON,
+                    assessmentInstanceId: `seed-${++instance}`,
+                    assessmentId: test.assessmentId,
+                    prairielearnUserId: person.prairielearnUserId,
+                    points: open ? 0 : points,
+                    maxPoints: PRACTICE_QUESTIONS * 6,
+                    startedAt: new Date(
+                        now.getTime() -
+                            Math.floor(rand() * 28 * 24 * 60) * 60_000,
+                    ),
+                    open,
+                    // Tallies are only fetched once an attempt is finished.
+                    ...(open
+                        ? { correct: null, wrong: null, skipped: null }
+                        : tally),
+                });
+            }
+        }
+    }
+    if (attempts.length > 0) {
+        await db.insert(prairielearnAttempt).values(attempts);
+    }
+    return attempts.length;
+}
+
 async function insertDummyData() {
     const now = new Date();
     const rand = random(2027);
@@ -514,14 +751,16 @@ async function insertDummyData() {
     );
 
     const dev = await insertDevActivity(rand, now);
+    const practiceAttempts = await insertPrairieLearnData(rand, now);
 
     console.log(
         `Added ${SCHOOLS.length} schools, ${users.length} users ` +
             `(${users.length - students.length} teachers), ` +
             `${submissions.length} submissions, ${scores.length} written scores, ` +
             `${FEATURE_REQUESTS.length} feature requests, ` +
-            `${dev.submissions} dev account submissions, and ` +
-            `${dev.runs} dev account runs.`,
+            `${dev.submissions} dev account submissions, ` +
+            `${dev.runs} dev account runs, and ` +
+            `${practiceAttempts} PrairieLearn practice-test attempts.`,
     );
 }
 

@@ -7,14 +7,19 @@ import { SchoolMembersCard } from "./school-members";
 import { ExportDataCard } from "./export-data";
 import { Button } from "~/components/ui/button";
 import { RecentOrgSubmissions } from "./recent-submissions";
+import { isConnected, memberCourse } from "~/server/prairielearn/leaderboard";
 
 export const dynamic = "force-dynamic";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default async function TeacherDashboardPage() {
     // The layout already checked that this is a teacher of the active school.
-    const { membership } = await getCurrentMembership();
+    const { session, membership } = await getCurrentMembership();
     if (!membership) return null;
+    const practiceCourse = await memberCourse(
+        session?.user.id,
+        membership.organizationId,
+    );
 
     return (
         <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
@@ -42,6 +47,15 @@ export default async function TeacherDashboardPage() {
                             Written Statistics
                         </Link>
                     </Button>
+                    {practiceCourse && (
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/teacher/practice-tests">
+                                {isConnected(practiceCourse)
+                                    ? "Practice Tests"
+                                    : "Connect PrairieLearn"}
+                            </Link>
+                        </Button>
+                    )}
                 </div>
             </div>
 

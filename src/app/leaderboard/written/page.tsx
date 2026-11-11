@@ -22,6 +22,8 @@ import { LeaderboardScopeTabs } from "../scope-tabs";
 import WrittenLeaderboard from "./written-leaderboard";
 import { WrittenFilterControls } from "./written-filters";
 
+import { isConnected, memberCourse } from "~/server/prairielearn/leaderboard";
+
 export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -53,7 +55,7 @@ export default async function WrittenLeaderboardPage({
     searchParams: Promise<SearchParams>;
 }) {
     const params = await searchParams;
-    const { membership } = await getCurrentMembership();
+    const { session, membership } = await getCurrentMembership();
     const { scope, filter } = leaderboardView(params, membership);
     const { year, competition } = parseWrittenFilter(params);
 
@@ -104,7 +106,18 @@ export default async function WrittenLeaderboardPage({
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
-            <LeaderboardKindTabs path="/leaderboard/written" />
+            <LeaderboardKindTabs
+                path="/leaderboard/written"
+                showPractice={
+                    // Once a teacher has connected the school's course.
+                    isConnected(
+                        await memberCourse(
+                            session?.user.id,
+                            membership?.organizationId,
+                        ),
+                    )
+                }
+            />
             <LeaderboardScopeTabs
                 path="/leaderboard/written"
                 scope={scope}

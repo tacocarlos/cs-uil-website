@@ -14,6 +14,8 @@ import Leaderboard from "./leaderboard";
 import { LeaderboardKindTabs } from "./kind-tabs";
 import { LeaderboardScopeTabs } from "./scope-tabs";
 
+import { isConnected, memberCourse } from "~/server/prairielearn/leaderboard";
+
 export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage({
@@ -21,7 +23,7 @@ export default async function LeaderboardPage({
 }: {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-    const { membership } = await getCurrentMembership();
+    const { session, membership } = await getCurrentMembership();
     const { scope, filter } = leaderboardView(await searchParams, membership);
 
     const rows = await db
@@ -70,7 +72,18 @@ export default async function LeaderboardPage({
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-12 sm:px-6 lg:px-8">
-            <LeaderboardKindTabs path="/leaderboard" />
+            <LeaderboardKindTabs
+                path="/leaderboard"
+                showPractice={
+                    // Once a teacher has connected the school's course.
+                    isConnected(
+                        await memberCourse(
+                            session?.user.id,
+                            membership?.organizationId,
+                        ),
+                    )
+                }
+            />
             <LeaderboardScopeTabs
                 path="/leaderboard"
                 scope={scope}

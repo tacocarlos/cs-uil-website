@@ -27,6 +27,7 @@ import {
     type MemberRole,
 } from "~/lib/auth/organizations";
 import { api } from "~/trpc/react";
+import { PrairieLearnCourse } from "./prairielearn-course";
 
 /** Rename a school, manage its teachers, or delete it (site admins). */
 export function ManageSchoolDialog({
@@ -57,6 +58,8 @@ export function ManageSchoolDialog({
                         <RenameSchool school={school} />
                         <Separator />
                         <SchoolTeachers organizationId={school.id} />
+                        <Separator />
+                        <PrairieLearnCourse organizationId={school.id} />
                         <Separator />
                         <DeleteSchool
                             school={school}
