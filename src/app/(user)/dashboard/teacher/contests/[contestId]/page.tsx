@@ -3,20 +3,21 @@
 /**
  * Teacher contest management page.
  *
- * This file is a client component so that ContestControls (with its
- * useMutation + useRouter calls) can live inline in the same file.
+ * Each section is its own component. Sections showing live data subscribe
+ * to one RefreshController owned by the page, so they all refetch together
+ * on the same tick instead of drifting apart on separate timers.
  * `export const dynamic = "force-dynamic"` prevents static caching.
  */
 
 export const dynamic = "force-dynamic";
 
-import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow, isPast } from "date-fns";
 import { ArrowLeft, BookOpen, Clock, Edit, Users } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "~/trpc/react";
-import { Badge } from "~/components/ui/badge";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -29,8 +30,23 @@ import {
 } from "~/components/ui/table";
 import { ContestStatusBadge } from "~/components/contest/contest-status-badge";
 import { STATUS_TRANSITIONS, type ContestStatus } from "~/lib/contest/status";
+import {
+    type RefreshController,
+    useRefreshController,
+    useRefreshSubscription,
+} from "~/hooks/use-refresh-controller";
+import { LeaderboardPreview } from "./leaderboard-preview";
+import { RecentContestSubmissions } from "./recent-submissions";
 
-// ─── ContestControls (inline "use client" component) ─────────────────────────
+type Contest = NonNullable<RouterOutputs["contest"]["getById"]>;
+
+/** How often the live sections refresh. */
+const REFRESH_MS = 5000;
+
+/** Statuses during which nothing on the page changes, so polling stops. */
+const STATIC_STATUSES: readonly ContestStatus[] = ["draft", "ended"];
+
+// ─── Header ───────────────────────────────────────────────────────────────────
 
 /** The button that moves a contest to each status (see STATUS_TRANSITIONS). */
 const STATUS_ACTIONS: Record<
@@ -46,15 +62,17 @@ const STATUS_ACTIONS: Record<
 function ContestControls({
     contestId,
     status,
+    refresh,
 }: {
     contestId: number;
     status: ContestStatus;
+    refresh: RefreshController;
 }) {
-    const router = useRouter();
     const setStatus = api.contest.setStatus.useMutation({
         onSuccess: () => {
             toast.success("Contest status updated.");
-            router.refresh();
+            // Update every live section now rather than on the next tick.
+            void refresh.refreshNow();
         },
         onError: (err) => toast.error(err.message),
     });
@@ -85,27 +103,172 @@ function ContestControls({
     );
 }
 
+function ContestHeader({
+    contest,
+    refresh,
+}: {
+    contest: Contest;
+    refresh: RefreshController;
+}) {
+    return (
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+                <Button asChild variant="ghost" size="sm">
+                    <Link href="/dashboard/teacher/contests">
+                        <ArrowLeft className="h-4 w-4" />
+                    </Link>
+                </Button>
+                <h1 className="text-2xl font-bold">{contest.name}</h1>
+                <ContestStatusBadge status={contest.status} />
+                <span className="text-muted-foreground text-sm">
+                    {contest.hostSchool ?? "Global contest"}
+                </span>
+            </div>
+
+            {/* Status changes and editing are for those who manage the
+                contest; other teachers follow their own students here. */}
+            {contest.canManage ? (
+                <ContestControls
+                    contestId={contest.id}
+                    status={contest.status}
+                    refresh={refresh}
+                />
+            ) : (
+                <p className="text-muted-foreground text-sm">
+                    Showing your school&apos;s students&apos; submissions.
+                </p>
+            )}
+        </div>
+    );
+}
+
+// ─── Stats row ────────────────────────────────────────────────────────────────
+
+function StatCard({
+    title,
+    icon: Icon,
+    value,
+}: {
+    title: string;
+    icon: typeof Clock;
+    value: React.ReactNode;
+}) {
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                <Icon className="text-muted-foreground h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+                <p className="text-2xl font-bold">{value}</p>
+            </CardContent>
+        </Card>
+    );
+}
+
+function ContestStats({
+    contest,
+    refresh,
+}: {
+    contest: Contest;
+    refresh: RefreshController;
+}) {
+    // The time remaining depends on the clock, not just on the data, so
+    // re-render on every tick even when the contest itself is unchanged.
+    const [, setNow] = useState(Date.now);
+    useRefreshSubscription(refresh, () => setNow(Date.now()));
+
+    const timeLabel = isPast(contest.endsAt)
+        ? "Ended"
+        : formatDistanceToNow(contest.endsAt, { addSuffix: true });
+
+    return (
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard
+                title="Problems"
+                icon={BookOpen}
+                value={contest.problems.length}
+            />
+            <StatCard
+                title="Participants"
+                icon={Users}
+                value={contest.participantCount}
+            />
+            <StatCard title="Time Remaining" icon={Clock} value={timeLabel} />
+        </div>
+    );
+}
+
+// ─── Problems list ────────────────────────────────────────────────────────────
+
+function ContestProblems({ problems }: { problems: Contest["problems"] }) {
+    const sortedProblems = [...problems].sort(
+        (a, b) => a.displayOrder - b.displayOrder,
+    );
+
+    return (
+        <section className="mb-8">
+            <h2 className="mb-4 text-lg font-semibold">Problems</h2>
+            <Card>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Label</TableHead>
+                            <TableHead>API Problem ID</TableHead>
+                            <TableHead>Max Points</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {sortedProblems.length === 0 ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={3}
+                                    className="text-muted-foreground py-8 text-center text-sm"
+                                >
+                                    No problems added yet.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            sortedProblems.map((p) => (
+                                <TableRow key={p.id}>
+                                    <TableCell className="font-medium">
+                                        {p.label}
+                                    </TableCell>
+                                    <TableCell>{p.apiProblemId}</TableCell>
+                                    <TableCell>{p.maxPoints}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </Card>
+        </section>
+    );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TeacherContestPage() {
     const { contestId: contestIdStr } = useParams<{ contestId: string }>();
     const contestId = parseInt(contestIdStr, 10);
 
-    const { data: contest, isLoading: contestLoading } =
-        api.contest.getById.useQuery(
-            { contestId },
-            { enabled: !isNaN(contestId) },
-        );
-    const { data: submissions, isLoading: subsLoading } =
-        api.contest.getAllSubmissions.useQuery(
-            { contestId, limit: 20 },
-            { enabled: !isNaN(contestId) },
-        );
-    const { data: leaderboard, isLoading: lbLoading } =
-        api.contest.getLeaderboard.useQuery(
-            { contestId },
-            { enabled: !isNaN(contestId) },
-        );
+    const {
+        data: contest,
+        isLoading: contestLoading,
+        refetch: refetchContest,
+    } = api.contest.getById.useQuery(
+        { contestId },
+        { enabled: !isNaN(contestId) },
+    );
+
+    // One controller drives every live section. The contest itself is
+    // refetched too, since its status and participant count change while
+    // it runs (and it can start or end on its own).
+    const refresh = useRefreshController({
+        intervalMs: REFRESH_MS,
+        enabled: !!contest && !STATIC_STATUSES.includes(contest.status),
+    });
+    useRefreshSubscription(refresh, refetchContest);
 
     if (contestLoading) {
         return (
@@ -125,283 +288,18 @@ export default function TeacherContestPage() {
         );
     }
 
-    const status = contest.status;
-
-    // Build label map from contest problems for the submissions table
-    const problemLabelMap = new Map(
-        contest.problems.map((p) => [p.apiProblemId, p.label]),
-    );
-
-    const timeLabel = isPast(contest.endsAt)
-        ? "Ended"
-        : formatDistanceToNow(contest.endsAt, { addSuffix: true });
-
-    const sortedProblems = [...contest.problems].sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-    );
-
     return (
         <div className="min-h-screen px-4 pt-20 pb-8 sm:px-8">
             <div className="mx-auto max-w-6xl">
-                {/* ── Header ──────────────────────────────────────────────── */}
-                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                        <Button asChild variant="ghost" size="sm">
-                            <Link href="/dashboard/teacher/contests">
-                                <ArrowLeft className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                        <h1 className="text-2xl font-bold">{contest.name}</h1>
-                        <ContestStatusBadge status={status} />
-                        <span className="text-muted-foreground text-sm">
-                            {contest.hostSchool ?? "Global contest"}
-                        </span>
-                    </div>
-
-                    {/* Status changes and editing are for those who manage
-                        the contest; other teachers follow their own
-                        students here. */}
-                    {contest.canManage ? (
-                        <ContestControls
-                            contestId={contestId}
-                            status={status}
-                        />
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            Showing your school&apos;s students&apos;
-                            submissions.
-                        </p>
-                    )}
-                </div>
-
-                {/* ── Stats row ───────────────────────────────────────────── */}
-                <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Problems
-                            </CardTitle>
-                            <BookOpen className="text-muted-foreground h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-2xl font-bold">
-                                {contest.problems.length}
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Participants
-                            </CardTitle>
-                            <Users className="text-muted-foreground h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-2xl font-bold">
-                                {contest.participantCount}
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Time Remaining
-                            </CardTitle>
-                            <Clock className="text-muted-foreground h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-2xl font-bold">{timeLabel}</p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* ── Problems list ────────────────────────────────────────── */}
-                <section className="mb-8">
-                    <h2 className="mb-4 text-lg font-semibold">Problems</h2>
-                    <Card>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Label</TableHead>
-                                    <TableHead>API Problem ID</TableHead>
-                                    <TableHead>Max Points</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {sortedProblems.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={3}
-                                            className="text-muted-foreground py-8 text-center text-sm"
-                                        >
-                                            No problems added yet.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    sortedProblems.map((p) => (
-                                        <TableRow key={p.id}>
-                                            <TableCell className="font-medium">
-                                                {p.label}
-                                            </TableCell>
-                                            <TableCell>
-                                                {p.apiProblemId}
-                                            </TableCell>
-                                            <TableCell>{p.maxPoints}</TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </section>
-
-                {/* ── Recent Submissions ───────────────────────────────────── */}
-                <section className="mb-8">
-                    <h2 className="mb-4 text-lg font-semibold">
-                        Recent Submissions
-                    </h2>
-                    <Card>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Student</TableHead>
-                                    <TableHead>Problem</TableHead>
-                                    <TableHead>Result</TableHead>
-                                    <TableHead>Points</TableHead>
-                                    <TableHead>Time</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {subsLoading ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={5}
-                                            className="text-muted-foreground py-8 text-center text-sm"
-                                        >
-                                            Loading…
-                                        </TableCell>
-                                    </TableRow>
-                                ) : !submissions || submissions.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={5}
-                                            className="text-muted-foreground py-8 text-center text-sm"
-                                        >
-                                            No submissions yet.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    submissions.map((s) => (
-                                        <TableRow
-                                            key={s.id}
-                                            className="hover:bg-muted/50 cursor-pointer"
-                                            onClick={() => {
-                                                window.location.href = `/dashboard/teacher/contests/${contestId}/submissions/${s.id}`;
-                                            }}
-                                        >
-                                            <TableCell>
-                                                {s.userName ?? s.userId}
-                                            </TableCell>
-                                            <TableCell>
-                                                {problemLabelMap.get(
-                                                    s.apiProblemId,
-                                                ) ?? `#${s.apiProblemId}`}
-                                            </TableCell>
-                                            <TableCell>
-                                                {s.accepted ? (
-                                                    <Badge className="bg-success/15 text-success">
-                                                        Accepted
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge className="bg-destructive/15 text-destructive">
-                                                        Denied
-                                                    </Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>{s.points}</TableCell>
-                                            <TableCell>
-                                                <span
-                                                    title={new Date(
-                                                        s.submittedAt,
-                                                    ).toISOString()}
-                                                >
-                                                    {formatDistanceToNow(
-                                                        new Date(s.submittedAt),
-                                                        { addSuffix: true },
-                                                    )}
-                                                </span>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </section>
-
-                {/* ── Leaderboard preview ──────────────────────────────────── */}
-                <section>
-                    <h2 className="mb-4 text-lg font-semibold">
-                        Leaderboard Preview
-                    </h2>
-                    <Card>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-16">Rank</TableHead>
-                                    <TableHead>Student</TableHead>
-                                    <TableHead>Total Points</TableHead>
-                                    <TableHead>Solved</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {lbLoading ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={4}
-                                            className="text-muted-foreground py-8 text-center text-sm"
-                                        >
-                                            Loading…
-                                        </TableCell>
-                                    </TableRow>
-                                ) : !leaderboard || leaderboard.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={4}
-                                            className="text-muted-foreground py-8 text-center text-sm"
-                                        >
-                                            No entries yet.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    leaderboard.slice(0, 5).map((entry, i) => (
-                                        <TableRow key={entry.userId}>
-                                            <TableCell className="font-medium">
-                                                {i + 1}
-                                            </TableCell>
-                                            <TableCell>
-                                                {entry.userName}
-                                                {entry.schoolName && (
-                                                    <span className="text-muted-foreground block text-xs">
-                                                        {entry.schoolName}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {entry.totalPoints}
-                                            </TableCell>
-                                            <TableCell>
-                                                {entry.solvedCount}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </section>
+                <ContestHeader contest={contest} refresh={refresh} />
+                <ContestStats contest={contest} refresh={refresh} />
+                <ContestProblems problems={contest.problems} />
+                <RecentContestSubmissions
+                    contestId={contestId}
+                    problems={contest.problems}
+                    refresh={refresh}
+                />
+                <LeaderboardPreview contestId={contestId} refresh={refresh} />
             </div>
         </div>
     );
