@@ -12,6 +12,13 @@ export const env = createEnv({
         BETTER_AUTH_SECRET: z.string(),
         GOOGLE_CLIENT_ID: z.string(),
         GOOGLE_CLIENT_SECRET: z.string(),
+
+        GITHUB_CLIENT_ID: z.string(),
+        GITHUB_CLIENT_SECRET: z.string(),
+
+        MICROSOFT_CLIENT_ID: z.string(),
+        MICROSOFT_CLIENT_SECRET: z.string(),
+
         NODE_ENV: z
             .enum(["development", "test", "production"])
             .default("development"),
@@ -56,6 +63,12 @@ export const env = createEnv({
         LSP_GATEWAY_SECRET: process.env.LSP_GATEWAY_SECRET,
         DEV_LOGIN_DATABASE_HOSTS: process.env.DEV_LOGIN_DATABASE_HOSTS,
         // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+        //
+        GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+        GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+
+        MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID,
+        MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET,
     },
     /**
      * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -3,6 +3,7 @@ import {
     adminClient,
     inferAdditionalFields,
     organizationClient,
+    usernameClient,
 } from "better-auth/client/plugins";
 import { type auth } from "auth";
 import { accessControl, adminPluginRoles } from "~/lib/auth/permissions";
@@ -20,5 +21,6 @@ export const {
         inferAdditionalFields<typeof auth>(),
         organizationClient(),
         adminClient({ ac: accessControl, roles: adminPluginRoles }),
+        usernameClient(),
     ],
 });

@@ -1,12 +1,28 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { admin, organization } from "better-auth/plugins";
+import {
+    admin,
+    lastLoginMethod,
+    organization,
+    username,
+} from "better-auth/plugins";
 import { env } from "~/env";
+import { signInMethod } from "~/lib/analytics";
+import { isDevUsername } from "~/lib/auth/dev-accounts";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
+import { LAST_LOGIN_METHOD_COOKIE } from "~/lib/auth/last-login";
 import { isBlockedAuthPath } from "~/lib/auth/organization-endpoints";
+import {
+    isBlockedEmailPath,
+    PASSWORD_MAX_LENGTH,
+    PASSWORD_MIN_LENGTH,
+    USERNAME_MAX_LENGTH,
+    USERNAME_MIN_LENGTH,
+} from "~/lib/auth/usernames";
 import { accessControl, adminPluginRoles } from "~/lib/auth/permissions";
 import { isSiteAdmin } from "~/lib/auth/roles";
+import { recordActivity, recordAuthEvent } from "~/server/analytics";
 import { db } from "~/server/db";
 import * as authSchema from "~/server/db/schema/auth";
 import * as orgSchema from "~/server/db/schema/organization";
@@ -79,18 +95,76 @@ export const auth = betterAuth({
             bannedUserMessage:
                 "Your account has been suspended. Contact your teacher or a site admin if you think this is a mistake.",
         }),
+        // Username + password sign-in, for students who can't use Google.
+        // These accounts have no real email (src/lib/auth/usernames.ts);
+        // they're created by src/app/sign-in/sign-up-action.ts.
+        username({
+            minUsernameLength: USERNAME_MIN_LENGTH,
+            maxUsernameLength: USERNAME_MAX_LENGTH,
+        }),
+        // Remembers (in a cookie) how this browser last signed in, so the
+        // sign-in page can mark it "Last used". Our signInMethod also knows
+        // /sign-in/username, which the plugin's default doesn't.
+        lastLoginMethod({
+            cookieName: LAST_LOGIN_METHOD_COOKIE,
+            customResolveMethod: (ctx) => signInMethod(ctx),
+        }),
     ],
-    // Refuse the organization plugin's endpoints the site doesn't use (see
-    // src/lib/auth/organization-endpoints.ts). Runs for browser requests and
-    // server-side `auth.api` calls alike.
     hooks: {
         before: createAuthMiddleware(async (ctx) => {
+            // Refuse the organization plugin's endpoints the site doesn't
+            // use (src/lib/auth/organization-endpoints.ts), for browser
+            // requests and server-side `auth.api` calls alike.
             if (isBlockedAuthPath(ctx.path)) {
                 throw new APIError("NOT_FOUND");
             }
+            // No email sign-in, sign-up, or emails from the browser (see
+            // isBlockedEmailPath). Server code (which has no `request`) may
+            // still create username accounts through /sign-up/email.
+            if (ctx.request && isBlockedEmailPath(ctx.path)) {
+                throw new APIError("NOT_FOUND");
+            }
+            // The dev accounts share a known password, so they only work
+            // where dev login is on (src/lib/auth/dev-login.ts).
+            if (
+                ctx.path === "/sign-in/username" &&
+                isDevUsername((ctx.body as { username?: unknown })?.username) &&
+                !devLoginEnabled()
+            ) {
+                throw new APIError("UNAUTHORIZED", {
+                    message: "Invalid username or password",
+                });
+            }
+        }),
+        // Every signed-in page load and API call reads the session, so this
+        // is where activity is noticed (for the admin analytics page). Not
+        // while a site admin is impersonating the user.
+        after: createAuthMiddleware(async (ctx) => {
+            if (ctx.path !== "/get-session") return;
+            const returned = ctx.context.returned as {
+                session?: { userId?: string; impersonatedBy?: string | null };
+            } | null;
+            const session = returned?.session;
+            if (!session?.userId || session.impersonatedBy) return;
+            await ctx.context.runInBackgroundOrAwait(
+                recordActivity(session.userId),
+            );
         }),
     },
+    // Sign-ups, sign-ins, and sign-outs are recorded for the admin analytics
+    // page (src/server/analytics.ts); impersonation sessions aren't.
     databaseHooks: {
+        user: {
+            create: {
+                after: async (user, context) => {
+                    await recordAuthEvent(
+                        user.id,
+                        "sign-up",
+                        signInMethod(context),
+                    );
+                },
+            },
+        },
         session: {
             create: {
                 // Start each session in the user's earliest current school
@@ -107,17 +181,50 @@ export const auth = betterAuth({
                         },
                     };
                 },
+                after: async (session, context) => {
+                    if (session.impersonatedBy) return;
+                    await recordAuthEvent(
+                        session.userId,
+                        "sign-in",
+                        signInMethod(context),
+                    );
+                },
+            },
+            delete: {
+                // Only real sign-outs; sessions also end by expiring, being
+                // revoked, or the user being banned.
+                after: async (session, context) => {
+                    if (context?.path !== "/sign-out") return;
+                    if (session.impersonatedBy) return;
+                    await recordAuthEvent(session.userId, "sign-out");
+                },
             },
         },
     },
-    // Only for the fake dev accounts (see src/lib/auth/dev-login.ts);
-    // everyone else signs in with Google.
-    emailAndPassword: { enabled: devLoginEnabled() },
+    // Passwords for username accounts (and the dev accounts, see
+    // src/lib/auth/dev-login.ts). Signing in by email is refused above.
+    // Accounts are created without a session; the browser then signs in by
+    // username, so cookies and the sign-in event are recorded as usual.
+    emailAndPassword: {
+        enabled: true,
+        autoSignIn: false,
+        minPasswordLength: PASSWORD_MIN_LENGTH,
+        maxPasswordLength: PASSWORD_MAX_LENGTH,
+    },
     socialProviders: {
         google: {
             prompt: "select_account",
             clientId: env.GOOGLE_CLIENT_ID,
             clientSecret: env.GOOGLE_CLIENT_SECRET,
+        },
+        github: {
+            clientId: env.GITHUB_CLIENT_ID,
+            clientSecret: env.GITHUB_CLIENT_SECRET,
+        },
+        microsoft: {
+            prompt: "select_account",
+            clientId: env.MICROSOFT_CLIENT_ID,
+            clientSecret: env.MICROSOFT_CLIENT_SECRET,
         },
     },
     user: {

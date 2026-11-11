@@ -28,6 +28,10 @@ const ACCESS: Record<string, Access> = {
     "admin.listUsers": "site-admin",
     "admin.banUser": "site-admin",
     "admin.unbanUser": "site-admin",
+    // Site analytics
+    "analytics.summary": "site-admin",
+    "analytics.daily": "site-admin",
+    "analytics.retention": "site-admin",
     // Contests
     "contest.getAll": "public",
     "contest.getById": "public",
