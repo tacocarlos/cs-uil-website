@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { devLoginEnabled } from "~/lib/auth/dev-login";
 import { LAST_LOGIN_METHOD_COOKIE } from "~/lib/auth/last-login";
+import { oauthProviders } from "~/server/oauth";
 import SignInPage from "./signin";
 
 export default async function SignIn({
@@ -18,6 +19,7 @@ export default async function SignIn({
             next={next}
             showDevLogin={devLoginEnabled()}
             lastMethod={lastMethod}
+            providers={oauthProviders}
         />
     );
 }

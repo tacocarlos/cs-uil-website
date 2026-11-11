@@ -22,6 +22,7 @@ import {
     passwordProblem,
     usernameProblem,
 } from "~/lib/auth/usernames";
+import { listProviders, type OAuthProvider } from "~/lib/auth/oauth-providers";
 import { LastUsedBadge } from "./last-used-badge";
 import { signUpWithUsername } from "./sign-up-action";
 
@@ -29,15 +30,18 @@ type Mode = "sign-in" | "sign-up";
 
 /**
  * Username + password sign-in, or creating such an account (for students
- * who can't use Google). New accounts are signed in right away.
+ * who can't use an OAuth provider). New accounts are signed in right away.
  */
 export function UsernameForm({
     callbackURL,
     disabled,
     lastUsed = false,
+    providers,
 }: {
     callbackURL: string;
     disabled: boolean;
+    /** The OAuth providers on offer, suggested instead of a username. */
+    providers: OAuthProvider[];
     /** This browser last signed in with a username. */
     lastUsed?: boolean;
 }) {
@@ -50,6 +54,8 @@ export function UsernameForm({
     // Stays true after success while the page navigates away.
     const [pending, setPending] = useState(false);
     // The "last resort" warning shown before switching to sign-up.
+    // Skipped when there are no providers, since then there's no
+    // alternative to point to.
     const [warningOpen, setWarningOpen] = useState(false);
 
     function switchMode(next: Mode) {
@@ -199,9 +205,11 @@ export function UsernameForm({
                     className="text-info underline-offset-4 hover:underline"
                     disabled={busy}
                     onClick={() =>
-                        mode === "sign-in"
-                            ? setWarningOpen(true)
-                            : switchMode("sign-in")
+                        mode === "sign-up"
+                            ? switchMode("sign-in")
+                            : providers.length > 0
+                              ? setWarningOpen(true)
+                              : switchMode("sign-up")
                     }
                 >
                     {mode === "sign-in" ? "Create one" : "Sign in"}
@@ -217,8 +225,8 @@ export function UsernameForm({
                             <div className="grid gap-2">
                                 <p>
                                     Username accounts aren&apos;t well
-                                    supported. If you can, sign in with Google,
-                                    GitHub, or Microsoft instead.
+                                    supported. If you can, sign in with{" "}
+                                    {listProviders(providers)} instead.
                                 </p>
                                 <p>
                                     A username account has no email, so if you
