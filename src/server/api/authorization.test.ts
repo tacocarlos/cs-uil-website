@@ -72,6 +72,7 @@ const ACCESS: Record<string, Access> = {
     "prairielearn.sync": "teacher",
     "prairielearn.listUsers": "teacher",
     "prairielearn.setLink": "teacher",
+    "prairielearn.getStudentResults": "teacher",
     "prairielearn.getAccess": "site-admin",
     "prairielearn.setEnabled": "site-admin",
     // Problem content
