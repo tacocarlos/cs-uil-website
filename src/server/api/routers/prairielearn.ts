@@ -1,6 +1,6 @@
 import z from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { user } from "~/server/db/schema/auth";
@@ -55,9 +55,9 @@ async function courseStatus(course: SchoolCourse | null) {
     if (!course) return null;
     const [connectedBy] = course.connectedBy
         ? await db
-              .select({ name: user.name })
-              .from(user)
-              .where(eq(user.id, course.connectedBy))
+            .select({ name: user.name })
+            .from(user)
+            .where(eq(user.id, course.connectedBy))
         : [];
     return {
         connected: isConnected(course),
@@ -376,5 +376,92 @@ export const prairielearnRouter = createTRPCRouter({
                         eq(prairielearnCourse.organizationId, organizationId),
                     );
             }
+        }),
+
+    /**
+     * One student's attempts at every practice test (or one, with
+     * assessmentId), across all PrairieLearn users linked to them, newest
+     * first. Teachers see hidden scores too.
+     */
+    getStudentResults: teacherProcedure
+        .input(
+            z.object({
+                userId: z.string(),
+                assessmentId: z.string().optional(),
+            }),
+        )
+        .query(async ({ ctx, input }) => {
+            await requireConnected(ctx.user.id, ctx.organizationId);
+
+            // Same check as setLink: only students in the teacher's school.
+            const [inSchool] = await db
+                .select({ id: member.id })
+                .from(member)
+                .where(
+                    and(
+                        eq(member.organizationId, ctx.organizationId),
+                        eq(member.userId, input.userId),
+                    ),
+                );
+            if (!inSchool) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "That student isn't in your school.",
+                });
+            }
+
+            return db
+                .select({
+                    assessmentInstanceId:
+                        prairielearnAttempt.assessmentInstanceId,
+                    assessmentId: prairielearnAttempt.assessmentId,
+                    level: prairielearnAssessment.level,
+                    uid: prairielearnUser.uid,
+                    correct: prairielearnAttempt.correct,
+                    wrong: prairielearnAttempt.wrong,
+                    skipped: prairielearnAttempt.skipped,
+                    open: prairielearnAttempt.open,
+                    startedAt: prairielearnAttempt.startedAt,
+                })
+                .from(prairielearnAttempt)
+                .innerJoin(
+                    prairielearnUser,
+                    and(
+                        eq(
+                            prairielearnUser.organizationId,
+                            prairielearnAttempt.organizationId,
+                        ),
+                        eq(
+                            prairielearnUser.prairielearnUserId,
+                            prairielearnAttempt.prairielearnUserId,
+                        ),
+                    ),
+                )
+                .innerJoin(
+                    prairielearnAssessment,
+                    and(
+                        eq(
+                            prairielearnAssessment.organizationId,
+                            prairielearnAttempt.organizationId,
+                        ),
+                        eq(
+                            prairielearnAssessment.assessmentId,
+                            prairielearnAttempt.assessmentId,
+                        ),
+                    ),
+                )
+                .where(
+                    and(
+                        eq(prairielearnAttempt.organizationId, ctx.organizationId),
+                        eq(prairielearnUser.userId, input.userId),
+                        input.assessmentId
+                            ? eq(
+                                prairielearnAttempt.assessmentId,
+                                input.assessmentId,
+                            )
+                            : undefined,
+                    ),
+                )
+                .orderBy(desc(prairielearnAttempt.startedAt));
         }),
 });
