@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-
+import { Button } from "~/components/ui/button";
 export type ResourceSectionLink = { id: string; title: string };
 
 /** The page's one banner: the site's own practice first, then a jump list. */
@@ -18,19 +18,22 @@ export default function ResourcesHero({
                     more with the outside courses, judges and channels below.
                 </p>
                 <div className="flex w-full flex-col justify-center gap-3 sm:flex-row">
-                    <Link
-                        href="/resources/past-problem"
-                        className="bg-highlight text-highlight-foreground hover:bg-highlight/90 inline-flex items-center justify-center gap-2 rounded-md px-6 py-3 font-medium shadow-md transition-colors"
-                    >
-                        Past UIL Programming Problems
-                        <ArrowRight className="h-4 w-4" />
-                    </Link>
-                    <Link
-                        href="/contest"
-                        className="border-primary-foreground/40 hover:bg-primary-foreground/10 inline-flex items-center justify-center rounded-md border px-6 py-3 font-medium transition-colors"
-                    >
-                        Practice Contests
-                    </Link>
+                    <Button variant="outline" asChild effect="expandIcon" icon={ArrowRight} iconPlacement="right">
+                        <Link
+                            href="/resources/past-problem"
+                            className="bg-highlight text-highlight-foreground hover:text-highlight-foreground hover:bg-highlight/90 inline-flex items-center justify-center gap-2 rounded-md px-6 py-3 font-medium shadow-md transition-colors"
+                        >
+                            Past UIL Programming Problems
+                        </Link>
+                    </Button>
+                    <Button variant="outline" asChild effect="expandIcon" icon={ArrowRight} iconPlacement="right">
+                        <Link
+                            href="/contest"
+                            className="border-primary-foreground/40 hover:text-primary-foreground hover:bg-primary-foreground/10 inline-flex items-center justify-center rounded-md border px-6 py-3 font-medium transition-colors"
+                        >
+                            Practice Contests
+                        </Link>
+                    </Button>
                 </div>
                 <nav
                     aria-label="Resource sections"
