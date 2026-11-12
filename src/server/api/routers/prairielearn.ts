@@ -55,9 +55,9 @@ async function courseStatus(course: SchoolCourse | null) {
     if (!course) return null;
     const [connectedBy] = course.connectedBy
         ? await db
-            .select({ name: user.name })
-            .from(user)
-            .where(eq(user.id, course.connectedBy))
+              .select({ name: user.name })
+              .from(user)
+              .where(eq(user.id, course.connectedBy))
         : [];
     return {
         connected: isConnected(course),
@@ -452,13 +452,16 @@ export const prairielearnRouter = createTRPCRouter({
                 )
                 .where(
                     and(
-                        eq(prairielearnAttempt.organizationId, ctx.organizationId),
+                        eq(
+                            prairielearnAttempt.organizationId,
+                            ctx.organizationId,
+                        ),
                         eq(prairielearnUser.userId, input.userId),
                         input.assessmentId
                             ? eq(
-                                prairielearnAttempt.assessmentId,
-                                input.assessmentId,
-                            )
+                                  prairielearnAttempt.assessmentId,
+                                  input.assessmentId,
+                              )
                             : undefined,
                     ),
                 )
