@@ -27,6 +27,10 @@ import {
     isLtiUid,
 } from "~/lib/prairielearn/practice-tests";
 import { api } from "~/trpc/react";
+import {
+    StudentResultsDialog,
+    type StudentResultsTarget,
+} from "./student-results-dialog";
 
 const UNLINKED = "unlinked";
 
@@ -40,6 +44,9 @@ export function PracticeTestLinks() {
     const { data: users, isPending } = api.prairielearn.listUsers.useQuery();
     const { data: members } = api.school.listMembers.useQuery();
     const [search, setSearch] = useState("");
+    const [viewing, setViewing] = useState<StudentResultsTarget | null>(null);
+    // Kept after closing so the dialog doesn't empty while it fades out.
+    const [viewingOpen, setViewingOpen] = useState(false);
 
     const sync = api.prairielearn.sync.useMutation({
         onSuccess: async () => {
@@ -120,6 +127,7 @@ export function PracticeTestLinks() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>In PrairieLearn</TableHead>
+                            <TableHead />
                             <TableHead className="text-right">
                                 Attempts
                             </TableHead>
@@ -129,14 +137,14 @@ export function PracticeTestLinks() {
                     <TableBody>
                         {isPending ? (
                             <TableRow>
-                                <TableCell colSpan={3}>
+                                <TableCell colSpan={4}>
                                     <Skeleton className="h-8 w-full" />
                                 </TableCell>
                             </TableRow>
                         ) : filtered.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={3}
+                                    colSpan={4}
                                     className="h-24 text-center"
                                 >
                                     {users?.length
@@ -162,6 +170,26 @@ export function PracticeTestLinks() {
                                                 </span>
                                             )}
                                         </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {u.userId && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setViewing({
+                                                        userId: u.userId!,
+                                                        name:
+                                                            u.linkedName ??
+                                                            u.name ??
+                                                            u.uid,
+                                                    });
+                                                    setViewingOpen(true);
+                                                }}
+                                            >
+                                                View attempts
+                                            </Button>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {u.attempts}
@@ -229,6 +257,11 @@ export function PracticeTestLinks() {
                     </TableBody>
                 </Table>
             </div>
+            <StudentResultsDialog
+                student={viewing}
+                open={viewingOpen}
+                onOpenChange={setViewingOpen}
+            />
         </div>
     );
 }
