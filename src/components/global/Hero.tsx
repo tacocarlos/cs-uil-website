@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Button } from "../ui/button";
+import { ArrowRight } from "lucide-react";
 
 const Hero = () => {
     return (
@@ -11,12 +13,14 @@ const Hero = () => {
                 <p className="mx-auto mb-8 max-w-3xl text-xl md:text-2xl">
                     Compete, learn, and excel in computer science competitions
                 </p>
-                <Link
-                    href="/resources"
-                    className="bg-highlight text-highlight-foreground hover:bg-highlight/90 rounded-lg px-8 py-3 font-medium shadow-md transition-colors"
-                >
-                    View Resources
-                </Link>
+                <Button variant="outline" asChild effect="expandIcon" icon={ArrowRight} iconPlacement="right">
+                    <Link
+                        href="/resources"
+                        className="bg-highlight text-highlight-foreground hover:text-highlight-foreground hover:bg-highlight/90 rounded-lg px-8 py-3 font-medium shadow-md transition-colors"
+                    >
+                        View Resources
+                    </Link>
+                </Button>
             </div>
         </section>
     );
