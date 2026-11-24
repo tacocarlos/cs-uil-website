@@ -183,6 +183,7 @@ export default function ContestEditor({
                 }
                 editor={<CodeEditor editor={codeEditor} />}
                 io={<IOPanel io={io} />}
+                outputVersion={io.outputVersion}
                 footer={
                     <>
                         <RunButton onRun={run} isRunning={isRunning} />

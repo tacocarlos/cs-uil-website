@@ -13,6 +13,8 @@ export function useTestIO(storagePrefix: string, defaultInput: string) {
     const [stdout, setStdout] = useState("");
     const [stderr, setStderr] = useState("");
     const [tab, setTab] = useState<IOTab>("input");
+    // Bumped on every result, so the layout can reveal a hidden I/O panel.
+    const [outputVersion, setOutputVersion] = useState(0);
 
     /** Show a program's output, focusing the error tab if there is any. */
     function showOutput(output: {
@@ -22,12 +24,14 @@ export function useTestIO(storagePrefix: string, defaultInput: string) {
         setStdout(output.stdout ?? "");
         setStderr(output.stderr ?? "");
         setTab(output.stderr ? "stderr" : "stdout");
+        setOutputVersion((v) => v + 1);
     }
 
     function showFailure(message: string) {
         setStdout(message);
         setStderr(message);
         setTab("stderr");
+        setOutputVersion((v) => v + 1);
     }
 
     function resetInput() {
@@ -45,6 +49,7 @@ export function useTestIO(storagePrefix: string, defaultInput: string) {
         setTab,
         showOutput,
         showFailure,
+        outputVersion,
     };
 }
 
