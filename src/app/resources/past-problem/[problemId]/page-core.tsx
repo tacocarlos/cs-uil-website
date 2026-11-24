@@ -97,6 +97,7 @@ export default function PageCore({ problem }: { problem: Problem }) {
                     }
                     editor={<CodeEditor editor={codeEditor} />}
                     io={<IOPanel io={io} />}
+                    outputVersion={io.outputVersion}
                     footer={
                         <>
                             <RunButton onRun={run} isRunning={isRunning} />

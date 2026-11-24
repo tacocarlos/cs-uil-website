@@ -1,4 +1,14 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { ImperativePanelHandle } from "react-resizable-panels";
+import {
+    Maximize2,
+    Minimize2,
+    PanelBottomClose,
+    PanelBottomOpen,
+} from "lucide-react";
+import { Button } from "~/components/ui/button";
 import {
     ResizableHandle,
     ResizablePanel,
@@ -100,29 +110,106 @@ export function ProblemSidebar({ tabs }: { tabs: SidebarTab[] }) {
     );
 }
 
-/** Right column: toolbar, editor above I/O (vertically resizable), footer. */
+/**
+ * Right column: toolbar, editor above I/O (vertically resizable), footer.
+ *
+ * The I/O panel can be hidden, and "full screen" lays the pane over the whole
+ * viewport (covering the navbar and problem column) with I/O hidden. Hidden
+ * I/O comes back on its own when a run produces output.
+ */
 export function EditorPane({
     toolbar,
     editor,
     io,
     footer,
+    outputVersion,
 }: {
     toolbar: ReactNode;
     editor: ReactNode;
     io: ReactNode;
     footer: ReactNode;
+    /** Changes whenever new output arrives; reveals a hidden I/O panel. */
+    outputVersion?: number;
 }) {
+    const ioPanel = useRef<ImperativePanelHandle>(null);
+    const [ioHidden, setIoHidden] = useState(false);
+    const [fullscreen, setFullscreen] = useState(false);
+    // Whether I/O was hidden before entering full screen, to restore on exit.
+    const ioHiddenBefore = useRef(false);
+
+    function setIoVisible(visible: boolean) {
+        if (visible) ioPanel.current?.expand();
+        else ioPanel.current?.collapse();
+    }
+
+    function toggleFullscreen() {
+        if (fullscreen) {
+            setIoVisible(!ioHiddenBefore.current);
+        } else {
+            ioHiddenBefore.current = ioHidden;
+            setIoVisible(false);
+        }
+        setFullscreen(!fullscreen);
+    }
+
+    useEffect(() => {
+        if (outputVersion) ioPanel.current?.expand();
+    }, [outputVersion]);
+
     return (
-        <div className="bg-background flex h-full flex-col">
-            <div className="bg-card flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2">
-                {toolbar}
+        <div
+            className={cn(
+                "bg-background flex h-full flex-col",
+                // z-50 matches the navbar and comes later in the DOM, so it
+                // covers it; portaled menus and dialogs (also z-50, appended
+                // to <body>) still show on top.
+                fullscreen && "fixed inset-0 z-50 h-dvh",
+            )}
+        >
+            <div className="bg-card flex items-center gap-2 border-b px-4 py-2">
+                <div className="flex flex-1 flex-wrap items-center justify-between gap-2">
+                    {toolbar}
+                </div>
+                <div className="flex items-center">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIoVisible(ioHidden)}
+                        title={ioHidden ? "Show I/O panel" : "Hide I/O panel"}
+                        aria-label={
+                            ioHidden ? "Show I/O panel" : "Hide I/O panel"
+                        }
+                    >
+                        {ioHidden ? <PanelBottomOpen /> : <PanelBottomClose />}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleFullscreen}
+                        title={fullscreen ? "Exit full screen" : "Full screen"}
+                        aria-label={
+                            fullscreen ? "Exit full screen" : "Full screen"
+                        }
+                        aria-pressed={fullscreen}
+                    >
+                        {fullscreen ? <Minimize2 /> : <Maximize2 />}
+                    </Button>
+                </div>
             </div>
             <ResizablePanelGroup direction="vertical">
                 <ResizablePanel defaultSize={70} minSize={30}>
                     {editor}
                 </ResizablePanel>
                 <ResizableHandle className="bg-border hover:bg-ring h-1" />
-                <ResizablePanel defaultSize={30} minSize={20}>
+                <ResizablePanel
+                    ref={ioPanel}
+                    defaultSize={30}
+                    minSize={20}
+                    collapsible
+                    collapsedSize={0}
+                    onCollapse={() => setIoHidden(true)}
+                    onExpand={() => setIoHidden(false)}
+                >
                     {io}
                 </ResizablePanel>
             </ResizablePanelGroup>

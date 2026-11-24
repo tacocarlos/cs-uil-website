@@ -47,6 +47,7 @@ export default function SandboxPage() {
                         showResetInput={false}
                     />
                 }
+                outputVersion={io.outputVersion}
                 footer={
                     <>
                         <RunButton onRun={run} isRunning={isRunning} />
